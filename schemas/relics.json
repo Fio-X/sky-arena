@@ -1,0 +1,26 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"$id": "relics.json",
+	"title": "Relic definitions",
+	"type": "array",
+	"items": {
+		"type": "object",
+		"required": ["id", "name", "tier", "pool", "counter", "values", "text"],
+		"properties": {
+			"id": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" },
+			"name": { "type": "string", "minLength": 1 },
+			"gameId": { "oneOf": [{ "type": "string" }, { "type": "null" }] },
+			"tier": { "$ref": "defs.json#/$defs/relicTier" },
+			"pool": { "$ref": "defs.json#/$defs/relicPool" },
+			"counter": { "$ref": "defs.json#/$defs/relicCounter" },
+			"values": { "oneOf": [{ "type": "array", "items": { "$ref": "defs.json#/$defs/nullableNumber" } }, { "type": "null" }] },
+			"text": { "type": "string" },
+			"inCharacterPools": { "type": "array", "items": { "type": "string" } },
+			"lightspeedMissing": { "type": "boolean" },
+			"note": { "type": "string" },
+			"sources": { "type": "object" },
+			"unobtainable": { "type": "boolean" }
+		},
+		"additionalProperties": false
+	}
+}

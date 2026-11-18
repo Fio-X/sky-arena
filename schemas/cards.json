@@ -1,0 +1,50 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"$id": "cards.json",
+	"title": "Card definitions",
+	"type": "array",
+	"items": {
+		"type": "object",
+		"required": ["id", "name", "gameId", "color", "type", "rarity", "cost", "target", "values", "flags", "upgrade", "pool", "text"],
+		"additionalProperties": false,
+		"properties": {
+			"id": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" },
+			"name": { "type": "string", "minLength": 1 },
+			"gameId": { "type": "string", "minLength": 1 },
+			"color": { "$ref": "defs.json#/$defs/cardColor" },
+			"type": { "$ref": "defs.json#/$defs/cardType" },
+			"rarity": { "$ref": "defs.json#/$defs/cardRarity" },
+			"cost": { "$ref": "defs.json#/$defs/nullableInt" },
+			"target": { "$ref": "defs.json#/$defs/cardTarget" },
+			"values": {
+				"type": "object",
+				"required": ["damage", "block", "magic", "hits"],
+				"additionalProperties": false,
+				"properties": {
+					"damage": { "$ref": "defs.json#/$defs/nullableInt" },
+					"block": { "$ref": "defs.json#/$defs/nullableInt" },
+					"magic": { "$ref": "defs.json#/$defs/nullableInt" },
+					"hits": { "$ref": "defs.json#/$defs/nullableInt" }
+				}
+			},
+			"flags": { "type": "array", "items": { "type": "string" } },
+			"upgrade": {
+				"type": "object",
+				"required": ["cost", "damage", "block", "magic", "hits", "flags"],
+				"additionalProperties": false,
+				"properties": {
+					"cost": { "$ref": "defs.json#/$defs/nullableInt" },
+					"damage": { "$ref": "defs.json#/$defs/nullableInt" },
+					"block": { "$ref": "defs.json#/$defs/nullableInt" },
+					"magic": { "$ref": "defs.json#/$defs/nullableInt" },
+					"hits": { "$ref": "defs.json#/$defs/nullableInt" },
+					"flags": { "type": "array", "items": { "type": "string" } }
+				}
+			},
+			"pool": { "type": "string" },
+			"text": { "type": "string" },
+			"noUpgrade": { "type": "boolean" },
+			"unobtainable": { "type": "boolean" }
+		}
+	}
+}

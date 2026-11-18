@@ -1,0 +1,23 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"$id": "potions.json",
+	"title": "Potion definitions",
+	"type": "array",
+	"items": {
+		"type": "object",
+		"required": ["id", "name", "rarity", "class", "targeted", "text"],
+		"properties": {
+			"id": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" },
+			"name": { "type": "string", "minLength": 1 },
+			"gameId": { "type": "string" },
+			"rarity": { "$ref": "defs.json#/$defs/potionRarity" },
+			"class": { "type": "string" },
+			"targeted": { "type": "boolean" },
+			"text": { "type": "string" },
+			"inClassPool": { "type": "array", "items": { "type": "string" } },
+			"potency": { "type": "object" },
+			"sources": { "type": "object" }
+		},
+		"additionalProperties": false
+	}
+}

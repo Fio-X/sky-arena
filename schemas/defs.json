@@ -1,0 +1,72 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"$id": "defs.json",
+	"$defs": {
+		"cardColor": {
+			"type": "string",
+			"enum": ["red", "green", "blue", "purple", "colorless", "curse"]
+		},
+		"cardType": {
+			"type": "string",
+			"enum": ["attack", "skill", "power", "curse", "status"]
+		},
+		"cardRarity": {
+			"type": "string",
+			"enum": ["basic", "common", "uncommon", "rare", "special", "curse"]
+		},
+		"cardTarget": {
+			"type": "string",
+			"enum": ["enemy", "allenemy", "all", "self", "selfandenemy", "none"]
+		},
+		"relicTier": {
+			"type": "string",
+			"enum": ["common", "uncommon", "rare", "boss", "shop", "event", "starter", "special"]
+		},
+		"relicPool": {
+			"type": "string",
+			"enum": ["shared", "red", "green", "blue", "purple"]
+		},
+		"relicCounter": {
+			"type": "string",
+			"enum": ["combat", "persistent", "turn", "none"]
+		},
+		"potionRarity": {
+			"type": "string",
+			"enum": ["common", "uncommon", "rare"]
+		},
+		"powerKind": {
+			"type": "string",
+			"enum": ["buff", "debuff"]
+		},
+		"powerStacking": {
+			"type": "string",
+			"enum": ["intensity", "duration", "none"]
+		},
+		"powerOwner": {
+			"type": "string",
+			"enum": ["player", "monster", "both"]
+		},
+		"moveType": {
+			"type": "string",
+			"enum": ["attack", "debuff", "buff", "defend", "special"]
+		},
+		"orbType": {
+			"type": "string",
+			"enum": ["empty", "lightning", "frost", "dark", "plasma"]
+		},
+		"stanceId": {
+			"type": "string",
+			"enum": ["neutral", "wrath", "calm", "divinity"]
+		},
+		"characterId": {
+			"type": "string",
+			"enum": ["IRONCLAD", "SILENT", "DEFECT", "WATCHER"]
+		},
+		"nullableInt": {
+			"oneOf": [{ "type": "integer" }, { "type": "null" }]
+		},
+		"nullableNumber": {
+			"oneOf": [{ "type": "number" }, { "type": "null" }]
+		}
+	}
+}

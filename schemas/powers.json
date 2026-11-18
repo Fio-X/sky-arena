@@ -1,0 +1,22 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"$id": "powers.json",
+	"title": "Power definitions",
+	"type": "array",
+	"items": {
+		"type": "object",
+		"required": ["id", "name", "kind", "stacking", "turnBased", "owner", "text"],
+		"properties": {
+			"id": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" },
+			"name": { "type": "string", "minLength": 1 },
+			"kind": { "$ref": "defs.json#/$defs/powerKind" },
+			"stacking": { "$ref": "defs.json#/$defs/powerStacking" },
+			"turnBased": { "type": "boolean" },
+			"owner": { "$ref": "defs.json#/$defs/powerOwner" },
+			"text": { "type": "string" },
+			"notes": { "type": "string" },
+			"sources": { "type": "object" }
+		},
+		"additionalProperties": false
+	}
+}

@@ -1,0 +1,262 @@
+import { getAllPotions, getAllRelics, getCard } from "../content/loader";
+import { random } from "../rng/stsRandom";
+import type { CardId, GameEvent, GameState, RngState, StepResult } from "./types";
+
+// ── Event definition (loaded from JSON) ─────────────────
+
+export interface EventOutcome {
+	readonly effect: string;
+	readonly amount: number | string | null;
+	readonly id: string | null;
+	readonly rounding?: string;
+	readonly detail?: string;
+}
+
+export interface EventOption {
+	readonly label: string;
+	readonly requires: string | null;
+	readonly outcomes: EventOutcome[];
+}
+
+export interface EventDef {
+	readonly id: string;
+	readonly name: string;
+	readonly pool: string;
+	readonly acts: number[];
+	readonly summary: string;
+	readonly options: EventOption[];
+	readonly canSpawn: string | null;
+}
+
+// ── Event registry ──────────────────────────────────────
+
+const events = new Map<string, EventDef>();
+const act1Pool: string[] = [];
+const shrinePool: string[] = [];
+const oneTimePool: string[] = [];
+export function loadEvents(data: { events: EventDef[] }): void {
+	events.clear();
+	act1Pool.length = 0;
+	shrinePool.length = 0;
+	oneTimePool.length = 0;
+
+	for (const e of data.events) {
+		events.set(e.id, e);
+		if (e.pool === "act1") act1Pool.push(e.id);
+		if (e.pool === "shrine") shrinePool.push(e.id);
+		if (e.pool === "oneTime" && e.acts.includes(1)) oneTimePool.push(e.id);
+	}
+}
+
+export function getEvent(id: string): EventDef | undefined {
+	return events.get(id);
+}
+
+// ── Pick random event ───────────────────────────────────
+
+const SHRINE_CHANCE = 0.25;
+
+export function pickEvent(rng: RngState): { eventId: string; rng: RngState } {
+	const shrineRoll = random(rng, 99);
+	rng = shrineRoll.state;
+
+	let pool: string[];
+	if (shrineRoll.value < SHRINE_CHANCE * 100 && shrinePool.length > 0) {
+		pool = shrinePool;
+	} else {
+		pool = [...act1Pool, ...oneTimePool.filter((id) => events.has(id))];
+	}
+
+	if (pool.length === 0) {
+		return { eventId: "BIG_FISH", rng };
+	}
+
+	const eventRoll = random(rng, pool.length - 1);
+	rng = eventRoll.state;
+	const eventId = pool[eventRoll.value] ?? pool[0] ?? "BIG_FISH";
+	return { eventId, rng };
+}
+
+// ── Execute event option ────────────────────────────────
+
+export function stepChooseEventOption(
+	state: GameState,
+	optionIndex: number,
+	events_: GameEvent[],
+): StepResult {
+	if (state.phase.type !== "event") return { state, events: events_ };
+	const def = getEvent(state.phase.eventId);
+	if (!def) return { state: { ...state, phase: { type: "map" } }, events: events_ };
+
+	const option = def.options[optionIndex];
+	if (!option) return { state, events: events_ };
+
+	let s = state;
+	for (const outcome of option.outcomes) {
+		s = applyOutcome(s, outcome, events_);
+	}
+
+	s = { ...s, phase: { type: "map" } };
+	return { state: s, events: events_ };
+}
+
+function applyOutcome(state: GameState, outcome: EventOutcome, events: GameEvent[]): GameState {
+	const amount = resolveAmount(outcome.amount, state);
+
+	switch (outcome.effect) {
+		case "healHp": {
+			const healed = Math.min(amount, state.maxHp - state.currentHp);
+			if (healed > 0) {
+				events.push({ type: "healed", target: { type: "player" }, amount: healed });
+			}
+			return { ...state, currentHp: Math.min(state.maxHp, state.currentHp + amount) };
+		}
+		case "loseHp": {
+			const newHp = Math.max(0, state.currentHp - amount);
+			events.push({ type: "hpLost", target: { type: "player" }, amount });
+			return { ...state, currentHp: newHp };
+		}
+		case "gainMaxHp": {
+			return { ...state, maxHp: state.maxHp + amount, currentHp: state.currentHp + amount };
+		}
+		case "loseMaxHp": {
+			const newMax = Math.max(1, state.maxHp - amount);
+			return { ...state, maxHp: newMax, currentHp: Math.min(state.currentHp, newMax) };
+		}
+		case "gainGold": {
+			events.push({ type: "goldChanged", delta: amount });
+			return { ...state, gold: state.gold + amount };
+		}
+		case "loseGold": {
+			const lost = Math.min(amount, state.gold);
+			events.push({ type: "goldChanged", delta: -lost });
+			return { ...state, gold: state.gold - lost };
+		}
+		case "obtainCurse": {
+			const curseId = (outcome.id ?? "REGRET") as CardId;
+			return addCardToDeck(state, curseId);
+		}
+		case "obtainCard": {
+			const cardId = outcome.id as CardId | null;
+			if (cardId) return addCardToDeck(state, cardId);
+			return state;
+		}
+		case "upgradeCard": {
+			return upgradeRandomCard(state);
+		}
+		case "removeCard": {
+			if (state.deck.length <= 1) return state;
+			const r = random(state.rng.miscRng, state.deck.length - 1);
+			const newDeck = state.deck.filter((_, i) => i !== r.value);
+			return { ...state, deck: newDeck, rng: { ...state.rng, miscRng: r.state } };
+		}
+		case "obtainRelic": {
+			return obtainRandomRelic(state);
+		}
+		case "obtainPotion": {
+			return obtainRandomPotion(state);
+		}
+		default:
+			return state;
+	}
+}
+
+function resolveAmount(raw: number | string | null, state: GameState): number {
+	if (raw === null) return 0;
+	if (typeof raw === "number") return raw;
+	if (typeof raw === "string" && raw.startsWith("pct:")) {
+		const pct = Number.parseFloat(raw.slice(4));
+		return Math.floor(state.maxHp * pct);
+	}
+	return Number(raw) || 0;
+}
+
+function addCardToDeck(state: GameState, cardId: CardId): GameState {
+	let uid = 1;
+	for (const c of state.deck) {
+		if (c.uniqueId >= uid) uid = c.uniqueId + 1;
+	}
+	const def = getCard(cardId as string);
+	return {
+		...state,
+		deck: [
+			...state.deck,
+			{
+				id: cardId,
+				uniqueId: uid,
+				upgraded: false,
+				costOverride: null,
+				costForTurn: def?.cost ?? 0,
+				freeToPlay: false,
+				misc: 0,
+			},
+		],
+	};
+}
+
+function upgradeRandomCard(state: GameState): GameState {
+	const upgradable = state.deck
+		.map((c, i) => ({ card: c, index: i }))
+		.filter(({ card }) => !card.upgraded);
+	if (upgradable.length === 0) return state;
+
+	const r = random(state.rng.miscRng, upgradable.length - 1);
+	const target = upgradable[r.value];
+	if (!target) return state;
+
+	const def = getCard(target.card.id as string);
+	const newCost = def?.upgrade.cost ?? target.card.costForTurn;
+	const newDeck = [...state.deck];
+	newDeck[target.index] = { ...target.card, upgraded: true, costForTurn: newCost };
+	return { ...state, deck: newDeck, rng: { ...state.rng, miscRng: r.state } };
+}
+
+function obtainRandomRelic(state: GameState): GameState {
+	const owned = new Set(state.relics.map((r) => r.id as string));
+	const pool = getAllRelics().filter(
+		(r) =>
+			!r.unobtainable &&
+			!owned.has(r.id as string) &&
+			r.tier !== "boss" &&
+			r.tier !== "event" &&
+			r.tier !== "starter" &&
+			r.tier !== "special",
+	);
+	if (pool.length === 0) return state;
+
+	const tierRoll = random(state.rng.relicRng, 99);
+	let rng = tierRoll.state;
+	let tier: string;
+	if (tierRoll.value < 50) tier = "common";
+	else if (tierRoll.value < 83) tier = "uncommon";
+	else tier = "rare";
+
+	const tierPool = pool.filter((r) => r.tier === tier);
+	const finalPool = tierPool.length > 0 ? tierPool : pool;
+	const relicRoll = random(rng, finalPool.length - 1);
+	rng = relicRoll.state;
+	const relic = finalPool[relicRoll.value];
+	if (!relic) return state;
+
+	return {
+		...state,
+		relics: [...state.relics, { id: relic.id, counter: 0 }],
+		rng: { ...state.rng, relicRng: rng },
+	};
+}
+
+function obtainRandomPotion(state: GameState): GameState {
+	const emptySlot = state.potions.indexOf(null);
+	if (emptySlot < 0) return state;
+
+	const potionPool = getAllPotions().filter((p) => p.class === "shared" || p.class === "red");
+	if (potionPool.length === 0) return state;
+
+	const r = random(state.rng.potionRng, potionPool.length - 1);
+	const potion = potionPool[r.value];
+	if (!potion) return state;
+
+	const newPotions = [...state.potions];
+	newPotions[emptySlot] = potion.id;
+	return { ...state, potions: newPotions, rng: { ...state.rng, potionRng: r.state } };
+}

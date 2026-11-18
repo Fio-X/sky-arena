@@ -1,0 +1,92 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"$id": "monsters.json",
+	"title": "Monster definitions",
+	"description": "Validates both array format (act1, act2) and object format (act34)",
+	"oneOf": [
+		{
+			"type": "array",
+			"items": { "$ref": "#/$defs/monster" }
+		},
+		{
+			"type": "object",
+			"required": ["monsters"],
+			"properties": {
+				"monsters": { "type": "array", "items": { "$ref": "#/$defs/monster" } },
+				"encounters": {},
+				"meta": {},
+				"notes": {}
+			}
+		}
+	],
+	"$defs": {
+		"monster": {
+			"type": "object",
+			"required": ["id", "name", "hp", "moves", "ai"],
+			"properties": {
+				"id": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" },
+				"name": { "type": "string", "minLength": 1 },
+				"hp": {
+					"type": "object",
+					"required": ["base", "asc", "ascLevel"],
+					"properties": {
+						"base": { "$ref": "#/$defs/hpRange" },
+						"asc": { "$ref": "#/$defs/hpRange" },
+						"ascLevel": { "type": "integer", "minimum": 0, "maximum": 20 }
+					}
+				},
+				"moves": {
+					"type": "object",
+					"patternProperties": {
+						"^[A-Z][A-Z0-9_]*$": { "$ref": "#/$defs/move" }
+					},
+					"minProperties": 1
+				},
+				"ai": {
+					"type": "object",
+					"required": ["roll", "spec", "historyRules"],
+					"properties": {
+						"roll": { "type": "string" },
+						"firstTurn": { "type": "string" },
+						"spec": { "type": "string", "minLength": 1 },
+						"historyRules": { "type": "array", "items": { "type": "string" } }
+					}
+				},
+				"acts": { "type": "array", "items": { "type": "integer" } },
+				"category": { "type": "string" },
+				"conflicts": { "type": "array" },
+				"prebattle": {},
+				"sources": {}
+			}
+		},
+		"hpRange": {
+			"type": "array",
+			"items": { "type": "integer", "minimum": 0 },
+			"minItems": 2,
+			"maxItems": 2
+		},
+		"move": {
+			"type": "object",
+			"required": ["intent", "damage", "hits"],
+			"properties": {
+				"intent": { "$ref": "#/$defs/intentType" },
+				"damage": { "$ref": "#/$defs/moveStat" },
+				"hits": { "$ref": "#/$defs/moveStat" },
+				"block": { "$ref": "#/$defs/moveStat" },
+				"effects": { "type": "array" },
+				"asc": { "type": "object" }
+			}
+		},
+		"moveStat": {
+			"oneOf": [
+				{ "type": "integer" },
+				{ "type": "array", "items": { "type": "integer" }, "minItems": 2, "maxItems": 2 },
+				{ "type": "null" }
+			]
+		},
+		"intentType": {
+			"type": "string",
+			"pattern": "^(ATTACK|ATTACK_BUFF|ATTACK_DEBUFF|ATTACK_DEFEND|BUFF|DEBUFF|DEFEND|DEFEND_BUFF|DEFEND_DEBUFF|ESCAPE|SLEEP|STRONG_DEBUFF|STUN|UNKNOWN|attack|attack_buff|attack_debuff|attack_defend|buff|debuff|defend|defend_buff|defend_debuff|escape|sleep|strong_debuff|stun|unknown)$"
+		}
+	}
+}

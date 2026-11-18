@@ -1,0 +1,48 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"$id": "characters.json",
+	"title": "Character definitions",
+	"type": "array",
+	"items": {
+		"type": "object",
+		"required": [
+			"id", "name", "color", "maxHp", "startingEnergy", "startingHandSize",
+			"startingDeck", "masterDeckSize", "startingRelic", "startingGold",
+			"startingPotionSlots", "orbSlots"
+		],
+		"properties": {
+			"id": { "$ref": "defs.json#/$defs/characterId" },
+			"name": { "type": "string", "minLength": 1 },
+			"color": { "type": "string" },
+			"maxHp": { "type": "integer", "minimum": 1 },
+			"startingEnergy": { "type": "integer", "minimum": 0 },
+			"startingHandSize": { "type": "integer", "minimum": 0 },
+			"startingDeck": {
+				"type": "array",
+				"items": {
+					"type": "object",
+					"required": ["card", "count"],
+					"additionalProperties": false,
+					"properties": {
+						"card": { "type": "string" },
+						"count": { "type": "integer", "minimum": 1 }
+					}
+				}
+			},
+			"masterDeckSize": { "type": "integer", "minimum": 1 },
+			"startingRelic": {
+				"type": "object",
+				"required": ["id", "name"],
+				"properties": {
+					"id": { "type": "string" },
+					"name": { "type": "string" }
+				}
+			},
+			"startingGold": { "type": "integer", "minimum": 0 },
+			"startingPotionSlots": { "type": "integer", "minimum": 0 },
+			"orbSlots": { "type": "integer", "minimum": 0 },
+			"ascension14MaxHpLoss": { "type": "integer" },
+			"sources": { "type": "object" }
+		}
+	}
+}
