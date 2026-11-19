@@ -5,6 +5,7 @@ import { initCombat } from "../combat/init";
 import { resolveCardEffect } from "../content/cardEffects";
 import { getCard } from "../content/loader";
 import { relicVal } from "../content/relicHelpers";
+import * as relicRules from "../content/relicsCombatRules";
 import {
 	addRelicCombatRewards,
 	dreamCatcherReward,
@@ -24,7 +25,13 @@ import { stepChooseNeowBlessing } from "./neow";
 import { hasRelic, obtainCard } from "./obtain";
 import { gainGold } from "./playerActions";
 import { rollPotionDrop, stepDiscardPotion, stepObtainPotionReward, stepUsePotion } from "./potion";
-import { replayIfAmplify, replayIfBurst, replayIfDoubleTap, replayIfEchoForm } from "./replay";
+import {
+	replayIfAmplify,
+	replayIfBurst,
+	replayIfDoubleTap,
+	replayIfEchoForm,
+	replayIfNecronomicon,
+} from "./replay";
 import { generateShop, stepChooseShopItem, stepShopPurge } from "./shop";
 import { stepEndTurn } from "./turn";
 import type {
@@ -113,9 +120,11 @@ function stepPlayCard(
 	if (!combat || state.phase.type !== "combat") return { state, events };
 	const card = combat.hand[handIndex];
 	if (!card) return { state, events };
-	// Data cost -2 marks unplayable cards (status/curse); costForTurn alone cannot block them.
-	if (getCard(card.id)?.cost === -2) return { state, events };
 	const def = getCard(card.id);
+	// Data cost -2 marks unplayable cards (status/curse); costForTurn alone cannot block them.
+	// Blue Candle / Medical Kit make them playable (no effect; exhausted).
+	const relicPlay = def?.cost === -2 && relicRules.playableByRelic(state, card);
+	if (def?.cost === -2 && !relicPlay) return { state, events };
 
 	let baseCost = card.freeToPlay ? 0 : card.costForTurn;
 	if (card.id === "EVISCERATE") baseCost = Math.max(0, baseCost - combat.cardsDiscardedThisTurn);
@@ -148,7 +157,9 @@ function stepPlayCard(
 		target: { type: "monster", index: targetIndex },
 	});
 
-	const actions = resolveCardEffect(s, card, targetIndex);
+	// X cost: energy spent is all energy (Necronomicon checks it).
+	const energySpent = def?.cost === -1 ? combat.energy : cost;
+	const actions = relicPlay ? [] : resolveCardEffect(s, card, targetIndex);
 	for (const action of actions) {
 		if (!s.combat) break;
 		s = { ...s, combat: addToBot(s.combat, action) };
@@ -159,22 +170,36 @@ function stepPlayCard(
 
 	s = fireHookOnAllActors(s, (st, actor) => fireHook(st, actor, "onAfterCardPlayed", card));
 
-	s = exhaustOrDiscard(s, card, events);
+	s = exhaustOrDiscard(s, card, events, relicPlay);
 	s = replayIfDoubleTap(s, card, targetIndex, events);
 	s = replayIfBurst(s, card, targetIndex, events);
 	s = replayIfEchoForm(s, card, targetIndex, events);
 	s = replayIfAmplify(s, card, targetIndex, events);
+	s = replayIfNecronomicon(s, card, targetIndex, events, energySpent);
 
 	return { state: s, events };
 }
 
-function exhaustOrDiscard(s: GameState, card: CardInstance, events: GameEvent[]): GameState {
+function exhaustOrDiscard(
+	state: GameState,
+	card: CardInstance,
+	events: GameEvent[],
+	forceExhaust: boolean,
+): GameState {
+	let s = state;
 	if (!s.combat) return s;
 	const def = getCard(card.id);
 	const cardFlags = card.upgraded ? (def?.upgrade.flags ?? def?.flags ?? []) : (def?.flags ?? []);
-	const exhausts =
+	let exhausts =
+		forceExhaust ||
 		cardFlags.includes("exhaust") ||
 		(def?.type === "skill" && s.combat.player.powers.some((p) => p.id === "corruption"));
+	if (exhausts) {
+		const spoon = relicRules.strangeSpoon(s, card);
+		s = spoon.state;
+		exhausts = !spoon.spoon;
+	}
+	if (!s.combat) return s;
 	if (exhausts) {
 		s = {
 			...s,
@@ -407,10 +432,11 @@ function stepProceed(state: GameState, events: GameEvent[]): StepResult {
 }
 
 function checkCombatEnd(result: StepResult): StepResult {
-	const { state, events } = result;
+	const { events } = result;
+	// Lizard Tail: deaths outside the damage/HP-loss actions (powers that set HP directly).
+	const state = relicRules.preventPlayerDeath(result.state, events);
 	const combat = state.combat;
-	if (!combat) return result;
-	if (state.phase.type !== "combat") return result;
+	if (!combat || state.phase.type !== "combat") return { state, events };
 
 	if (state.currentHp <= 0) {
 		events.push({ type: "combatEnded", victory: false });
@@ -455,5 +481,5 @@ function checkCombatEnd(result: StepResult): StepResult {
 		return { state: withExtras, events };
 	}
 
-	return result;
+	return { state, events };
 }

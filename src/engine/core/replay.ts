@@ -99,3 +99,28 @@ export function replayIfAmplify(
 	({ state: s } = drainActions(s, events));
 	return s;
 }
+
+/**
+ * Necronomicon: the first Attack each turn that cost 2+ energy (X: energy
+ * spent) is played again. Relic counter 1 = not yet used this turn.
+ */
+export function replayIfNecronomicon(
+	s: GameState,
+	card: CardInstance,
+	targetIndex: number,
+	events: GameEvent[],
+	energySpent: number,
+): GameState {
+	if (!s.combat || getCard(card.id)?.type !== "attack" || energySpent < 2) return s;
+	const relic = s.relics.find((r) => r.id === "NECRONOMICON");
+	if (relic?.counter !== 1) return s;
+	let st: GameState = {
+		...s,
+		relics: s.relics.map((r) => (r.id === "NECRONOMICON" ? { ...r, counter: 0 } : r)),
+	};
+	for (const action of resolveCardEffect(st, card, targetIndex)) {
+		if (!st.combat) break;
+		st = { ...st, combat: addToBot(st.combat, action) };
+	}
+	return drainActions(st, events).state;
+}

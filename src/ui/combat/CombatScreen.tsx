@@ -87,6 +87,7 @@ export function CombatScreen() {
 								floats={monsterFloats(m.index)}
 								onClick={() => needsTarget && isTargeted && handlePlayCard(i)}
 								highlighted={needsTarget && isTargeted}
+								hideIntent={state.relics.some((r) => r.id === "RUNIC_DOME")}
 							/>
 						))}
 					</AnimatePresence>

@@ -7,6 +7,7 @@ import {
 import { resolveMonsterDeath } from "../combat/death";
 import { negateWithArtifact } from "../combat/powers";
 import { getCard } from "../content/loader";
+import * as relicRules from "../content/relicsCombatRules";
 import { popAction } from "./actionQueue";
 import { insertAtRandomSpot } from "./drawPile";
 import { fireHook, vetoHook } from "./hooks";
@@ -134,8 +135,9 @@ function executeDamage(
 			? calculateNonAttackDamage(s, action.target, action.baseDamage)
 			: calculateDamage(s, action.source, action.target, action.baseDamage, null);
 		s = calc.state;
+		const blockBefore = relicRules.targetBlock(s, action.target);
 		const applied = applyDamage(s, action.target, calc.damage);
-		s = applied.state;
+		s = relicRules.handDrill(applied.state, action, blockBefore);
 
 		events.push({
 			type: "damageDealt",
@@ -152,6 +154,7 @@ function executeDamage(
 			s = fireHook(s, action.target, "wasHPLost", applied.hpLost);
 			s = fireHook(s, action.source, "onAttack", applied.hpLost, action.target);
 		}
+		s = relicRules.preventPlayerDeath(s, events);
 
 		if (action.target.type === "monster" && !isTargetAlive(s, action.target)) {
 			s = resolveMonsterDeath(s, action.target.index, events);
@@ -200,10 +203,11 @@ function executeBlock(
 }
 
 function executeApplyPower(
-	state: GameState,
-	action: Extract<Action, { type: "applyPower" }>,
+	rawState: GameState,
+	rawAction: Extract<Action, { type: "applyPower" }>,
 	events: GameEvent[],
 ): { state: GameState } {
+	const { state, action } = relicRules.applyPowerRelics(rawState, rawAction);
 	if (!state.combat) return { state };
 	const { target, powerId, amount } = action;
 	const negated = negateWithArtifact(state, target, powerId, amount);
@@ -263,7 +267,8 @@ function executeLoseHp(
 	events: GameEvent[],
 ): { state: GameState } {
 	if (action.target.type !== "player") return { state };
-	return executePlayerLoseHp(state, action.amount, events);
+	const lost = executePlayerLoseHp(state, action.amount, events).state;
+	return { state: relicRules.preventPlayerDeath(lost, events) };
 }
 
 function executeGainEnergy(
@@ -548,7 +553,7 @@ function executeScry(
 	const combat = state.combat;
 	if (!combat || action.count <= 0) return { state };
 
-	const count = Math.min(action.count, combat.drawPile.length);
+	const count = Math.min(action.count + relicRules.scryBonus(state), combat.drawPile.length);
 	if (count === 0) return { state };
 
 	// Scry: look at top N cards, discard any (for now auto-discard status/curse)

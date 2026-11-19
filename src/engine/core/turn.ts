@@ -7,6 +7,7 @@ import { takesTurns } from "../combat/death";
 import { buildIntent, resolveMonsterMove, rollMonsterMove } from "../combat/monsterTurn";
 import { clearBlockAtEndOfTurn, tickTurnBasedPowers } from "../combat/powers";
 import { getCard } from "../content/loader";
+import { preventPlayerDeath, recordEndTurnHand } from "../content/relicsCombatRules";
 import { drainActions } from "./actionExecutor";
 import { addToBot } from "./actionQueue";
 import { anyHook, fireHook, fireHookOnAllActors, foldHook } from "./hooks";
@@ -22,9 +23,11 @@ const TURN_BASED_POWER_IDS = new Set([
 	"regen",
 ]);
 
-export function stepEndTurn(state: GameState, events: GameEvent[]): StepResult {
+export function stepEndTurn(rawState: GameState, events: GameEvent[]): StepResult {
+	if (!rawState.combat || rawState.phase.type !== "combat") return { state: rawState, events };
+	const state = recordEndTurnHand(rawState); // Cloak Clasp: hand size before discarding
 	const combat = state.combat;
-	if (!combat || state.phase.type !== "combat") return { state, events };
+	if (!combat) return { state, events };
 
 	const wlp = combat.player.powers.find((p) => p.id === "WELL_LAID_PLANS");
 	if (wlp && wlp.amount > 0 && combat.hand.length > 0) {
@@ -82,6 +85,7 @@ function endOfTurnHand(
 		const dmg = (card.upgraded ? def?.upgrade.magic : def?.values.magic) ?? 2;
 		s = { ...s, currentHp: Math.max(0, s.currentHp - dmg) };
 		events.push({ type: "hpLost", target: { type: "player" }, amount: dmg });
+		s = preventPlayerDeath(s, events);
 	}
 	return s;
 }

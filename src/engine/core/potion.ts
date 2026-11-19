@@ -1,5 +1,6 @@
 import { getPotion } from "../content/loader";
 import { getPotionEffect } from "../content/potionEffects";
+import { potionPotency } from "../content/relicsCombatRules";
 import { random } from "../rng/stsRandom";
 import { drainActions } from "./actionExecutor";
 import { addToBot } from "./actionQueue";
@@ -91,7 +92,7 @@ export function stepUsePotion(
 
 	const effectFn = getPotionEffect(potionId);
 	if (effectFn) {
-		const actions = effectFn(s, targetIndex);
+		const actions = potionPotency(s, effectFn(s, targetIndex));
 		for (const action of actions) {
 			if (!s.combat) break;
 			s = { ...s, combat: addToBot(s.combat, action) };

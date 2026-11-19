@@ -9,6 +9,7 @@
 import type { Action, CardInstance, GameState } from "../core/types";
 import type { CardDef } from "./loader";
 import { getCard } from "./loader";
+import { withChemicalX } from "./relicsCombatRules";
 
 export type CardEffectFn = (state: GameState, card: CardInstance, targetIndex: number) => Action[];
 
@@ -37,7 +38,7 @@ export function resolveCardEffect(
 	targetIndex: number,
 ): Action[] {
 	const specific = registry.get(card.id);
-	if (specific) return specific(state, card, targetIndex);
+	if (specific) return specific(withChemicalX(state, card), card, targetIndex);
 	return genericCardEffect(state, card, targetIndex);
 }
 

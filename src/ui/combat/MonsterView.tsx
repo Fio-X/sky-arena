@@ -10,11 +10,14 @@ export function MonsterView({
 	floats,
 	onClick,
 	highlighted,
+	hideIntent = false,
 }: {
 	monster: MonsterState;
 	floats: FloatingText[];
 	onClick: () => void;
 	highlighted: boolean;
+	/** Runic Dome: enemy intents are hidden. */
+	hideIntent?: boolean;
 }) {
 	// halfDead (Darkling regrowing, Awakened One before rebirth): shown dimmed, still has an intent
 	if (!monster.alive && !monster.halfDead) return null;
@@ -46,7 +49,7 @@ export function MonsterView({
 			}}
 		>
 			<FloatLayer items={floats} />
-			<IntentDisplay monster={monster} />
+			{!hideIntent && <IntentDisplay monster={monster} />}
 
 			<div
 				style={{
