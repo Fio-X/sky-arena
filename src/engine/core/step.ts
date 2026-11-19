@@ -273,6 +273,7 @@ function stepEndTurn(state: GameState, events: GameEvent[]): StepResult {
 			turn: newTurn,
 			energy: c.maxEnergy,
 			cardsPlayedThisTurn: 0,
+			cardsDiscardedThisTurn: 0,
 			actionQueue: [],
 		},
 		phase: { type: "combat", turn: newTurn },
@@ -328,6 +329,7 @@ function stepChooseMapNode(
 		case "elite": {
 			const monsterIds = pickEncounter(s, node.type);
 			s = initCombat({ ...s, encounterIndex: advanceEncounterIndex(s, node.type) }, monsterIds);
+			s = fireHook(s, { type: "player" }, "atBattleStart");
 			events.push({ type: "combatStarted" });
 			break;
 		}
@@ -335,6 +337,7 @@ function stepChooseMapNode(
 			const bossId = s.encounterLists.boss;
 			const monsterIds = getEncounterMonsters(bossId);
 			s = initCombat(s, monsterIds);
+			s = fireHook(s, { type: "player" }, "atBattleStart");
 			events.push({ type: "combatStarted" });
 			break;
 		}

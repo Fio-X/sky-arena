@@ -298,7 +298,17 @@ function executeDiscardCard(
 	const hand = combat.hand.filter((_, i) => i !== action.handIndex);
 	const discardPile = [...combat.discardPile, card];
 	events.push({ type: "cardDiscarded", card });
-	return { state: { ...state, combat: { ...combat, hand, discardPile } } };
+	return {
+		state: {
+			...state,
+			combat: {
+				...combat,
+				hand,
+				discardPile,
+				cardsDiscardedThisTurn: combat.cardsDiscardedThisTurn + 1,
+			},
+		},
+	};
 }
 
 function executeExhaustCard(

@@ -72,6 +72,9 @@ export type CardSelectTask =
 	| "gamble"
 	| "headbutt"
 	| "recycle"
+	| "daggerThrow"
+	| "prepared"
+	| "survivor"
 	| "warcry";
 
 // ── 战斗状态 ──────────────────────────────────────────────
@@ -89,6 +92,7 @@ export interface CombatState {
 	readonly actionQueue: Action[];
 	readonly cardQueue: CardQueueItem[];
 	readonly cardsPlayedThisTurn: number;
+	readonly cardsDiscardedThisTurn: number;
 }
 
 export interface PlayerCombatState {
