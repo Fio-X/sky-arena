@@ -107,6 +107,20 @@ function handleRecycle(s: GameState, c: CombatState, idx: number): GameState | n
 	return toCombat({ ...s, combat: { ...c, hand, exhaustPile, energy } });
 }
 
+function handleDiscard(s: GameState, c: CombatState, indices: number[]): GameState {
+	const toDiscard = indices.map((i) => c.hand[i]).filter((cc): cc is CardInstance => cc != null);
+	if (toDiscard.length === 0) return toCombat(s);
+	const hand = c.hand.filter((_, i) => !indices.includes(i));
+	const discardPile = [...c.discardPile, ...toDiscard];
+	const nc = {
+		...c,
+		hand,
+		discardPile,
+		cardsDiscardedThisTurn: c.cardsDiscardedThisTurn + toDiscard.length,
+	};
+	return toCombat({ ...s, combat: nc });
+}
+
 function handleCodexOrDiscovery(
 	s: GameState,
 	c: CombatState,
@@ -168,6 +182,13 @@ export function stepChooseCard(
 		case "codex":
 		case "discovery":
 			result = handleCodexOrDiscovery(state, c, idx, state.phase.task);
+			break;
+		case "survivor":
+		case "daggerThrow":
+			result = handleDiscard(state, c, [idx]);
+			break;
+		case "prepared":
+			result = handleDiscard(state, c, indices);
 			break;
 		default:
 			return { state, events };

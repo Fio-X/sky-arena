@@ -21,6 +21,14 @@ registerRelicHooks("BURNING_BLOOD", () => ({
 	},
 }));
 
+// Ring of the Snake — draw 2 extra cards at start of combat
+registerRelicHooks("RING_OF_THE_SNAKE", () => ({
+	relicId: "RING_OF_THE_SNAKE",
+	hooks: {
+		atBattleStart: (ctx) => drawCards(ctx.state, 2),
+	},
+}));
+
 // ═════════════════════════════════════════════════════════
 // COMMON
 // ═════════════════════════════════════════════════════════

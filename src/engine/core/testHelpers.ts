@@ -70,6 +70,7 @@ export function makeCombat(overrides: Partial<CombatState> = {}): CombatState {
 		actionQueue: [],
 		cardQueue: [],
 		cardsPlayedThisTurn: 0,
+		cardsDiscardedThisTurn: 0,
 		...overrides,
 	};
 }
