@@ -72,9 +72,14 @@ export type CardSelectTask =
 	| "gamble"
 	| "headbutt"
 	| "recycle"
+	| "acrobatics"
+	| "concentrate"
 	| "daggerThrow"
+	| "nightmare"
 	| "prepared"
+	| "setup"
 	| "survivor"
+	| "toolsOfTheTrade"
 	| "warcry";
 
 // ── 战斗状态 ──────────────────────────────────────────────

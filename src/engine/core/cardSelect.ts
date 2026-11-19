@@ -112,13 +112,46 @@ function handleDiscard(s: GameState, c: CombatState, indices: number[]): GameSta
 	if (toDiscard.length === 0) return toCombat(s);
 	const hand = c.hand.filter((_, i) => !indices.includes(i));
 	const discardPile = [...c.discardPile, ...toDiscard];
-	const nc = {
+	let nc = {
 		...c,
 		hand,
 		discardPile,
 		cardsDiscardedThisTurn: c.cardsDiscardedThisTurn + toDiscard.length,
 	};
+	// Reflex: draw 2(3) on discard; Tactician: gain 1(2) energy on discard
+	for (const card of toDiscard) {
+		if (card.id === "REFLEX") {
+			const def = getCard(card.id);
+			const drawCount = card.upgraded ? (def?.upgrade.magic ?? 3) : (def?.values.magic ?? 2);
+			nc = drawN(nc, drawCount);
+		} else if (card.id === "TACTICIAN") {
+			const def = getCard(card.id);
+			const energy = card.upgraded ? (def?.upgrade.magic ?? 2) : (def?.values.magic ?? 1);
+			nc = { ...nc, energy: nc.energy + energy };
+		}
+	}
 	return toCombat({ ...s, combat: nc });
+}
+
+function handleSetup(s: GameState, c: CombatState, idx: number): GameState | null {
+	const card = c.hand[idx];
+	if (!card) return null;
+	const hand = c.hand.filter((_, i) => i !== idx);
+	const topCard: CardInstance = { ...card, costOverride: 0 };
+	return toCombat({ ...s, combat: { ...c, hand, drawPile: [...c.drawPile, topCard] } });
+}
+
+function handleNightmare(s: GameState, c: CombatState, idx: number): GameState | null {
+	const card = c.hand[idx];
+	if (!card) return null;
+	let uid = nextUid(c);
+	const copies: CardInstance[] = [];
+	const copyCount = 3;
+	for (let i = 0; i < copyCount; i++) {
+		copies.push({ ...card, uniqueId: uid++ });
+	}
+	const drawPile = [...c.drawPile, ...copies];
+	return toCombat({ ...s, combat: { ...c, drawPile } });
 }
 
 function handleCodexOrDiscovery(
@@ -185,10 +218,21 @@ export function stepChooseCard(
 			break;
 		case "survivor":
 		case "daggerThrow":
+		case "acrobatics":
+		case "toolsOfTheTrade":
 			result = handleDiscard(state, c, [idx]);
 			break;
 		case "prepared":
 			result = handleDiscard(state, c, indices);
+			break;
+		case "concentrate":
+			result = handleDiscard(state, c, indices);
+			break;
+		case "setup":
+			result = handleSetup(state, c, idx);
+			break;
+		case "nightmare":
+			result = handleNightmare(state, c, idx);
 			break;
 		default:
 			return { state, events };

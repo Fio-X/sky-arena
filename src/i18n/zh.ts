@@ -92,5 +92,10 @@ export const zh: TranslationTable = {
 		prepared: "选择卡牌弃置",
 		survivor: "选择一张卡牌弃置",
 		warcry: "选择一张卡牌放到抽牌堆顶部",
+		acrobatics: "选择一张卡牌弃置",
+		concentrate: "选择卡牌弃置",
+		nightmare: "选择一张卡牌复制",
+		setup: "选择一张卡牌放到抽牌堆顶部",
+		toolsOfTheTrade: "选择一张卡牌弃置",
 	},
 };

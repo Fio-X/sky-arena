@@ -94,5 +94,10 @@ export const en: TranslationTable = {
 		prepared: "Choose card(s) to discard",
 		survivor: "Choose a card to discard",
 		warcry: "Choose a card to put on top of draw pile",
+		acrobatics: "Choose a card to discard",
+		concentrate: "Choose cards to discard",
+		nightmare: "Choose a card to copy",
+		setup: "Choose a card to put on top of draw pile",
+		toolsOfTheTrade: "Choose a card to discard",
 	},
 };

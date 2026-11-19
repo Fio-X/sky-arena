@@ -57,5 +57,7 @@ import "./potionEffects";
 import "./relicHooks";
 import "./relicHooksAdvanced";
 import "./silentCards";
+import "./silentUncommonCards";
+import "./silentRareCards";
 import "./silentPowers";
 import "./statusCards";
