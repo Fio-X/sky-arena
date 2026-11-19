@@ -151,10 +151,7 @@ describe("Silent card effects", () => {
 	it("BACKFLIP gains block and draws 2", () => {
 		const combat = makeCombat({
 			hand: [card("BACKFLIP")],
-			drawPile: [
-				card("STRIKE_GREEN", { uniqueId: 101 }),
-				card("STRIKE_GREEN", { uniqueId: 102 }),
-			],
+			drawPile: [card("STRIKE_GREEN", { uniqueId: 101 }), card("STRIKE_GREEN", { uniqueId: 102 })],
 			energy: 3,
 		});
 		const state = makeState(combat);
