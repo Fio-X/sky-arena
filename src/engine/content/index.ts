@@ -65,3 +65,6 @@ import "./defectUncommonCards";
 import "./defectRareCards";
 import "./defectPowers";
 import "./statusCards";
+import "./colorlessCards";
+import "./colorlessRareCards";
+import "./colorlessPowers";

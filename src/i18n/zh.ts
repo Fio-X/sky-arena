@@ -1,5 +1,6 @@
 import type { TranslationTable } from "./types";
 import { zhCardTextsBlue } from "./zh-card-texts-blue";
+import { zhCardTextsColorless } from "./zh-card-texts-colorless";
 import { zhCardTextsGreen } from "./zh-card-texts-green";
 import { zhCardTextsRed } from "./zh-card-texts-red";
 import { zhCards } from "./zh-cards";
@@ -11,7 +12,12 @@ import { zhEvents, zhMonsters, zhPotions, zhPowers, zhRelics } from "./zh-conten
  */
 export const zh: TranslationTable = {
 	cards: zhCards,
-	cardTexts: { ...zhCardTextsRed, ...zhCardTextsGreen, ...zhCardTextsBlue },
+	cardTexts: {
+		...zhCardTextsRed,
+		...zhCardTextsGreen,
+		...zhCardTextsBlue,
+		...zhCardTextsColorless,
+	},
 	relics: zhRelics,
 	powers: zhPowers,
 	potions: zhPotions,
