@@ -289,3 +289,31 @@ registerRelicHooks("VAJRA", () => ({
 		atBattleStart: (ctx) => addPlayerPower(ctx.state, "strength", 1),
 	},
 }));
+
+// Pure Water — at start of combat, add a Miracle to hand
+registerRelicHooks("PURE_WATER", () => ({
+	relicId: "PURE_WATER",
+	hooks: {
+		atBattleStart: (ctx) => {
+			const c = ctx.combat;
+			if (!c || c.hand.length >= 10) return ctx.state;
+			let uid = 1;
+			for (const card of [...c.hand, ...c.drawPile, ...c.discardPile, ...c.exhaustPile]) {
+				if (card.uniqueId >= uid) uid = card.uniqueId + 1;
+			}
+			const miracle = {
+				id: "MIRACLE" as never,
+				upgraded: false,
+				uniqueId: uid,
+				costOverride: null,
+				freeToPlay: false,
+				costForTurn: 0,
+				misc: 0,
+			};
+			return {
+				...ctx.state,
+				combat: { ...c, hand: [...c.hand, miracle] },
+			};
+		},
+	},
+}));

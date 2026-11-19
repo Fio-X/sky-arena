@@ -26,8 +26,20 @@ export function calculateDamage(
 	// Phase 3: attacker final modifiers (multiplicative — Vulnerable on target)
 	({ value: damage, state: s } = foldHook(s, source, "atDamageFinalGive", damage, card));
 
+	// Stance multiplier for player attacks (after hooks, before floor)
+	if (source.type === "player" && s.combat) {
+		const stance = s.combat.player.stance;
+		if (stance === "wrath") damage *= 2;
+		else if (stance === "divinity") damage *= 3;
+	}
+
 	// Phase 4: defender final modifiers (multiplicative — Intangible)
 	({ value: damage, state: s } = foldHook(s, target, "atDamageFinalReceive", damage, card));
+
+	// Wrath: player takes double damage
+	if (target.type === "player" && s.combat?.player.stance === "wrath") {
+		damage *= 2;
+	}
 
 	return { damage: Math.max(0, Math.floor(damage)), state: s };
 }

@@ -7,14 +7,14 @@ import { resolveCardEffect } from "../content/cardEffects";
 import { getCard } from "../content/loader";
 import { drainActions } from "./actionExecutor";
 import { addToBot } from "./actionQueue";
-import { triggerOrbPassives } from "./orbSystem";
-import { replayIfAmplify, replayIfBurst, replayIfDoubleTap, replayIfEchoForm } from "./replay";
 import { afterRewardPhase, rollGoldReward, stepChooseBossRelic } from "./bossReward";
 import { stepChooseCard } from "./cardSelect";
 import { obtainRandomRelic, pickEvent, stepChooseEventOption } from "./event";
 import { fireHook, fireHookOnAllActors, foldHook, vetoHook } from "./hooks";
 import { stepChooseNeowBlessing } from "./neow";
+import { triggerOrbPassives } from "./orbSystem";
 import { rollPotionDrop, stepDiscardPotion, stepObtainPotionReward, stepUsePotion } from "./potion";
+import { replayIfAmplify, replayIfBurst, replayIfDoubleTap, replayIfEchoForm } from "./replay";
 import { generateShop, stepChooseShopItem, stepShopPurge } from "./shop";
 import type {
 	ActorRef,
@@ -37,7 +37,6 @@ const TURN_BASED_POWER_IDS = new Set([
 
 export function step(state: GameState, command: Command): StepResult {
 	const events: GameEvent[] = [];
-
 	let result: StepResult;
 	switch (command.type) {
 		case "playCard":
@@ -94,13 +93,10 @@ function stepPlayCard(
 ): StepResult {
 	const combat = state.combat;
 	if (!combat || state.phase.type !== "combat") return { state, events };
-
 	const card = combat.hand[handIndex];
 	if (!card) return { state, events };
-
 	// Data cost -2 marks unplayable cards (status/curse); costForTurn alone cannot block them.
 	if (getCard(card.id)?.cost === -2) return { state, events };
-
 	const def = getCard(card.id);
 
 	let baseCost = card.freeToPlay ? 0 : card.costForTurn;
@@ -216,6 +212,7 @@ export function stepEndTurnContinue(
 	let s = state;
 
 	if (!skipDiscard) {
+		const retained: CardInstance[] = [];
 		const toDiscard: CardInstance[] = [];
 		const toExhaust: CardInstance[] = [];
 		for (const card of combat.hand) {
@@ -223,6 +220,8 @@ export function stepEndTurnContinue(
 			if (def?.flags.includes("ethereal")) {
 				toExhaust.push(card);
 				events.push({ type: "cardExhausted", card });
+			} else if (def?.flags.includes("selfRetain") || card.misc === 1) {
+				retained.push({ ...card, misc: 0 });
 			} else {
 				toDiscard.push(card);
 				events.push({ type: "cardDiscarded", card });
@@ -232,7 +231,7 @@ export function stepEndTurnContinue(
 			...state,
 			combat: {
 				...combat,
-				hand: [],
+				hand: retained,
 				discardPile: [...combat.discardPile, ...toDiscard],
 				exhaustPile: [...combat.exhaustPile, ...toExhaust],
 			},
@@ -298,6 +297,10 @@ export function stepEndTurnContinue(
 		}
 	}
 
+	if (s.combat?.player.stance === "divinity") {
+		s = { ...s, combat: addToBot(s.combat, { type: "changeStance", stance: "neutral" }) };
+		({ state: s } = drainActions(s, events));
+	}
 	s = fireHookOnAllActors(s, (st, actor) => fireHook(st, actor, "atStartOfTurn"));
 
 	s = { ...s, combat: addToBot(s.combat as typeof c, { type: "drawCards", count: 5 }) };

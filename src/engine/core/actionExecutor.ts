@@ -73,6 +73,10 @@ function executeAction(
 			return executeChannelOrb(state, action, events);
 		case "evokeOrb":
 			return executeEvokeOrb(state, action, events);
+		case "changeStance":
+			return executeChangeStance(state, action, events);
+		case "scry":
+			return executeScry(state, action, events);
 		default:
 			return { state };
 	}
@@ -510,4 +514,76 @@ function isTargetAlive(state: GameState, target: ActorRef): boolean {
 	if (target.type === "player") return state.currentHp > 0;
 	const monster = state.combat?.monsters[target.index];
 	return monster?.alive ?? false;
+}
+
+function executeChangeStance(
+	state: GameState,
+	action: Extract<Action, { type: "changeStance" }>,
+	events: GameEvent[],
+): { state: GameState } {
+	const combat = state.combat;
+	if (!combat) return { state };
+	const from = combat.player.stance;
+	const to = action.stance;
+	if (from === to) return { state };
+
+	let s: GameState = {
+		...state,
+		combat: { ...combat, player: { ...combat.player, stance: to } },
+	};
+
+	// Leaving Calm: gain 2 energy
+	if (from === "calm") {
+		s = { ...s, combat: { ...s.combat!, energy: s.combat!.energy + 2 } };
+	}
+
+	// Entering Divinity: gain 3 energy
+	if (to === "divinity") {
+		s = { ...s, combat: { ...s.combat!, energy: s.combat!.energy + 3 } };
+	}
+
+	events.push({ type: "stanceChanged", from, to });
+	s = fireHook(s, { type: "player" }, "onChangeStance", from, to);
+	return { state: s };
+}
+
+function executeScry(
+	state: GameState,
+	action: Extract<Action, { type: "scry" }>,
+	events: GameEvent[],
+): { state: GameState } {
+	const combat = state.combat;
+	if (!combat || action.count <= 0) return { state };
+
+	const count = Math.min(action.count, combat.drawPile.length);
+	if (count === 0) return { state };
+
+	// Scry: look at top N cards, discard any (for now auto-discard status/curse)
+	const drawPile = [...combat.drawPile];
+	const toDiscard: CardInstance[] = [];
+	const toKeep: CardInstance[] = [];
+
+	const scried = drawPile.splice(drawPile.length - count, count);
+	for (const card of scried) {
+		const def = getCard(card.id);
+		if (def?.type === "status" || def?.type === "curse") {
+			toDiscard.push(card);
+		} else {
+			toKeep.push(card);
+		}
+	}
+
+	const newDrawPile = [...drawPile, ...toKeep];
+	const newDiscardPile = [...combat.discardPile, ...toDiscard];
+
+	for (const card of toDiscard) {
+		events.push({ type: "cardDiscarded", card });
+	}
+
+	return {
+		state: {
+			...state,
+			combat: { ...combat, drawPile: newDrawPile, discardPile: newDiscardPile },
+		},
+	};
 }

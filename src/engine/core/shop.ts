@@ -56,7 +56,7 @@ export function generateShop(state: GameState): { shop: ShopData; rng: RngState 
 	let rng = state.rng.merchantRng;
 	const ownedRelics = new Set(state.relics.map((r) => r.id as string));
 
-	const cards = generateShopCards(rng);
+	const cards = generateShopCards(rng, state.character);
 	rng = cards.rng;
 
 	const relics = generateShopRelics(rng, ownedRelics);
@@ -77,9 +77,15 @@ export function generateShop(state: GameState): { shop: ShopData; rng: RngState 
 	};
 }
 
-function generateShopCards(rng: RngState): { items: ShopData["cards"][number][]; rng: RngState } {
+function generateShopCards(
+	rng: RngState,
+	character: GameState["character"],
+): { items: ShopData["cards"][number][]; rng: RngState } {
+	const colorMap = { IRONCLAD: "red", SILENT: "green", DEFECT: "blue", WATCHER: "purple" } as const;
+	const charColor = colorMap[character] ?? "red";
 	const classCards = getAllCards().filter(
-		(c) => c.color === "red" && !c.unobtainable && c.rarity !== "basic" && c.rarity !== "special",
+		(c) =>
+			c.color === charColor && !c.unobtainable && c.rarity !== "basic" && c.rarity !== "special",
 	);
 	const colorlessCards = getAllCards().filter(
 		(c) =>

@@ -12,8 +12,8 @@ export function generateCardReward(
 	state: GameState,
 	count = 3,
 ): { cards: CardId[]; rng: RngState } {
-	const color =
-		state.character === "IRONCLAD" ? "red" : state.character === "SILENT" ? "green" : "red";
+	const colorMap = { IRONCLAD: "red", SILENT: "green", DEFECT: "blue", WATCHER: "purple" } as const;
+	const color = colorMap[state.character] ?? ("red" as const);
 
 	const commons = getCardsByColor(color).filter(
 		(c) => c.rarity === "common" && !c.unobtainable && c.pool !== "none",

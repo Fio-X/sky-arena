@@ -40,6 +40,7 @@ export interface TranslationTable {
 		readonly ironclad: string;
 		readonly silent: string;
 		readonly defect: string;
+		readonly watcher: string;
 		readonly slayTheSpire: string;
 		readonly rest: string;
 		readonly smith: string;

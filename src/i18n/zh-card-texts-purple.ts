@@ -1,0 +1,102 @@
+/** Chinese card description translations for Watcher (purple) cards.
+ *  Uses official Slay the Spire Chinese localization terms.
+ *  $Keyword markers, [base|upgraded] brackets, <br> and @RE are kept for display code. */
+export const zhCardTextsPurple: Record<string, string> = {
+	// Basic
+	STRIKE_PURPLE: "造成[6|9]伤害。",
+	DEFEND_PURPLE: "获得[5|8]点$Block。",
+	ERUPTION: "造成9伤害。进入$Wrath。",
+	VIGILANCE: "获得[8|12]点$Block。<br>进入$Calm。",
+
+	// Common
+	BOWLING_BASH: "对每个在场的敌人造成[7|10]伤害。",
+	CONSECRATE: "对所有敌人造成[5|8]伤害。",
+	CRESCENDO: "$Retain。<br>进入$Wrath。<br>$Exhaust。",
+	CRUSH_JOINTS: "造成[8|10]伤害。如果本场战斗中你打出的上一张牌是技能牌，施加[1|2]层$Vulnerable。",
+	CUT_THROUGH_FATE: "造成[7|9]伤害。<br>$Scry [2|3]。<br>抽1张牌。",
+	EMPTY_BODY: "获得[7|10]点$Block。退出你的$Stance。",
+	EMPTY_FIST: "造成[9|14]伤害。退出你的$Stance。",
+	EVALUATE: "获得[6|10]点$Block。将一张{{C|洞察}}洗入你的抽牌堆。",
+	FLURRY_OF_BLOWS: "造成[4|6]伤害。<br>每当你改变$Stances，将此牌从弃牌堆放回你的手牌。",
+	FLYING_SLEEVES: "$Retain。<br>造成[4|6]伤害两次。",
+	FOLLOW_UP: "造成[7|11]伤害。<br>如果你打出的上一张牌是攻击牌，获得@RE。",
+	HALT: "获得[3|4]点$Block。<br>如果你处于$Wrath，额外获得[9|14]点$Block。",
+	JUST_LUCKY: "$Scry [1|2]。<br>获得[2|3]点$Block。<br>造成[3|4]伤害。",
+	PRESSURE_POINTS: "施加[8|11]层印记。所有敌人失去等同于其印记数的生命值。",
+	PROSTRATE: "获得[2|3]点$Mantra。<br>获得4点$Block。",
+	PROTECT: "$Retain。获得[12|16]点$Block。",
+	SASH_WHIP: "造成[8|10]伤害。如果本场战斗中你打出的上一张牌是攻击牌，施加[1|2]层$Weak。",
+	THIRD_EYE: "获得[7|9]点$Block。<br>$Scry [3|5]。",
+	TRANQUILITY: "$Retain。<br>进入$Calm。<br>$Exhaust。",
+
+	// Uncommon
+	CARVE_REALITY: "造成[6|10]伤害。将一张{{C|惩击}}加入你的手牌。",
+	COLLECT: "在你接下来的[X|X+1]个回合开始时，将一张{{C|奇迹}}加入你的手牌。",
+	CONCLUDE: "对所有敌人造成[12|16]伤害。结束你的回合。",
+	DECEIVE_REALITY: "获得[4|7]点$Block。<br>将一张{{C|安全}}加入你的手牌。",
+	EMPTY_MIND: "退出你的$Stance。抽[2|3]张牌。",
+	FEAR_NO_EVIL: "造成[8|11]伤害。如果敌人意图攻击，进入$Calm。",
+	FOREIGN_INFLUENCE: "从任意颜色中选择1张攻击牌加入你的手牌。[|本回合其费用变为0。]",
+	INDIGNATION: "如果你处于$Wrath，对所有敌人施加[3|5]层$Vulnerable，否则进入$Wrath。",
+	INNER_PEACE: "如果你处于$Calm，抽[3|4]张牌，否则进入$Calm。",
+	MEDITATE: "将弃牌堆中的[1张牌|2张牌]放回你的手牌并$Retain。进入$Calm。结束你的回合。",
+	PERSEVERANCE: "$Retain。获得[5|7]点$Block。每当此牌被$Retained，增加其$Block [2|3]点。",
+	PRAY: "获得[3|4]点$Mantra。将一张{{C|洞察}}洗入你的抽牌堆。",
+	REACH_HEAVEN: "造成[10|15]伤害。将一张{{C|以暴制暴}}洗入你的抽牌堆。",
+	SANCTITY: "获得[6|9]点$Block。<br>如果本场战斗中你打出的上一张牌是技能牌，抽2张牌。",
+	SANDS_OF_TIME: "$Retain。<br>造成[20|26]伤害。<br>被$Retained时，本回合费用减少1。",
+	SIGNATURE_MOVE: "只有当你手牌中只有这一张攻击牌时才能打出。<br>造成[30|40]伤害。",
+	SIMMERING_FURY: "在你下一个回合开始时，进入$Wrath并抽[2|3]张牌。",
+	SWIVEL: "获得[8|11]点$Block。<br>你打出的下一张攻击牌费用变为0。",
+	TALK_TO_THE_HAND: "造成[5|7]伤害。每当你攻击该敌人，获得[2|3]点$Block。<br>$Exhaust。",
+	TANTRUM: "造成3伤害[3|4]次。进入$Wrath。将此牌洗入你的抽牌堆。",
+	WALLOP: "造成[9|12]伤害。获得等同于未被格挡伤害的$Block。",
+	WAVE_OF_THE_HAND: "本回合每当你获得$Block，对所有敌人施加[1|2]层$Weak。",
+	WEAVE: "造成[4|6]伤害。每当你$Scry，将此牌从弃牌堆放回你的手牌。",
+	WHEEL_KICK: "造成[15|20]伤害。抽2张牌。",
+	WINDMILL_STRIKE: "$Retain。<br>造成[7|10]伤害。<br>被$Retained时，增加其伤害[4|5]点。",
+	WORSHIP: "[|$Retain。]获得5点$Mantra。",
+	WREATH_OF_FLAME: "你的下一次攻击额外造成[5|8]伤害。",
+
+	// Uncommon Powers
+	BATTLE_HYMN: "[|$Innate。<br>]在你的每个回合开始时，将一张{{C|惩击}}加入你的手牌。",
+	FASTING:
+		"获得[3|4]点$Strength。<br>获得[3|4]点$Dexterity。<br>在你的每个回合开始时，少获得1点@RE。",
+	FORESIGHT: "在你的回合开始时，$Scry [3|4]。",
+	LIKE_WATER: "在你的回合结束时，如果你处于$Calm，获得[5|7]点$Block。",
+	MENTAL_FORTRESS: "每当你转换$Stances，获得[4|6]点$Block。",
+	NIRVANA: "每当你$Scry，获得[3|4]点$Block。",
+	RUSHDOWN: "每当你进入$Wrath，抽2张牌。",
+	STUDY: "在你的回合结束时，将一张{{C|洞察}}洗入你的抽牌堆。",
+
+	// Rare
+	ALPHA: "[|$Innate。]将一张{{C|贝塔}}洗入你的抽牌堆。$Exhaust。",
+	BLASPHEMY: "[|$Retain。]进入$Divinity。下个回合死亡。$Exhaust。",
+	BRILLIANCE: "造成[12|16]伤害。造成等同于本场战斗中你获得的$Mantra的额外伤害。",
+	CONJURE_BLADE: "将一张{{C|涤荡者}}[|（X+1）]洗入你的抽牌堆。<br>$Exhaust。",
+	DEUS_EX_MACHINA: "$Unplayable。<br>当你抽到此牌时，将[2|3]张{{C|奇迹}}加入你的手牌。$Exhaust。",
+	JUDGMENT: "如果敌人的生命值不超过[30|40]，将其生命值设为0。",
+	LESSON_LEARNED: "造成[10|13]伤害。<br>如果$Fatal，随机$Upgrade你牌组中的一张牌。<br>$Exhaust。",
+	OMNISCIENCE: "从你的抽牌堆中选择一张牌。将所选牌打出两次并$Exhaust。$Exhaust。",
+	RAGNAROK: "对一个随机敌人造成[5|6]伤害[5|6]次。",
+	SCRAWL: "抽牌直到你的手牌满。<br>$Exhaust。",
+	SPIRIT_SHIELD: "你手牌中的每张牌提供[3|4]点$Block。",
+	VAULT: "在本回合之后额外获得一个回合。<br>结束你的回合。<br>$Exhaust。",
+	WISH: "选择一项：获得[6|8]层$Plated Armor、[3|4]点$Strength或[25|30]金币。$Exhaust。",
+
+	// Rare Powers
+	DEVA_FORM: "[$Ethereal。<br>|]在你的回合开始时，获得@RE，<br>并且每回合获得量增加1。",
+	DEVOTION: "在你的回合开始时，获得[2|3]点$Mantra。",
+	ESTABLISHMENT: "[|$Innate。]每当一张牌被$Retained，降低其费用1点。",
+	MASTER_REALITY: "每当在战斗中生成一张牌时，$Upgrade该牌。",
+
+	// Generated / special cards
+	MIRACLE: "$Retain。<br>获得[@RE|@RE @RE]。<br>$Exhaust。",
+	SMITE: "$Retain。<br>造成[12|16]伤害。<br>$Exhaust。",
+	SAFETY: "$Retain。<br>获得[12|16]点$Block。<br>$Exhaust。",
+	THROUGH_VIOLENCE: "$Retain。<br>造成[20|30]伤害。<br>$Exhaust。",
+	INSIGHT: "$Retain。<br>抽[2|3]张牌。<br>$Exhaust。",
+	BETA: "将一张{{C|欧米茄}}洗入你的抽牌堆。<br>$Exhaust。",
+	OMEGA: "在你的回合结束时，对所有敌人造成[50|60]伤害。",
+	EXPUNGER: "造成[9|15]伤害X次。",
+};

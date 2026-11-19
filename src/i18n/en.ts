@@ -42,6 +42,7 @@ export const en: TranslationTable = {
 		ironclad: "Ironclad",
 		silent: "Silent",
 		defect: "Defect",
+		watcher: "Watcher",
 		slayTheSpire: "Slay the Spire",
 		rest: "Rest",
 		smith: "Smith",

@@ -2,6 +2,7 @@ import type { TranslationTable } from "./types";
 import { zhCardTextsBlue } from "./zh-card-texts-blue";
 import { zhCardTextsColorless } from "./zh-card-texts-colorless";
 import { zhCardTextsGreen } from "./zh-card-texts-green";
+import { zhCardTextsPurple } from "./zh-card-texts-purple";
 import { zhCardTextsRed } from "./zh-card-texts-red";
 import { zhCards } from "./zh-cards";
 import { zhEvents, zhMonsters, zhPotions, zhPowers, zhRelics } from "./zh-content";
@@ -16,6 +17,7 @@ export const zh: TranslationTable = {
 		...zhCardTextsRed,
 		...zhCardTextsGreen,
 		...zhCardTextsBlue,
+		...zhCardTextsPurple,
 		...zhCardTextsColorless,
 	},
 	relics: zhRelics,
@@ -52,6 +54,7 @@ export const zh: TranslationTable = {
 		ironclad: "铁甲战士",
 		silent: "寂静猎手",
 		defect: "机器人",
+		watcher: "观者",
 		slayTheSpire: "杀戮尖塔",
 		rest: "休息",
 		smith: "锻造",
