@@ -1,4 +1,5 @@
 import { NEOW_BLESSINGS } from "../../engine/core/neow";
+import { tNeow, tUi } from "../../i18n";
 import { useGameStore } from "../../store/gameStore";
 
 export function NeowScreen() {
@@ -15,9 +16,9 @@ export function NeowScreen() {
 				gap: "1.5rem",
 			}}
 		>
-			<h2>Neow&apos;s Lament</h2>
+			<h2>{tUi("neowLament")}</h2>
 			<p style={{ color: "var(--text-dim)", maxWidth: 400, textAlign: "center" }}>
-				Choose a blessing to begin your journey.
+				{tUi("neowChoose")}
 			</p>
 			<div
 				style={{
@@ -47,8 +48,10 @@ export function NeowScreen() {
 							cursor: "pointer",
 						}}
 					>
-						<strong>{b.label}</strong>
-						<span style={{ fontSize: "0.75rem", color: "var(--text-dim)" }}>{b.description}</span>
+						<strong>{tNeow(b.id)?.label ?? b.label}</strong>
+						<span style={{ fontSize: "0.75rem", color: "var(--text-dim)" }}>
+							{tNeow(b.id)?.description ?? b.description}
+						</span>
 					</button>
 				))}
 			</div>

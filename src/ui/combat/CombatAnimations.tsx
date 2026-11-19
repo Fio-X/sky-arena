@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { getPower } from "../../engine/content/loader";
 import type { GameEvent } from "../../engine/core/types";
+import { tPower } from "../../i18n";
 import { useGameStore } from "../../store/gameStore";
 
 export interface FloatingText {
@@ -37,7 +38,7 @@ function eventToFloat(e: GameEvent): FloatingText | null {
 			return e.amount > 0 ? makeFloat(`+${e.amount}`, "#4caf50", e.target) : null;
 		case "powerApplied": {
 			if (e.amount === 0) return null;
-			const name = getPower(e.powerId)?.name ?? e.powerId;
+			const name = tPower(e.powerId, getPower(e.powerId)?.name ?? e.powerId);
 			const sign = e.amount > 0 ? "+" : "";
 			const color = e.amount > 0 ? "var(--accent-gold)" : "var(--accent-blue)";
 			return makeFloat(`${sign}${e.amount} ${name}`, color, e.target);

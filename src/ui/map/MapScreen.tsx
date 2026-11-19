@@ -1,4 +1,5 @@
 import type { MapNode, RoomType } from "../../engine/core/types";
+import { tUiFmt } from "../../i18n";
 import { useGameStore } from "../../store/gameStore";
 
 const ROOM_ICONS: Record<RoomType, string> = {
@@ -93,7 +94,9 @@ export function MapScreen() {
 				padding: "1rem",
 			}}
 		>
-			<h2 style={{ marginBottom: "1rem", color: "var(--text-dim)" }}>Act {state.act} Map</h2>
+			<h2 style={{ marginBottom: "1rem", color: "var(--text-dim)" }}>
+				{tUiFmt("map", String(state.act))}
+			</h2>
 			<div style={{ position: "relative", width: gridW, height: gridH }}>
 				<svg
 					aria-hidden="true"

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { getCard } from "../../engine/content/loader";
 import type { CardInstance } from "../../engine/core/types";
+import { tCard, tUi } from "../../i18n";
 import { useGameStore } from "../../store/gameStore";
 
 type PileType = "deck" | "draw" | "discard" | "exhaust";
@@ -11,10 +12,10 @@ export function CardPileViewer() {
 	if (!state) return null;
 
 	const piles: Record<PileType, { label: string; cards: CardInstance[] }> = {
-		deck: { label: "Deck", cards: state.deck },
-		draw: { label: "Draw Pile", cards: state.combat?.drawPile ?? [] },
-		discard: { label: "Discard Pile", cards: state.combat?.discardPile ?? [] },
-		exhaust: { label: "Exhaust Pile", cards: state.combat?.exhaustPile ?? [] },
+		deck: { label: tUi("deck"), cards: state.deck },
+		draw: { label: tUi("drawPile"), cards: state.combat?.drawPile ?? [] },
+		discard: { label: tUi("discardPile"), cards: state.combat?.discardPile ?? [] },
+		exhaust: { label: tUi("exhaustPile"), cards: state.combat?.exhaustPile ?? [] },
 	};
 
 	const inCombat = state.combat !== null;
@@ -22,20 +23,23 @@ export function CardPileViewer() {
 	return (
 		<>
 			<span style={{ display: "flex", gap: "0.375rem", fontSize: "0.8rem" }}>
-				<PileButton label={`Deck: ${state.deck.length}`} onClick={() => setOpen("deck")} />
+				<PileButton
+					label={`${tUi("deck")}: ${state.deck.length}`}
+					onClick={() => setOpen("deck")}
+				/>
 				{inCombat && (
 					<>
 						<PileButton
-							label={`Draw: ${state.combat?.drawPile.length ?? 0}`}
+							label={`${tUi("draw")}: ${state.combat?.drawPile.length ?? 0}`}
 							onClick={() => setOpen("draw")}
 						/>
 						<PileButton
-							label={`Discard: ${state.combat?.discardPile.length ?? 0}`}
+							label={`${tUi("discard")}: ${state.combat?.discardPile.length ?? 0}`}
 							onClick={() => setOpen("discard")}
 						/>
 						{(state.combat?.exhaustPile.length ?? 0) > 0 && (
 							<PileButton
-								label={`Exhaust: ${state.combat?.exhaustPile.length ?? 0}`}
+								label={`${tUi("exhaust")}: ${state.combat?.exhaustPile.length ?? 0}`}
 								onClick={() => setOpen("exhaust")}
 							/>
 						)}
@@ -134,11 +138,11 @@ function PileModal({
 						{title} ({cards.length})
 					</h3>
 					<button type="button" onClick={onClose} style={{ fontSize: "0.75rem" }}>
-						Close
+						{tUi("close")}
 					</button>
 				</div>
 				{cards.length === 0 ? (
-					<p style={{ color: "var(--text-dim)" }}>Empty</p>
+					<p style={{ color: "var(--text-dim)" }}>{tUi("empty")}</p>
 				) : (
 					<div style={{ display: "flex", flexWrap: "wrap", gap: "0.375rem" }}>
 						{sorted.map((c) => (
@@ -153,7 +157,7 @@ function PileModal({
 
 function MiniCard({ card }: { card: CardInstance }) {
 	const def = getCard(card.id);
-	const name = def?.name ?? card.id;
+	const name = tCard(card.id, def?.name ?? card.id);
 	const cost = card.freeToPlay ? 0 : (card.costOverride ?? def?.cost ?? card.costForTurn);
 
 	const typeColor =

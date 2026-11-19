@@ -1,4 +1,5 @@
 import { getCard, getPotion } from "../../engine/content/loader";
+import { tCard, tPotion, tUi } from "../../i18n";
 import { useGameStore } from "../../store/gameStore";
 
 export function RewardScreen() {
@@ -19,9 +20,13 @@ export function RewardScreen() {
 				gap: "2rem",
 			}}
 		>
-			<h2>Victory!</h2>
+			<h2>{tUi("victory")}</h2>
 
-			{gold > 0 && <p style={{ color: "var(--accent-gold)" }}>+{gold} Gold</p>}
+			{gold > 0 && (
+				<p style={{ color: "var(--accent-gold)" }}>
+					+{gold} {tUi("goldUnit")}
+				</p>
+			)}
 
 			{potionReward && (
 				<button
@@ -35,17 +40,20 @@ export function RewardScreen() {
 						borderRadius: 8,
 					}}
 				>
-					Take {getPotion(potionReward)?.name ?? potionReward}
+					{tUi("takePotion").replace(
+						"{0}",
+						tPotion(potionReward, getPotion(potionReward)?.name ?? potionReward),
+					)}
 				</button>
 			)}
 
 			{cardRewards.length > 0 && (
 				<>
-					<p style={{ color: "var(--text-dim)" }}>Choose a card to add to your deck:</p>
+					<p style={{ color: "var(--text-dim)" }}>{tUi("chooseCard")}</p>
 					<div style={{ display: "flex", gap: "1rem" }}>
 						{cardRewards.map((cardId, i) => {
 							const def = getCard(cardId);
-							const name = def?.name ?? cardId;
+							const name = tCard(cardId, def?.name ?? cardId);
 							const rarityColor =
 								def?.rarity === "rare"
 									? "var(--rare)"
@@ -105,7 +113,7 @@ export function RewardScreen() {
 				}}
 				style={{ padding: "0.75rem 2rem" }}
 			>
-				{cardRewards.length > 0 ? "Skip" : "Continue"}
+				{cardRewards.length > 0 ? tUi("skip") : tUi("continue")}
 			</button>
 		</div>
 	);

@@ -1,4 +1,5 @@
 import { getEvent } from "../../engine/core/event";
+import { tEvent, tUi } from "../../i18n";
 import { useGameStore } from "../../store/gameStore";
 
 export function EventScreen() {
@@ -20,9 +21,9 @@ export function EventScreen() {
 					gap: "1rem",
 				}}
 			>
-				<h2>Unknown Event</h2>
+				<h2>{tUi("unknownEvent")}</h2>
 				<button type="button" onClick={() => dispatch({ type: "proceed" })}>
-					Continue
+					{tUi("continue")}
 				</button>
 			</div>
 		);
@@ -40,7 +41,7 @@ export function EventScreen() {
 				padding: "2rem 1rem",
 			}}
 		>
-			<h2>{def.name}</h2>
+			<h2>{tEvent(state.phase.eventId, def.name)}</h2>
 			<p style={{ color: "var(--text-dim)", maxWidth: 500, textAlign: "center" }}>{def.summary}</p>
 
 			<div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", minWidth: 300 }}>
@@ -66,7 +67,7 @@ export function EventScreen() {
 				onClick={() => dispatch({ type: "proceed" })}
 				style={{ padding: "0.5rem 1.5rem", color: "var(--text-dim)" }}
 			>
-				Leave
+				{tUi("leave")}
 			</button>
 		</div>
 	);

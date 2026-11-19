@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { getCard, getPotion, getRelic } from "../../engine/content/loader";
+import { tCard, tPotion, tRelic, tUi, tUiFmt } from "../../i18n";
 import { useGameStore } from "../../store/gameStore";
 
 export function ShopScreen() {
@@ -40,17 +41,19 @@ export function ShopScreen() {
 				overflowY: "auto",
 			}}
 		>
-			<h2>Shop</h2>
-			<p style={{ color: "var(--accent-gold)" }}>Gold: {gold}</p>
+			<h2>{tUi("shop")}</h2>
+			<p style={{ color: "var(--accent-gold)" }}>
+				{tUi("gold")}: {gold}
+			</p>
 
 			{/* Cards */}
-			<Section title="Cards">
+			<Section title={tUi("cards")}>
 				{shop.cards.map((item, i) => {
 					const def = getCard(item.cardId as string);
 					return (
 						<ShopButton
 							key={item.cardId as string}
-							label={def?.name ?? (item.cardId as string)}
+							label={tCard(item.cardId as string, def?.name ?? (item.cardId as string))}
 							sublabel={`${def?.rarity ?? ""} ${def?.type ?? ""}`}
 							price={item.price}
 							sold={item.sold}
@@ -62,13 +65,13 @@ export function ShopScreen() {
 			</Section>
 
 			{/* Relics */}
-			<Section title="Relics">
+			<Section title={tUi("relics")}>
 				{shop.relics.map((item, i) => {
 					const def = getRelic(item.relicId as string);
 					return (
 						<ShopButton
 							key={item.relicId as string}
-							label={def?.name ?? (item.relicId as string)}
+							label={tRelic(item.relicId as string, def?.name ?? (item.relicId as string))}
 							sublabel={def?.text ?? ""}
 							price={item.price}
 							sold={item.sold}
@@ -80,13 +83,13 @@ export function ShopScreen() {
 			</Section>
 
 			{/* Potions */}
-			<Section title="Potions">
+			<Section title={tUi("potions")}>
 				{shop.potions.map((item, i) => {
 					const def = getPotion(item.potionId as string);
 					return (
 						<ShopButton
 							key={item.potionId as string}
-							label={def?.name ?? (item.potionId as string)}
+							label={tPotion(item.potionId as string, def?.name ?? (item.potionId as string))}
 							sublabel={def?.text ?? ""}
 							price={item.price}
 							sold={item.sold}
@@ -108,7 +111,7 @@ export function ShopScreen() {
 						opacity: gold < shop.purgePrice ? 0.5 : 1,
 					}}
 				>
-					Remove a Card — {shop.purgePrice} gold
+					{tUiFmt("removeCard", String(shop.purgePrice))}
 				</button>
 			)}
 
@@ -117,7 +120,7 @@ export function ShopScreen() {
 				onClick={() => dispatch({ type: "leaveShop" })}
 				style={{ padding: "0.75rem 2rem", marginTop: "1rem" }}
 			>
-				Leave Shop
+				{tUi("leaveShop")}
 			</button>
 		</div>
 	);
@@ -169,7 +172,7 @@ function ShopButton({
 				{sublabel}
 			</div>
 			<div style={{ color: "var(--accent-gold)", fontSize: "0.8rem" }}>
-				{sold ? "SOLD" : `${price} gold`}
+				{sold ? tUi("sold") : `${price} ${tUi("goldUnit")}`}
 			</div>
 		</button>
 	);
@@ -195,7 +198,7 @@ function PurgeView({
 				gap: "1rem",
 			}}
 		>
-			<h2>Choose a card to remove</h2>
+			<h2>{tUi("chooseCardToRemove")}</h2>
 			<div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", justifyContent: "center" }}>
 				{deck.map((card, i) => {
 					const def = getCard(card.id);
@@ -212,14 +215,14 @@ function PurgeView({
 								textAlign: "center",
 							}}
 						>
-							{def?.name ?? card.id}
+							{tCard(card.id, def?.name ?? card.id)}
 							{card.upgraded ? "+" : ""}
 						</button>
 					);
 				})}
 			</div>
 			<button type="button" onClick={onCancel} style={{ padding: "0.5rem 1.5rem" }}>
-				Cancel
+				{tUi("cancel")}
 			</button>
 		</div>
 	);

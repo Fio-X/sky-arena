@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { getCard } from "../../engine/content/loader";
+import { tCard, tUi, tUiFmt } from "../../i18n";
 import { useGameStore } from "../../store/gameStore";
 
 export function RestScreen() {
@@ -26,7 +27,7 @@ export function RestScreen() {
 					gap: "1rem",
 				}}
 			>
-				<h2>Smith - Choose a card to upgrade</h2>
+				<h2>{tUi("smithChoose")}</h2>
 				<div
 					style={{
 						display: "flex",
@@ -46,7 +47,7 @@ export function RestScreen() {
 								style={{ padding: "0.5rem 0.75rem", minWidth: 90, textAlign: "center" }}
 							>
 								<div style={{ fontSize: "0.7rem", color: "var(--energy)" }}>{def?.cost ?? "?"}</div>
-								<div style={{ fontWeight: "bold" }}>{def?.name ?? e.card.id}</div>
+								<div style={{ fontWeight: "bold" }}>{tCard(e.card.id, def?.name ?? e.card.id)}</div>
 								<div style={{ fontSize: "0.65rem", color: "var(--text-dim)" }}>
 									{def?.type ?? ""}
 								</div>
@@ -55,7 +56,7 @@ export function RestScreen() {
 					})}
 				</div>
 				<button type="button" onClick={() => setMode("choose")} style={{ marginTop: "1rem" }}>
-					Back
+					{tUi("back")}
 				</button>
 			</div>
 		);
@@ -72,12 +73,12 @@ export function RestScreen() {
 				gap: "1rem",
 			}}
 		>
-			<h2>Rest Site</h2>
+			<h2>{tUi("restSite")}</h2>
 			<button type="button" onClick={() => dispatch({ type: "rest" })}>
-				Rest (heal {healAmount} HP)
+				{tUiFmt("restHeal", String(healAmount))}
 			</button>
 			<button type="button" onClick={() => setMode("smith")} disabled={upgradable.length === 0}>
-				Smith (upgrade a card)
+				{tUi("smithUpgrade")}
 			</button>
 		</div>
 	);

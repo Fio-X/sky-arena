@@ -1,4 +1,5 @@
 import { getRelic } from "../../engine/content/loader";
+import { tRelic, tUi } from "../../i18n";
 import { useGameStore } from "../../store/gameStore";
 
 export function BossRewardScreen() {
@@ -19,8 +20,8 @@ export function BossRewardScreen() {
 				gap: "2rem",
 			}}
 		>
-			<h2>Boss Defeated!</h2>
-			<p style={{ color: "var(--text-dim)" }}>Choose a Boss Relic:</p>
+			<h2>{tUi("bossDefeated")}</h2>
+			<p style={{ color: "var(--text-dim)" }}>{tUi("chooseBossRelic")}</p>
 			<div style={{ display: "flex", gap: "1rem" }}>
 				{relics.map((relicId, i) => {
 					const def = getRelic(relicId as string);
@@ -39,7 +40,7 @@ export function BossRewardScreen() {
 							}}
 						>
 							<div style={{ fontWeight: "bold", fontSize: "1.1rem", marginBottom: "0.5rem" }}>
-								{def?.name ?? (relicId as string)}
+								{tRelic(relicId as string, def?.name ?? (relicId as string))}
 							</div>
 							<div style={{ fontSize: "0.8rem", color: "var(--text-dim)" }}>{def?.text ?? ""}</div>
 						</button>

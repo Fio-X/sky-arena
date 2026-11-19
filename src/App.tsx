@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { tUi, tUiFmt } from "./i18n";
 import { useGameStore } from "./store/gameStore";
 import { CardSelectScreen } from "./ui/combat/CardSelectScreen";
 import { CombatScreen } from "./ui/combat/CombatScreen";
@@ -6,6 +7,7 @@ import { RewardScreen } from "./ui/combat/RewardScreen";
 import { BossRewardScreen } from "./ui/common/BossRewardScreen";
 import { EventScreen } from "./ui/common/EventScreen";
 import { Hud } from "./ui/common/Hud";
+import { LanguageToggle } from "./ui/common/LanguageToggle";
 import { NeowScreen } from "./ui/common/NeowScreen";
 import { RestScreen } from "./ui/common/RestScreen";
 import { ShopScreen } from "./ui/common/ShopScreen";
@@ -13,6 +15,12 @@ import { MapScreen } from "./ui/map/MapScreen";
 
 export default function App() {
 	const state = useGameStore((s) => s.state);
+	const [, forceUpdate] = useState(0);
+	useEffect(() => {
+		const handler = () => forceUpdate((n) => n + 1);
+		window.addEventListener("locale-changed", handler);
+		return () => window.removeEventListener("locale-changed", handler);
+	}, []);
 
 	if (!state) {
 		return <TitleScreen />;
@@ -88,11 +96,11 @@ function GameOverScreen() {
 			}}
 		>
 			<h1 style={{ color: victory ? "var(--accent-green)" : "var(--accent)" }}>
-				{victory ? "Victory!" : "Defeat"}
+				{victory ? tUi("victory") : tUi("defeat")}
 			</h1>
-			<p>Floor reached: {state?.floor ?? 0}</p>
+			<p>{tUiFmt("floorReached", String(state?.floor ?? 0))}</p>
 			<button type="button" onClick={() => startGame(BigInt(Date.now()), "IRONCLAD")}>
-				New Game
+				{tUi("newGame")}
 			</button>
 		</div>
 	);
@@ -118,11 +126,14 @@ function TitleScreen() {
 				gap: "1rem",
 			}}
 		>
-			<h1>Slay the Spire</h1>
-			<p style={{ color: "var(--text-dim)" }}>Choose your character</p>
+			<div style={{ position: "absolute", top: "1rem", right: "1rem" }}>
+				<LanguageToggle />
+			</div>
+			<h1>{tUi("slayTheSpire")}</h1>
+			<p style={{ color: "var(--text-dim)" }}>{tUi("chooseCharacter")}</p>
 			<div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
 				<label style={{ color: "var(--text-dim)", fontSize: "0.875rem" }}>
-					Seed:
+					{tUi("seed")}:
 					<input
 						type="text"
 						value={seedInput}
@@ -144,7 +155,7 @@ function TitleScreen() {
 					onClick={() => setSeedInput(String(Math.floor(Math.random() * 1_000_000)))}
 					style={{ fontSize: "0.75rem", padding: "0.375rem 0.5rem" }}
 				>
-					Random
+					{tUi("random")}
 				</button>
 			</div>
 			<div style={{ display: "flex", gap: "0.5rem" }}>
@@ -153,7 +164,7 @@ function TitleScreen() {
 					disabled={seed === null}
 					onClick={() => seed !== null && startGame(seed, "IRONCLAD")}
 				>
-					Ironclad
+					{tUi("ironclad")}
 				</button>
 			</div>
 		</div>

@@ -1,6 +1,8 @@
 import { getPotion, getRelic } from "../../engine/content/loader";
+import { tPotion, tRelic, tUi } from "../../i18n";
 import { useGameStore } from "../../store/gameStore";
 import { CardPileViewer } from "./CardPileViewer";
+import { LanguageToggle } from "./LanguageToggle";
 
 export function Hud() {
 	const state = useGameStore((s) => s.state);
@@ -19,8 +21,8 @@ export function Hud() {
 				boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
 			}}
 		>
-			<HudChip label="Floor" value={String(state.floor)} />
-			<HudChip label="Act" value={String(state.act)} />
+			<HudChip label={tUi("floor")} value={String(state.floor)} />
+			<HudChip label={tUi("act")} value={String(state.act)} />
 			<HpBar current={state.currentHp} max={state.maxHp} />
 			<span
 				style={{
@@ -49,7 +51,7 @@ export function Hud() {
 					{state.relics.map((r) => (
 						<span
 							key={r.id}
-							title={`${getRelic(r.id)?.name ?? r.id}: ${getRelic(r.id)?.text ?? ""}`}
+							title={`${tRelic(r.id, getRelic(r.id)?.name ?? r.id)}: ${getRelic(r.id)?.text ?? ""}`}
 							style={{
 								padding: "0.125rem 0.5rem",
 								background: "rgba(127,90,240,0.15)",
@@ -60,12 +62,13 @@ export function Hud() {
 								color: "var(--text)",
 							}}
 						>
-							{getRelic(r.id)?.name ?? r.id}
+							{tRelic(r.id, getRelic(r.id)?.name ?? r.id)}
 						</span>
 					))}
 				</span>
 			)}
 			<PotionSlots />
+			<LanguageToggle />
 		</div>
 	);
 }
@@ -108,7 +111,7 @@ function PotionSlots() {
 								color: "var(--text-dim)",
 							}}
 						>
-							Empty
+							{tUi("empty")}
 						</span>
 					);
 				}
@@ -116,7 +119,7 @@ function PotionSlots() {
 					<button
 						type="button"
 						key={slotKey}
-						title={`${def?.name}: ${def?.text}. Right-click to discard.`}
+						title={`${tPotion(p, def?.name ?? p)}: ${def?.text ?? ""}`}
 						onClick={() => {
 							if (state.combat) {
 								dispatch({ type: "usePotion", index: i, targetIndex: 0 });
@@ -137,7 +140,7 @@ function PotionSlots() {
 							boxShadow: "0 1px 4px rgba(127,90,240,0.3)",
 						}}
 					>
-						{def?.name ?? p}
+						{tPotion(p, def?.name ?? p)}
 					</button>
 				);
 			})}

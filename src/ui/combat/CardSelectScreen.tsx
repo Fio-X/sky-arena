@@ -1,20 +1,7 @@
 import { getCard } from "../../engine/content/loader";
 import type { CardInstance, CardSelectTask } from "../../engine/core/types";
+import { tCard, tCardSelect } from "../../i18n";
 import { useGameStore } from "../../store/gameStore";
-
-const TASK_LABELS: Record<CardSelectTask, string> = {
-	armaments: "Choose a card to upgrade",
-	codex: "Choose a card to add",
-	discovery: "Choose a card to add",
-	dualWield: "Choose a card to copy",
-	exhaust: "Choose a card to exhaust",
-	exhume: "Choose a card from exhaust pile",
-	forethought: "Choose a card to put on bottom of draw pile",
-	gamble: "Choose cards to discard and redraw",
-	headbutt: "Choose a card to put on top of draw pile",
-	recycle: "Choose a card to exhaust",
-	warcry: "Choose a card to put on top of draw pile",
-};
 
 export function CardSelectScreen() {
 	const state = useGameStore((s) => s.state);
@@ -27,7 +14,7 @@ export function CardSelectScreen() {
 	if (!combat) return null;
 
 	const cards: CardInstance[] = options ?? getSourceCards(task, combat);
-	const label = TASK_LABELS[task] ?? "Choose a card";
+	const label = tCardSelect(task);
 
 	return (
 		<div
@@ -53,7 +40,7 @@ export function CardSelectScreen() {
 			>
 				{cards.map((card, i) => {
 					const def = getCard(card.id);
-					const name = def?.name ?? card.id;
+					const name = tCard(card.id, def?.name ?? card.id);
 					const cost = card.freeToPlay ? 0 : card.costForTurn;
 
 					return (

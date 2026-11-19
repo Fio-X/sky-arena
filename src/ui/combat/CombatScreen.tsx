@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { getCard, getMonster, getPower } from "../../engine/content/loader";
 import type { CardInstance, MonsterState, PowerInstance } from "../../engine/core/types";
+import { tCard, tMonster, tPower, tUi } from "../../i18n";
 import { useGameStore } from "../../store/gameStore";
 import { type FloatingText, FloatLayer, useFloatingTexts } from "./CombatAnimations";
 
@@ -106,8 +107,8 @@ export function CombatScreen() {
 				)}
 				<EnergyOrb current={combat.energy} max={combat.maxEnergy} />
 				<span style={{ color: "var(--text-dim)", fontSize: "0.8rem" }}>
-					Draw {combat.drawPile.length} · Discard {combat.discardPile.length}
-					{combat.exhaustPile.length > 0 && ` · Exhaust ${combat.exhaustPile.length}`}
+					{tUi("draw")} {combat.drawPile.length} · {tUi("discard")} {combat.discardPile.length}
+					{combat.exhaustPile.length > 0 && ` · ${tUi("exhaust")} ${combat.exhaustPile.length}`}
 				</span>
 				{combat.player.powers.length > 0 && <PowerList powers={combat.player.powers} />}
 				<button
@@ -124,7 +125,7 @@ export function CombatScreen() {
 						boxShadow: "0 2px 8px rgba(229,49,112,0.3)",
 					}}
 				>
-					End Turn
+					{tUi("endTurn")}
 				</button>
 			</div>
 
@@ -213,7 +214,7 @@ function PowerList({ powers }: { powers: PowerInstance[] }) {
 						}}
 						title={def?.text ?? p.id}
 					>
-						{def?.name ?? p.id} {p.amount}
+						{tPower(p.id, def?.name ?? p.id)} {p.amount}
 					</span>
 				);
 			})}
@@ -263,7 +264,7 @@ function MonsterCard({
 					letterSpacing: "0.02em",
 				}}
 			>
-				{getMonster(monster.id)?.name ?? monster.id}
+				{tMonster(monster.id, getMonster(monster.id)?.name ?? monster.id)}
 			</div>
 			<HpBar current={monster.currentHp} max={monster.maxHp} />
 			{monster.block > 0 && (
@@ -377,11 +378,11 @@ function IntentDisplay({ monster }: { monster: MonsterState }) {
 		color = "var(--accent)";
 		iconType = "attack";
 	} else if (intent.isBuff) {
-		label = "Buff";
+		label = tUi("buff");
 		color = "var(--accent-gold)";
 		iconType = "buff";
 	} else if (intent.isDebuff) {
-		label = "Debuff";
+		label = tUi("debuff");
 		color = "var(--accent-blue)";
 		iconType = "debuff";
 	} else {
@@ -456,7 +457,7 @@ function CardView({
 	fanStyle?: React.CSSProperties;
 }) {
 	const def = getCard(card.id);
-	const name = def?.name ?? card.id;
+	const name = tCard(card.id, def?.name ?? card.id);
 	const cost = card.freeToPlay ? 0 : card.costForTurn;
 	const desc = formatCardText(def?.text ?? "", card, def);
 
