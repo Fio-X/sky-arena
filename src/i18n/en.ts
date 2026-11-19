@@ -99,5 +99,6 @@ export const en: TranslationTable = {
 		nightmare: "Choose a card to copy",
 		setup: "Choose a card to put on top of draw pile",
 		toolsOfTheTrade: "Choose a card to discard",
+		wellLaidPlans: "Choose card(s) to retain",
 	},
 };

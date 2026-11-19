@@ -484,9 +484,7 @@ registerPowerHooks(
 	"WELL_LAID_PLANS",
 	(_p: PowerInstance): HookSource => ({
 		powerId: "WELL_LAID_PLANS",
-		hooks: {
-			modifyBlockRetention: (_ctx, retained) => retained,
-		},
+		hooks: {},
 	}),
 );
 

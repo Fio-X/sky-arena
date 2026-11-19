@@ -281,6 +281,12 @@ function executeDrawCards(
 		};
 		events.push({ type: "cardDrawn", card });
 		s = fireHook(s, { type: "player" }, "onDraw", card);
+
+		if (card.id === ("ENDLESS_AGONY" as never) && s.combat && s.combat.hand.length < 10) {
+			const uid = nextUniqueCardId++;
+			const copy: CardInstance = { ...card, uniqueId: uid };
+			s = { ...s, combat: { ...s.combat, hand: [...s.combat.hand, copy] } };
+		}
 	}
 	return { state: s };
 }

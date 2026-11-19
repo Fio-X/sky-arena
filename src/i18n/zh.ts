@@ -97,5 +97,6 @@ export const zh: TranslationTable = {
 		nightmare: "选择一张卡牌复制",
 		setup: "选择一张卡牌放到抽牌堆顶部",
 		toolsOfTheTrade: "选择一张卡牌弃置",
+		wellLaidPlans: "选择要保留的卡牌",
 	},
 };

@@ -106,7 +106,8 @@ function stepPlayCard(
 
 	const def = getCard(card.id);
 
-	const baseCost = card.freeToPlay ? 0 : card.costForTurn;
+	let baseCost = card.freeToPlay ? 0 : card.costForTurn;
+	if (card.id === "EVISCERATE") baseCost = Math.max(0, baseCost - combat.cardsDiscardedThisTurn);
 	const costResult = foldHook(state, { type: "player" }, "modifyCardCost", baseCost, card);
 	const cost = Math.max(0, costResult.value);
 	if (cost > combat.energy) return { state, events };
@@ -148,6 +149,7 @@ function stepPlayCard(
 
 	s = exhaustOrDiscard(s, card, events);
 	s = replayIfDoubleTap(s, card, targetIndex, events);
+	s = replayIfBurst(s, card, targetIndex, events);
 
 	return { state: s, events };
 }
@@ -195,40 +197,84 @@ function replayIfDoubleTap(
 	return s;
 }
 
+function replayIfBurst(
+	s: GameState,
+	card: CardInstance,
+	targetIndex: number,
+	events: GameEvent[],
+): GameState {
+	if (!s.combat) return s;
+	const def = getCard(card.id);
+	if (def?.type !== "skill") return s;
+	const bIdx = s.combat.player.powers.findIndex((p) => p.id === "BURST" && p.amount > 0);
+	if (bIdx < 0) return s;
+	const powers = [...s.combat.player.powers];
+	const b = powers[bIdx]!;
+	powers[bIdx] = { ...b, amount: b.amount - 1 };
+	s = { ...s, combat: { ...s.combat, player: { ...s.combat.player, powers } } };
+	const replayActions = resolveCardEffect(s, card, targetIndex);
+	for (const action of replayActions) {
+		if (!s.combat) break;
+		s = { ...s, combat: addToBot(s.combat, action) };
+	}
+	({ state: s } = drainActions(s, events));
+	return s;
+}
+
 function stepEndTurn(state: GameState, events: GameEvent[]): StepResult {
 	const combat = state.combat;
 	if (!combat || state.phase.type !== "combat") return { state, events };
 
-	// 1. Discard remaining hand (ethereal → exhaust, burn → damage)
-	const toDiscard = [];
-	const toExhaust = [];
-	for (const card of combat.hand) {
-		const def = getCard(card.id);
-		if (def?.flags.includes("ethereal")) {
-			toExhaust.push(card);
-			events.push({ type: "cardExhausted", card });
-		} else {
-			toDiscard.push(card);
-			events.push({ type: "cardDiscarded", card });
-		}
+	const wlp = combat.player.powers.find((p) => p.id === "WELL_LAID_PLANS");
+	if (wlp && wlp.amount > 0 && combat.hand.length > 0) {
+		return {
+			state: { ...state, phase: { type: "cardSelect", task: "wellLaidPlans" } },
+			events,
+		};
 	}
-	let s: GameState = {
-		...state,
-		combat: {
-			...combat,
-			hand: [],
-			discardPile: [...combat.discardPile, ...toDiscard],
-			exhaustPile: [...combat.exhaustPile, ...toExhaust],
-		},
-	};
 
-	// Burn cards deal damage when discarded at end of turn
-	for (const card of toDiscard) {
-		if (card.id === ("BURN" as never)) {
+	return stepEndTurnContinue(state, events);
+}
+
+export function stepEndTurnContinue(
+	state: GameState,
+	events: GameEvent[],
+	skipDiscard = false,
+): StepResult {
+	const combat = state.combat;
+	if (!combat) return { state, events };
+
+	let s = state;
+
+	if (!skipDiscard) {
+		const toDiscard: CardInstance[] = [];
+		const toExhaust: CardInstance[] = [];
+		for (const card of combat.hand) {
 			const def = getCard(card.id);
-			const dmg = (card.upgraded ? def?.upgrade.magic : def?.values.magic) ?? 2;
-			s = { ...s, currentHp: Math.max(0, s.currentHp - dmg) };
-			events.push({ type: "hpLost", target: { type: "player" }, amount: dmg });
+			if (def?.flags.includes("ethereal")) {
+				toExhaust.push(card);
+				events.push({ type: "cardExhausted", card });
+			} else {
+				toDiscard.push(card);
+				events.push({ type: "cardDiscarded", card });
+			}
+		}
+		s = {
+			...state,
+			combat: {
+				...combat,
+				hand: [],
+				discardPile: [...combat.discardPile, ...toDiscard],
+				exhaustPile: [...combat.exhaustPile, ...toExhaust],
+			},
+		};
+		for (const card of toDiscard) {
+			if (card.id === ("BURN" as never)) {
+				const def = getCard(card.id);
+				const dmg = (card.upgraded ? def?.upgrade.magic : def?.values.magic) ?? 2;
+				s = { ...s, currentHp: Math.max(0, s.currentHp - dmg) };
+				events.push({ type: "hpLost", target: { type: "player" }, amount: dmg });
+			}
 		}
 	}
 

@@ -294,6 +294,96 @@ describe("Silent uncommon & rare cards", () => {
 		expect(p?.amount).toBe(1);
 	});
 
+	// ── Hook mechanics ─────────────────────────────────────
+
+	it("Eviscerate costs less after discarding cards", () => {
+		const combat = makeCombat({
+			hand: [card("EVISCERATE", { costForTurn: 3 })],
+			energy: 3,
+			cardsDiscardedThisTurn: 2,
+			monsters: [monster({ currentHp: 100, maxHp: 100 })],
+		});
+		const state = makeState(combat);
+		const r = step(state, { type: "playCard", handIndex: 0, targetIndex: 0 });
+		// Cost 3 - 2 discards = 1, so 3 - 1 = 2 energy left
+		expect(r.state.combat!.energy).toBe(2);
+		expect(r.state.combat!.monsters[0]!.currentHp).toBeLessThan(100);
+	});
+
+	it("Burst replays the next Skill", () => {
+		const combat = makeCombat({
+			hand: [
+				card("DEFEND_GREEN", { uniqueId: 60, costForTurn: 1 }),
+			],
+			energy: 3,
+			player: {
+				block: 0,
+				powers: [withPower("BURST", 1)],
+				stance: "neutral" as const,
+				orbs: [],
+				orbSlots: 3,
+			},
+		});
+		const state = makeState(combat);
+		const r = step(state, { type: "playCard", handIndex: 0, targetIndex: -1 });
+		const c = r.state.combat!;
+		// Defend gives 5 block, played twice = 10
+		expect(c.player.block).toBeGreaterThanOrEqual(10);
+		// Burst should be consumed
+		const burst = c.player.powers.find((p) => p.id === "BURST");
+		expect(burst?.amount ?? 0).toBe(0);
+	});
+
+	it("Escape Plan draws extra card if first draw is a Skill", () => {
+		const combat = makeCombat({
+			hand: [card("ESCAPE_PLAN", { costForTurn: 0 })],
+			drawPile: [
+				card("STRIKE_GREEN", { uniqueId: 101 }),
+				card("DEFEND_GREEN", { uniqueId: 102, costForTurn: 1 }),
+			],
+			energy: 3,
+		});
+		const state = makeState(combat);
+		const r = step(state, { type: "playCard", handIndex: 0, targetIndex: -1 });
+		// DEFEND_GREEN (top of draw pile) is a Skill → draws extra → 2 cards in hand
+		expect(r.state.combat!.hand.length).toBe(2);
+	});
+
+	it("Escape Plan does not draw extra if first draw is an Attack", () => {
+		const combat = makeCombat({
+			hand: [card("ESCAPE_PLAN", { costForTurn: 0 })],
+			drawPile: [
+				card("DEFEND_GREEN", { uniqueId: 101 }),
+				card("STRIKE_GREEN", { uniqueId: 102, costForTurn: 1 }),
+			],
+			energy: 3,
+		});
+		const state = makeState(combat);
+		const r = step(state, { type: "playCard", handIndex: 0, targetIndex: -1 });
+		// STRIKE_GREEN (top) is an Attack → no extra draw → 1 card
+		expect(r.state.combat!.hand.length).toBe(1);
+	});
+
+	it("Well-Laid Plans enters card select on end turn", () => {
+		const combat = makeCombat({
+			hand: [card("STRIKE_GREEN", { uniqueId: 60 })],
+			energy: 0,
+			player: {
+				block: 0,
+				powers: [withPower("WELL_LAID_PLANS", 1)],
+				stance: "neutral" as const,
+				orbs: [],
+				orbSlots: 3,
+			},
+		});
+		const state = makeState(combat);
+		const r = step(state, { type: "endTurn" });
+		expect(r.state.phase.type).toBe("cardSelect");
+		if (r.state.phase.type === "cardSelect") {
+			expect(r.state.phase.task).toBe("wellLaidPlans");
+		}
+	});
+
 	it("Wraith Form grants Intangible and Wraith Form power", () => {
 		const combat = makeCombat({
 			hand: [card("WRAITH_FORM", { costForTurn: 3 })],

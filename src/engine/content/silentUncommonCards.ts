@@ -349,6 +349,27 @@ registerCardEffect("ESCAPE_PLAN", (_s, card, _t) => {
 	return [
 		{ type: "block", source: P, amount: v.block },
 		{ type: "drawCards", count: 1 },
+		{
+			type: "custom",
+			execute: (st: GameState): GameState => {
+				if (!st.combat) return st;
+				const lastDrawn = st.combat.hand[st.combat.hand.length - 1];
+				if (!lastDrawn) return st;
+				const def = getCard(lastDrawn.id);
+				if (def?.type !== "skill") return st;
+				if (st.combat.hand.length >= 10 || st.combat.drawPile.length === 0) return st;
+				const top = st.combat.drawPile[st.combat.drawPile.length - 1];
+				if (!top) return st;
+				return {
+					...st,
+					combat: {
+						...st.combat,
+						drawPile: st.combat.drawPile.slice(0, -1),
+						hand: [...st.combat.hand, top],
+					},
+				};
+			},
+		},
 	];
 });
 

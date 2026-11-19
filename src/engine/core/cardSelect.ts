@@ -1,4 +1,5 @@
 import { getCard } from "../content/loader";
+import { stepEndTurnContinue } from "./step";
 import type { CardInstance, CombatState, GameEvent, GameState, StepResult } from "./types";
 
 function nextUid(combat: CombatState): number {
@@ -172,6 +173,31 @@ function handleCodexOrDiscovery(
 	return toCombat({ ...s, combat: { ...c, hand } });
 }
 
+function handleWellLaidPlans(
+	s: GameState,
+	c: CombatState,
+	indices: number[],
+	events: GameEvent[],
+): StepResult {
+	const wlp = c.player.powers.find((p) => p.id === "WELL_LAID_PLANS");
+	const maxRetain = wlp?.amount ?? 0;
+	const retainIndices = indices.slice(0, maxRetain);
+	const retainSet = new Set(retainIndices);
+	const retained = c.hand.filter((_, i) => retainSet.has(i));
+	const discarded = c.hand.filter((_, i) => !retainSet.has(i));
+	const nc: CombatState = {
+		...c,
+		hand: retained,
+		discardPile: [...c.discardPile, ...discarded],
+	};
+	const ns: GameState = {
+		...s,
+		combat: nc,
+		phase: { type: "combat" as const, turn: c.turn },
+	};
+	return stepEndTurnContinue(ns, events, true);
+}
+
 // ── Entry ───────────────────────────────────────────────
 
 export function stepChooseCard(
@@ -234,6 +260,8 @@ export function stepChooseCard(
 		case "nightmare":
 			result = handleNightmare(state, c, idx);
 			break;
+		case "wellLaidPlans":
+			return handleWellLaidPlans(state, c, indices, events);
 		default:
 			return { state, events };
 	}

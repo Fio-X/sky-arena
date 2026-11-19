@@ -80,7 +80,8 @@ export type CardSelectTask =
 	| "setup"
 	| "survivor"
 	| "toolsOfTheTrade"
-	| "warcry";
+	| "warcry"
+	| "wellLaidPlans";
 
 // ── 战斗状态 ──────────────────────────────────────────────
 
