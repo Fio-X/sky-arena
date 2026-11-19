@@ -4,14 +4,15 @@ import { tUi } from "../../i18n";
 import { useGameStore } from "../../store/gameStore";
 import { LanguageToggle } from "./LanguageToggle";
 
-type CharacterKey = "IRONCLAD" | "SILENT" | "DEFECT";
+type CharacterKey = "IRONCLAD" | "SILENT" | "DEFECT" | "WATCHER";
 
 interface CharacterDef {
 	key: CharacterKey;
-	nameKey: "ironclad" | "silent" | "defect";
+	nameKey: "ironclad" | "silent" | "defect" | "watcher";
 	enName: string;
 	color: string;
 	icon: React.ReactNode;
+	image: string;
 }
 
 const svgBase = {
@@ -56,11 +57,21 @@ const orbIcon = (
 	</svg>
 );
 
+const lotusIcon = (
+	<svg {...svgBase} aria-label="Lotus">
+		<path d="M24 10 C24 10 18 18 18 26 C18 30 20 32 24 32 C28 32 30 30 30 26 C30 18 24 10 24 10Z" />
+		<path d="M24 32 C20 32 14 30 10 26 C8 24 10 20 14 22 C17 23 20 28 24 32Z" />
+		<path d="M24 32 C28 32 34 30 38 26 C40 24 38 20 34 22 C31 23 28 28 24 32Z" />
+		<line x1="24" y1="32" x2="24" y2="42" />
+	</svg>
+);
+
 /* biome-ignore format: compact data table */
 const characters: CharacterDef[] = [
-	{ key: "IRONCLAD", nameKey: "ironclad", enName: "Ironclad", color: "var(--ironclad)", icon: swordIcon },
-	{ key: "SILENT", nameKey: "silent", enName: "Silent", color: "var(--silent)", icon: daggerIcon },
-	{ key: "DEFECT", nameKey: "defect", enName: "Defect", color: "var(--defect)", icon: orbIcon },
+	{ key: "IRONCLAD", nameKey: "ironclad", enName: "Ironclad", color: "var(--ironclad)", icon: swordIcon, image: "characters/ironclad.png" },
+	{ key: "SILENT", nameKey: "silent", enName: "Silent", color: "var(--silent)", icon: daggerIcon, image: "characters/silent.png" },
+	{ key: "DEFECT", nameKey: "defect", enName: "Defect", color: "var(--defect)", icon: orbIcon, image: "characters/defect.png" },
+	{ key: "WATCHER", nameKey: "watcher", enName: "Watcher", color: "var(--watcher)", icon: lotusIcon, image: "characters/watcher.png" },
 ];
 
 const bgStyle: React.CSSProperties = {
@@ -342,16 +353,19 @@ function CharacterCard({
 				}}
 			/>
 
-			{/* Icon */}
+			{/* Character portrait */}
 			<div
 				style={{
-					color: active ? char.color : "var(--text-dim)",
-					transition: "color 0.3s, filter 0.3s",
+					transition: "filter 0.3s",
 					filter: active ? `drop-shadow(0 0 8px ${char.color}66)` : "none",
 					opacity: disabled ? 0.35 : 1,
 				}}
 			>
-				{char.icon}
+				<img
+					src={`${import.meta.env.BASE_URL}${char.image}`}
+					alt={char.enName}
+					style={{ width: 80, height: 80, objectFit: "contain" }}
+				/>
 			</div>
 
 			{/* Character name */}

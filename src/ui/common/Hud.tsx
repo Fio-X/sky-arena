@@ -9,32 +9,43 @@ export function Hud() {
 	if (!state) return null;
 
 	return (
-		<div style={{
-			display: "flex",
-			gap: "0.75rem",
-			padding: "0 1rem",
-			height: "var(--hud-height)",
-			background: "var(--bg-panel)",
-			borderBottom: "1px solid var(--border)",
-			fontSize: "0.8rem",
-			alignItems: "center",
-			boxShadow: "0 2px 12px rgba(0,0,0,0.4)",
-			backdropFilter: "blur(8px)",
-			zIndex: 100,
-		}}>
+		<div
+			style={{
+				display: "flex",
+				gap: "0.75rem",
+				padding: "0 1rem",
+				height: "var(--hud-height)",
+				background: "var(--bg-panel)",
+				borderBottom: "1px solid var(--border)",
+				fontSize: "0.8rem",
+				alignItems: "center",
+				boxShadow: "0 2px 12px rgba(0,0,0,0.4)",
+				backdropFilter: "blur(8px)",
+				zIndex: 100,
+			}}
+		>
 			<HudChip label={tUi("floor")} value={String(state.floor)} color="var(--text)" />
 			<HudChip label={tUi("act")} value={String(state.act)} color="var(--text)" />
 			<HpBar current={state.currentHp} max={state.maxHp} />
 
-			<span style={{
-				color: "var(--accent-gold)",
-				fontWeight: 700,
-				display: "flex",
-				alignItems: "center",
-				gap: "0.2rem",
-				fontSize: "0.85rem",
-			}}>
-				<svg width={12} height={12} viewBox="0 0 24 24" fill="currentColor">
+			<span
+				style={{
+					color: "var(--accent-gold)",
+					fontWeight: 700,
+					display: "flex",
+					alignItems: "center",
+					gap: "0.2rem",
+					fontSize: "0.85rem",
+				}}
+			>
+				<svg
+					width={12}
+					height={12}
+					viewBox="0 0 24 24"
+					fill="currentColor"
+					role="img"
+					aria-label="Gold"
+				>
 					<circle cx={12} cy={12} r={10} />
 				</svg>
 				{state.gold}
@@ -80,9 +91,7 @@ export function Hud() {
 function HudChip({ label, value, color }: { label: string; value: string; color: string }) {
 	return (
 		<span style={{ display: "flex", alignItems: "center", gap: "0.2rem" }}>
-			<span style={{ color: "var(--text-dim)", fontSize: "0.7rem", fontWeight: 500 }}>
-				{label}
-			</span>
+			<span style={{ color: "var(--text-dim)", fontSize: "0.7rem", fontWeight: 500 }}>{label}</span>
 			<span style={{ fontWeight: 700, color, fontSize: "0.85rem" }}>{value}</span>
 		</span>
 	);
@@ -153,30 +162,36 @@ function HpBar({ current, max }: { current: number; max: number }) {
 	const isLow = pct < 30;
 	return (
 		<div style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
-			<div style={{
-				width: 100,
-				height: 10,
-				background: "var(--hp-bg)",
-				borderRadius: 5,
-				overflow: "hidden",
-				boxShadow: "inset 0 1px 3px rgba(0,0,0,0.5)",
-			}}>
-				<div style={{
-					width: `${pct}%`,
-					height: "100%",
-					background: isLow
-						? "linear-gradient(90deg, #ff4444, #ff6666)"
-						: "linear-gradient(90deg, #e53170, #ff6b8a)",
+			<div
+				style={{
+					width: 100,
+					height: 10,
+					background: "var(--hp-bg)",
 					borderRadius: 5,
-					transition: "width 0.3s ease-out",
-					boxShadow: isLow ? "0 0 6px rgba(255,68,68,0.4)" : "none",
-				}} />
+					overflow: "hidden",
+					boxShadow: "inset 0 1px 3px rgba(0,0,0,0.5)",
+				}}
+			>
+				<div
+					style={{
+						width: `${pct}%`,
+						height: "100%",
+						background: isLow
+							? "linear-gradient(90deg, #ff4444, #ff6666)"
+							: "linear-gradient(90deg, #e53170, #ff6b8a)",
+						borderRadius: 5,
+						transition: "width 0.3s ease-out",
+						boxShadow: isLow ? "0 0 6px rgba(255,68,68,0.4)" : "none",
+					}}
+				/>
 			</div>
-			<span style={{
-				fontWeight: 600,
-				fontSize: "0.8rem",
-				color: isLow ? "var(--accent)" : "var(--text)",
-			}}>
+			<span
+				style={{
+					fontWeight: 600,
+					fontSize: "0.8rem",
+					color: isLow ? "var(--accent)" : "var(--text)",
+				}}
+			>
 				{current}/{max}
 			</span>
 		</div>

@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <radialGradient id="df-bg" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#0a1520"/>
+      <stop offset="100%" stop-color="#040810"/>
+    </radialGradient>
+    <radialGradient id="df-glow" cx="50%" cy="45%" r="50%">
+      <stop offset="0%" stop-color="#00d4ff" stop-opacity="0.25"/>
+      <stop offset="60%" stop-color="#00d4ff" stop-opacity="0.06"/>
+      <stop offset="100%" stop-color="transparent"/>
+    </radialGradient>
+    <linearGradient id="df-body" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1a2535"/>
+      <stop offset="50%" stop-color="#0a1018"/>
+      <stop offset="100%" stop-color="#050810"/>
+    </linearGradient>
+    <filter id="df-blur"><feGaussianBlur stdDeviation="8"/></filter>
+    <filter id="df-glow-f">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+  <rect width="512" height="512" fill="url(#df-bg)"/>
+  <ellipse cx="256" cy="310" rx="190" ry="175" fill="url(#df-glow)"/>
+  <ellipse cx="256" cy="460" rx="80" ry="18" fill="#00d4ff" opacity="0.12" filter="url(#df-blur)"/>
+  <!-- legs - mechanical -->
+  <path d="M228 380 L222 420 L218 460 L238 462 L240 422 L244 384 Z" fill="#0a1018"/>
+  <path d="M268 380 L274 420 L278 460 L298 462 L294 422 L272 384 Z" fill="#0a1018"/>
+  <!-- joint details -->
+  <ellipse cx="230" cy="420" rx="8" ry="6" fill="#0d1520" stroke="#00d4ff" stroke-width="0.5" opacity="0.4"/>
+  <ellipse cx="282" cy="420" rx="8" ry="6" fill="#0d1520" stroke="#00d4ff" stroke-width="0.5" opacity="0.4"/>
+  <!-- torso - boxy robot -->
+  <path d="M195 200 Q190 230 192 290 Q195 340 215 380 Q235 395 256 395 Q277 395 297 380 Q317 340 320 290 Q322 230 317 200 Q295 185 256 182 Q217 185 195 200 Z" fill="url(#df-body)"/>
+  <!-- chest panel -->
+  <rect x="225" y="230" width="62" height="80" rx="8" fill="#0d1520" stroke="#00d4ff" stroke-width="0.8" opacity="0.4"/>
+  <!-- core light -->
+  <ellipse cx="256" cy="270" rx="12" ry="12" fill="#00d4ff" opacity="0.3" filter="url(#df-blur)"/>
+  <ellipse cx="256" cy="270" rx="6" ry="6" fill="#00d4ff" opacity="0.6"/>
+  <!-- head - round robot -->
+  <ellipse cx="256" cy="150" rx="40" ry="42" fill="#0d1520"/>
+  <ellipse cx="256" cy="148" rx="36" ry="38" fill="#0a1018"/>
+  <!-- eye visor -->
+  <path d="M228 143 Q240 135 256 134 Q272 135 284 143 Q272 150 256 151 Q240 150 228 143 Z" fill="#00d4ff" opacity="0.15"/>
+  <!-- eyes -->
+  <ellipse cx="242" cy="143" rx="6" ry="5" fill="#00d4ff" opacity="0.85" filter="url(#df-glow-f)"/>
+  <ellipse cx="270" cy="143" rx="6" ry="5" fill="#00d4ff" opacity="0.85" filter="url(#df-glow-f)"/>
+  <!-- antenna -->
+  <line x1="256" y1="108" x2="256" y2="88" stroke="#1a2535" stroke-width="2"/>
+  <circle cx="256" cy="85" r="4" fill="#00d4ff" opacity="0.5" filter="url(#df-glow-f)"/>
+  <!-- arms - mechanical -->
+  <path d="M193 210 Q175 240 168 280 Q165 310 170 340 L182 338 Q180 310 182 282 Q186 248 198 222 Z" fill="#0a1018"/>
+  <path d="M319 210 Q337 240 344 280 Q347 310 342 340 L330 338 Q332 310 330 282 Q326 248 314 222 Z" fill="#0a1018"/>
+  <!-- floating orbs -->
+  <circle cx="135" cy="220" r="18" fill="#0d1520" stroke="#00d4ff" stroke-width="1" opacity="0.6"/>
+  <circle cx="135" cy="220" r="8" fill="#00d4ff" opacity="0.25" filter="url(#df-blur)"/>
+  <circle cx="135" cy="220" r="3" fill="#00d4ff" opacity="0.6"/>
+  <circle cx="377" cy="200" r="18" fill="#0d1520" stroke="#00d4ff" stroke-width="1" opacity="0.6"/>
+  <circle cx="377" cy="200" r="8" fill="#00d4ff" opacity="0.25" filter="url(#df-blur)"/>
+  <circle cx="377" cy="200" r="3" fill="#00d4ff" opacity="0.6"/>
+  <circle cx="155" cy="310" r="14" fill="#0d1520" stroke="#00d4ff" stroke-width="0.8" opacity="0.5"/>
+  <circle cx="155" cy="310" r="5" fill="#00d4ff" opacity="0.2" filter="url(#df-blur)"/>
+  <circle cx="155" cy="310" r="2" fill="#00d4ff" opacity="0.5"/>
+  <!-- rim light -->
+  <path d="M195 200 Q190 230 192 290 Q195 340 215 380" stroke="#00d4ff" stroke-width="1.5" fill="none" opacity="0.35" filter="url(#df-glow-f)"/>
+  <!-- circuit line details -->
+  <line x1="230" y1="250" x2="230" y2="290" stroke="#00d4ff" stroke-width="0.5" opacity="0.3"/>
+  <line x1="282" y1="250" x2="282" y2="290" stroke="#00d4ff" stroke-width="0.5" opacity="0.3"/>
+  <line x1="240" y1="290" x2="272" y2="290" stroke="#00d4ff" stroke-width="0.5" opacity="0.3"/>
+  <!-- ambient particles -->
+  <circle cx="120" cy="160" r="1.5" fill="#00d4ff" opacity="0.4"/>
+  <circle cx="400" cy="280" r="2" fill="#00d4ff" opacity="0.35"/>
+  <circle cx="100" cy="380" r="1" fill="#00d4ff" opacity="0.3"/>
+  <circle cx="410" cy="380" r="1.5" fill="#00d4ff" opacity="0.25"/>
+</svg>

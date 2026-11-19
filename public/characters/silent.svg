@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <radialGradient id="si-bg" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#0a1a12"/>
+      <stop offset="100%" stop-color="#040a06"/>
+    </radialGradient>
+    <radialGradient id="si-glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#2cb57d" stop-opacity="0.25"/>
+      <stop offset="60%" stop-color="#2cb57d" stop-opacity="0.06"/>
+      <stop offset="100%" stop-color="transparent"/>
+    </radialGradient>
+    <linearGradient id="si-body" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1a2d20"/>
+      <stop offset="50%" stop-color="#0a1208"/>
+      <stop offset="100%" stop-color="#050a04"/>
+    </linearGradient>
+    <filter id="si-blur"><feGaussianBlur stdDeviation="8"/></filter>
+    <filter id="si-glow-f">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+  <rect width="512" height="512" fill="url(#si-bg)"/>
+  <ellipse cx="256" cy="300" rx="180" ry="170" fill="url(#si-glow)"/>
+  <ellipse cx="256" cy="460" rx="70" ry="16" fill="#2cb57d" opacity="0.12" filter="url(#si-blur)"/>
+  <!-- legs - slender, dynamic pose -->
+  <path d="M235 370 L225 430 L218 460 L236 462 L242 432 L245 375 Z" fill="#0a1208"/>
+  <path d="M270 370 L280 420 L292 460 L310 458 L295 418 L278 372 Z" fill="#0a1208"/>
+  <!-- cloak/body - slim, angular -->
+  <path d="M200 190 Q190 230 192 290 Q195 340 220 380 Q240 395 260 395 Q280 395 295 380 Q318 340 320 290 Q322 230 312 190 Q290 170 256 167 Q222 170 200 190 Z" fill="url(#si-body)"/>
+  <!-- cloak tails flowing -->
+  <path d="M192 290 Q180 340 170 400 Q168 420 175 440 L185 438 Q185 415 190 390 Q195 350 200 310 Z" fill="#0a1208" opacity="0.7"/>
+  <path d="M320 290 Q332 340 342 400 Q344 420 337 440 L327 438 Q327 415 322 390 Q317 350 312 310 Z" fill="#0a1208" opacity="0.7"/>
+  <!-- hood -->
+  <path d="M210 185 Q205 155 215 130 Q230 105 256 100 Q282 105 297 130 Q307 155 302 185 Q285 170 256 167 Q227 170 210 185 Z" fill="#152018"/>
+  <!-- hood peak -->
+  <path d="M240 100 Q250 80 256 72 Q262 80 272 100 Q265 95 256 93 Q247 95 240 100 Z" fill="#1a2d20"/>
+  <!-- face shadow inside hood -->
+  <ellipse cx="256" cy="150" rx="30" ry="32" fill="#080e08"/>
+  <!-- glowing eyes -->
+  <ellipse cx="244" cy="147" rx="4" ry="2.5" fill="#2cb57d" opacity="0.9" filter="url(#si-glow-f)"/>
+  <ellipse cx="268" cy="147" rx="4" ry="2.5" fill="#2cb57d" opacity="0.9" filter="url(#si-glow-f)"/>
+  <!-- arms holding daggers -->
+  <path d="M198 200 Q180 230 170 270 Q165 290 168 310 L178 308 Q180 288 182 270 Q188 240 200 215 Z" fill="#0a1208"/>
+  <path d="M314 200 Q332 230 342 270 Q347 290 344 310 L334 308 Q332 288 330 270 Q324 240 312 215 Z" fill="#0a1208"/>
+  <!-- dagger left -->
+  <path d="M165 308 L150 290 L135 230 L140 228 L148 232 L155 288 Z" fill="#1a2d20" stroke="#2cb57d" stroke-width="0.5" opacity="0.7"/>
+  <!-- dagger right -->
+  <path d="M347 308 L362 290 L377 230 L372 228 L364 232 L357 288 Z" fill="#1a2d20" stroke="#2cb57d" stroke-width="0.5" opacity="0.7"/>
+  <!-- rim light right -->
+  <path d="M302 185 Q307 155 297 130 Q282 105 272 100" stroke="#2cb57d" stroke-width="1.5" fill="none" opacity="0.45" filter="url(#si-glow-f)"/>
+  <path d="M312 190 Q322 230 320 290 Q318 340 295 380" stroke="#2cb57d" stroke-width="1" fill="none" opacity="0.3" filter="url(#si-glow-f)"/>
+  <!-- ambient particles -->
+  <circle cx="140" cy="180" r="1.5" fill="#2cb57d" opacity="0.4"/>
+  <circle cx="370" cy="220" r="2" fill="#2cb57d" opacity="0.35"/>
+  <circle cx="120" cy="350" r="1" fill="#2cb57d" opacity="0.3"/>
+  <circle cx="390" cy="310" r="1.5" fill="#2cb57d" opacity="0.25"/>
+  <circle cx="180" cy="420" r="1" fill="#5de8aa" opacity="0.2"/>
+  <circle cx="340" cy="400" r="1.5" fill="#5de8aa" opacity="0.2"/>
+</svg>

@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <radialGradient id="ic-bg" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#2a1015"/>
+      <stop offset="100%" stop-color="#0a0406"/>
+    </radialGradient>
+    <radialGradient id="ic-glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#e53170" stop-opacity="0.3"/>
+      <stop offset="60%" stop-color="#e53170" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="transparent"/>
+    </radialGradient>
+    <linearGradient id="ic-body" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3d1a1a"/>
+      <stop offset="40%" stop-color="#1a0808"/>
+      <stop offset="100%" stop-color="#0d0404"/>
+    </linearGradient>
+    <linearGradient id="ic-rim" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#e53170" stop-opacity="0.6"/>
+      <stop offset="50%" stop-color="#e53170" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="ic-blur">
+      <feGaussianBlur stdDeviation="8"/>
+    </filter>
+    <filter id="ic-glow-f">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+  <rect width="512" height="512" fill="url(#ic-bg)"/>
+  <ellipse cx="256" cy="300" rx="200" ry="180" fill="url(#ic-glow)"/>
+  <!-- body shadow -->
+  <ellipse cx="256" cy="460" rx="90" ry="20" fill="#e53170" opacity="0.15" filter="url(#ic-blur)"/>
+  <!-- legs -->
+  <path d="M220 380 L210 460 L230 462 L240 385 Z" fill="#1a0808"/>
+  <path d="M272 380 L282 460 L302 462 L290 385 Z" fill="#1a0808"/>
+  <!-- torso - broad shouldered warrior -->
+  <path d="M180 200 Q175 240 178 300 Q180 360 220 390 Q256 400 292 390 Q332 360 334 300 Q337 240 332 200 Q310 170 256 165 Q202 170 180 200 Z" fill="url(#ic-body)"/>
+  <!-- armor plates -->
+  <path d="M195 220 Q200 260 210 300 Q230 340 256 350 Q282 340 302 300 Q312 260 317 220 Q290 200 256 195 Q222 200 195 220 Z" fill="#1f0a0a" opacity="0.8"/>
+  <!-- shoulder left -->
+  <path d="M170 195 Q155 190 148 210 Q142 240 155 260 Q170 270 185 255 Q190 230 185 205 Z" fill="#2a0e0e"/>
+  <!-- shoulder right -->
+  <path d="M342 195 Q357 190 364 210 Q370 240 357 260 Q342 270 327 255 Q322 230 327 205 Z" fill="#2a0e0e"/>
+  <!-- arms -->
+  <path d="M155 260 Q140 310 145 360 L160 362 Q165 310 170 265 Z" fill="#1a0808"/>
+  <path d="M357 260 Q372 310 367 360 L352 362 Q347 310 342 265 Z" fill="#1a0808"/>
+  <!-- head -->
+  <ellipse cx="256" cy="145" rx="42" ry="48" fill="#1a0808"/>
+  <!-- helmet -->
+  <path d="M214 140 Q210 110 220 90 Q240 70 256 68 Q272 70 292 90 Q302 110 298 140 Q280 125 256 122 Q232 125 214 140 Z" fill="#2a0e0e"/>
+  <!-- helmet crest -->
+  <path d="M248 68 Q252 40 256 30 Q260 40 264 68" fill="#3d1515" stroke="#e53170" stroke-width="1" opacity="0.6"/>
+  <!-- visor slit - glowing eyes -->
+  <line x1="235" y1="142" x2="277" y2="142" stroke="#e53170" stroke-width="3" opacity="0.8" filter="url(#ic-glow-f)"/>
+  <!-- sword in right hand -->
+  <path d="M352 358 L370 340 L380 200 L375 195 L365 198 L358 335 Z" fill="#2a1515" stroke="#e53170" stroke-width="0.5" opacity="0.7"/>
+  <path d="M374 200 L382 192 L386 196 L378 204 Z" fill="#4a2020"/>
+  <!-- rim light left side -->
+  <path d="M170 195 Q155 190 148 210 Q142 240 155 260 Q140 310 145 360" stroke="#e53170" stroke-width="2" fill="none" opacity="0.5" filter="url(#ic-glow-f)"/>
+  <!-- rim light head -->
+  <path d="M214 155 Q210 130 220 100 Q240 75 256 72" stroke="#e53170" stroke-width="1.5" fill="none" opacity="0.4" filter="url(#ic-glow-f)"/>
+  <!-- chest glow -->
+  <ellipse cx="256" cy="270" rx="15" ry="20" fill="#e53170" opacity="0.15" filter="url(#ic-blur)"/>
+  <!-- ambient particles -->
+  <circle cx="130" cy="200" r="2" fill="#e53170" opacity="0.5"/>
+  <circle cx="380" cy="150" r="1.5" fill="#e53170" opacity="0.4"/>
+  <circle cx="160" cy="350" r="1" fill="#e53170" opacity="0.3"/>
+  <circle cx="350" cy="380" r="1.5" fill="#e53170" opacity="0.3"/>
+  <circle cx="400" cy="280" r="2" fill="#ff6b8a" opacity="0.25"/>
+  <circle cx="110" cy="300" r="1" fill="#ff6b8a" opacity="0.2"/>
+</svg>

@@ -15,6 +15,24 @@ const KEYWORD_ZH: Record<string, string> = {
 	Upgraded: "已升级",
 	Fatal: "致命",
 	Keyword: "",
+	Calm: "冷静",
+	Wrath: "愤怒",
+	Divinity: "神圣",
+	Retain: "保留",
+	Retained: "保留",
+	Scry: "预见",
+	Mantra: "真言",
+	Dexterity: "敏捷",
+	Focus: "集中",
+	Intangible: "无实体",
+	Lightning: "闪电",
+	Frost: "冰霜",
+	Dark: "暗",
+	Plasma: "等离子",
+	Stance: "架势",
+	Stances: "架势",
+	Plated: "甲",
+	Unplayable: "不可打出",
 };
 
 export function formatCardText(
@@ -29,7 +47,8 @@ export function formatCardText(
 		.replace(/\{\{QueryLink\|[^|]*\|[^|]*\|([^}]*)}}/g, "$1")
 		.replace(/\{\{C\|(?:[^|}]*\|)?([^}]+)\}\}/g, "$1")
 		.replace(/<br\s*\/?>/g, " ")
-		.replace(/@[RGB]E|@PE/g, "[E]");
+		.replace(/@[RGB]E|@PE/g, "[E]")
+		.replace(/\[E]/g, "⚡");
 	if (getLocale() === "zh") {
 		result = result.replace(/\$([A-Z][A-Za-z]+)/g, (_m, kw) => KEYWORD_ZH[kw] ?? kw);
 	}
@@ -42,7 +61,8 @@ export function formatCardTextSimple(text: string): string {
 		.replace(/\{\{QueryLink\|[^|]*\|[^|]*\|([^}]*)}}/g, "$1")
 		.replace(/\{\{C\|(?:[^|}]*\|)?([^}]+)\}\}/g, "$1")
 		.replace(/<br\s*\/?>/g, " ")
-		.replace(/@[RGB]E|@PE/g, "[E]");
+		.replace(/@[RGB]E|@PE/g, "[E]")
+		.replace(/\[E]/g, "⚡");
 	if (getLocale() === "zh") {
 		result = result.replace(/\$([A-Z][A-Za-z]+)/g, (_m, kw) => KEYWORD_ZH[kw] ?? kw);
 	}

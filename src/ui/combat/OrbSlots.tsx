@@ -1,4 +1,4 @@
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import type { OrbInstance } from "../../engine/core/types";
 
 const ORB_SIZE = 48;
@@ -47,7 +47,11 @@ export function OrbSlots({ orbs, slots }: { orbs: OrbInstance[]; slots: number }
 }
 
 function OrbBall({ orb, index }: { orb: OrbInstance; index: number }) {
-	const colors = ORB_COLORS[orb.type] ?? { main: "var(--orb-empty)", glow: "transparent", icon: "" };
+	const colors = ORB_COLORS[orb.type] ?? {
+		main: "var(--orb-empty)",
+		glow: "transparent",
+		icon: "",
+	};
 	const passiveVal = orb.type === "dark" ? orb.passive : null;
 
 	return (

@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <radialGradient id="wa-bg" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#1a0a25"/>
+      <stop offset="100%" stop-color="#08040f"/>
+    </radialGradient>
+    <radialGradient id="wa-glow" cx="50%" cy="45%" r="50%">
+      <stop offset="0%" stop-color="#a855f7" stop-opacity="0.3"/>
+      <stop offset="60%" stop-color="#a855f7" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="transparent"/>
+    </radialGradient>
+    <linearGradient id="wa-body" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2a1540"/>
+      <stop offset="50%" stop-color="#120820"/>
+      <stop offset="100%" stop-color="#08040f"/>
+    </linearGradient>
+    <filter id="wa-blur"><feGaussianBlur stdDeviation="8"/></filter>
+    <filter id="wa-glow-f">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+    <radialGradient id="wa-third-eye" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#e9b5ff"/>
+      <stop offset="50%" stop-color="#a855f7"/>
+      <stop offset="100%" stop-color="#7c3aed"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#wa-bg)"/>
+  <ellipse cx="256" cy="300" rx="190" ry="180" fill="url(#wa-glow)"/>
+  <ellipse cx="256" cy="460" rx="85" ry="18" fill="#a855f7" opacity="0.12" filter="url(#wa-blur)"/>
+  <!-- flowing robes bottom -->
+  <path d="M190 360 Q170 400 160 440 Q158 460 165 465 L200 462 Q205 440 210 410 Q215 385 218 365 Z" fill="#120820"/>
+  <path d="M322 360 Q342 400 352 440 Q354 460 347 465 L312 462 Q307 440 302 410 Q297 385 294 365 Z" fill="#120820"/>
+  <!-- center robe -->
+  <path d="M218 365 Q230 420 240 460 L272 460 Q282 420 294 365 Q270 390 256 392 Q242 390 218 365 Z" fill="#0d0618"/>
+  <!-- torso - flowing robes -->
+  <path d="M195 195 Q185 235 188 290 Q190 340 218 375 Q240 395 256 397 Q272 395 294 375 Q322 340 324 290 Q327 235 317 195 Q295 175 256 172 Q217 175 195 195 Z" fill="url(#wa-body)"/>
+  <!-- inner robe detail -->
+  <path d="M220 230 Q225 280 235 330 Q245 360 256 370 Q267 360 277 330 Q287 280 292 230 Q276 220 256 218 Q236 220 220 230 Z" fill="#1a0d2a" opacity="0.6"/>
+  <!-- sash/belt -->
+  <path d="M210 310 Q230 318 256 320 Q282 318 302 310 Q282 322 256 324 Q230 322 210 310 Z" fill="#2a1540" stroke="#a855f7" stroke-width="0.5" opacity="0.5"/>
+  <!-- arms in meditation pose -->
+  <path d="M193 205 Q172 235 162 270 Q158 290 165 300 Q175 305 185 295 Q188 275 195 250 Q198 230 200 215 Z" fill="#120820"/>
+  <path d="M319 205 Q340 235 350 270 Q354 290 347 300 Q337 305 327 295 Q324 275 317 250 Q314 230 312 215 Z" fill="#120820"/>
+  <!-- hands meeting at center (meditation) -->
+  <ellipse cx="256" cy="330" rx="22" ry="12" fill="#120820"/>
+  <ellipse cx="256" cy="330" rx="10" ry="5" fill="#a855f7" opacity="0.15" filter="url(#wa-blur)"/>
+  <!-- head with blindfold -->
+  <ellipse cx="256" cy="145" rx="38" ry="42" fill="#120820"/>
+  <!-- blindfold -->
+  <path d="M218 138 Q230 132 256 130 Q282 132 294 138 Q282 144 256 146 Q230 144 218 138 Z" fill="#2a1540"/>
+  <path d="M218 138 Q230 132 256 130 Q282 132 294 138" stroke="#a855f7" stroke-width="1.5" fill="none" opacity="0.5"/>
+  <!-- blindfold tails flowing -->
+  <path d="M294 138 Q310 140 325 135 Q335 130 340 128" stroke="#2a1540" stroke-width="4" fill="none" opacity="0.7"/>
+  <path d="M294 138 Q308 142 320 140 Q328 136 335 133" stroke="#a855f7" stroke-width="0.5" fill="none" opacity="0.4"/>
+  <!-- third eye (above blindfold) -->
+  <ellipse cx="256" cy="122" rx="6" ry="8" fill="url(#wa-third-eye)" opacity="0.8" filter="url(#wa-glow-f)"/>
+  <ellipse cx="256" cy="122" rx="3" ry="4" fill="#e9b5ff" opacity="0.9"/>
+  <!-- headdress/crown -->
+  <path d="M230 108 Q240 85 256 75 Q272 85 282 108 Q270 100 256 98 Q242 100 230 108 Z" fill="#1a0d2a"/>
+  <path d="M246 98 Q252 70 256 60 Q260 70 266 98" fill="#2a1540" stroke="#a855f7" stroke-width="0.8" opacity="0.5"/>
+  <!-- energy emanating from third eye -->
+  <line x1="256" y1="112" x2="256" y2="90" stroke="#a855f7" stroke-width="1" opacity="0.3" filter="url(#wa-glow-f)"/>
+  <line x1="248" y1="115" x2="235" y2="95" stroke="#a855f7" stroke-width="0.5" opacity="0.2" filter="url(#wa-glow-f)"/>
+  <line x1="264" y1="115" x2="277" y2="95" stroke="#a855f7" stroke-width="0.5" opacity="0.2" filter="url(#wa-glow-f)"/>
+  <!-- rim light right -->
+  <path d="M317 195 Q327 235 324 290 Q322 340 294 375" stroke="#a855f7" stroke-width="1.5" fill="none" opacity="0.4" filter="url(#wa-glow-f)"/>
+  <!-- mandala ring behind -->
+  <circle cx="256" cy="260" r="130" fill="none" stroke="#a855f7" stroke-width="0.5" opacity="0.1"/>
+  <circle cx="256" cy="260" r="145" fill="none" stroke="#a855f7" stroke-width="0.3" opacity="0.08"/>
+  <!-- floating lotus petals -->
+  <path d="M130 280 Q135 270 140 275 Q138 285 130 280 Z" fill="#a855f7" opacity="0.2"/>
+  <path d="M380 240 Q385 230 390 235 Q388 245 380 240 Z" fill="#a855f7" opacity="0.2"/>
+  <path d="M150 370 Q155 362 158 367 Q155 375 150 370 Z" fill="#a855f7" opacity="0.15"/>
+  <!-- ambient particles -->
+  <circle cx="130" cy="180" r="1.5" fill="#a855f7" opacity="0.5"/>
+  <circle cx="380" cy="150" r="2" fill="#a855f7" opacity="0.4"/>
+  <circle cx="110" cy="340" r="1" fill="#a855f7" opacity="0.3"/>
+  <circle cx="400" cy="350" r="1.5" fill="#a855f7" opacity="0.3"/>
+  <circle cx="170" cy="440" r="1" fill="#c084fc" opacity="0.2"/>
+  <circle cx="345" cy="430" r="1.5" fill="#c084fc" opacity="0.2"/>
+</svg>
