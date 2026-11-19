@@ -166,6 +166,13 @@ function TitleScreen() {
 				>
 					{tUi("ironclad")}
 				</button>
+				<button
+					type="button"
+					disabled={seed === null}
+					onClick={() => seed !== null && startGame(seed, "SILENT")}
+				>
+					{tUi("silent")}
+				</button>
 			</div>
 		</div>
 	);

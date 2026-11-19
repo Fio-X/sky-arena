@@ -40,6 +40,7 @@ export const zh: TranslationTable = {
 		random: "随机",
 		chooseCharacter: "选择你的角色",
 		ironclad: "铁甲战士",
+		silent: "寂静猎手",
 		slayTheSpire: "杀戮尖塔",
 		rest: "休息",
 		smith: "锻造",

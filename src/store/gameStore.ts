@@ -34,41 +34,30 @@ function ensureContent() {
 	contentLoaded = true;
 }
 
-function makeStarterDeck(): GameState["deck"] {
+function makeCard(id: string, uid: number, cost = 1): GameState["deck"][0] {
+	return { id: id as CardId, uniqueId: uid, upgraded: false, costOverride: null, costForTurn: cost, freeToPlay: false, misc: 0 };
+}
+
+function makeStarterDeck(character: GameState["character"]): GameState["deck"] {
 	let uid = 1;
+	if (character === "SILENT") {
+		const cards: GameState["deck"] = [];
+		for (let i = 0; i < 5; i++) cards.push(makeCard("STRIKE_GREEN", uid++));
+		for (let i = 0; i < 5; i++) cards.push(makeCard("DEFEND_GREEN", uid++));
+		cards.push(makeCard("SURVIVOR", uid++));
+		cards.push(makeCard("NEUTRALIZE", uid++, 0));
+		return cards;
+	}
 	const cards: GameState["deck"] = [];
-	for (let i = 0; i < 5; i++) {
-		cards.push({
-			id: "STRIKE_RED" as CardId,
-			uniqueId: uid++,
-			upgraded: false,
-			costOverride: null,
-			costForTurn: 1,
-			freeToPlay: false,
-			misc: 0,
-		});
-	}
-	for (let i = 0; i < 4; i++) {
-		cards.push({
-			id: "DEFEND_RED" as CardId,
-			uniqueId: uid++,
-			upgraded: false,
-			costOverride: null,
-			costForTurn: 1,
-			freeToPlay: false,
-			misc: 0,
-		});
-	}
-	cards.push({
-		id: "BASH" as CardId,
-		uniqueId: uid++,
-		upgraded: false,
-		costOverride: null,
-		costForTurn: 2,
-		freeToPlay: false,
-		misc: 0,
-	});
+	for (let i = 0; i < 5; i++) cards.push(makeCard("STRIKE_RED", uid++));
+	for (let i = 0; i < 4; i++) cards.push(makeCard("DEFEND_RED", uid++));
+	cards.push(makeCard("BASH", uid++, 2));
 	return cards;
+}
+
+function getStartingStats(character: GameState["character"]) {
+	if (character === "SILENT") return { maxHp: 70, relic: "RING_OF_THE_SNAKE" as RelicId };
+	return { maxHp: 80, relic: "BURNING_BLOOD" as RelicId };
 }
 
 interface GameStore {
@@ -90,6 +79,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 		const rng = createAllStreams(seed);
 		const encResult = generateEncounterLists(rng.monsterRng);
 		const map = generateMap(seed, 1);
+		const stats = getStartingStats(character);
 
 		const state: GameState = {
 			seed,
@@ -98,12 +88,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
 			act: 1,
 			floor: 0,
 			gold: 99,
-			maxHp: 80,
-			currentHp: 80,
+			maxHp: stats.maxHp,
+			currentHp: stats.maxHp,
 			potionSlots: 3,
 			potions: [null, null, null],
-			deck: makeStarterDeck(),
-			relics: [{ id: "BURNING_BLOOD" as RelicId, counter: 0 }],
+			deck: makeStarterDeck(character),
+			relics: [{ id: stats.relic, counter: 0 }],
 			map,
 			combat: null,
 			encounterIndex: { weak: 0, strong: 0, elite: 0 },

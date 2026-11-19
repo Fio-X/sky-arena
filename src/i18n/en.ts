@@ -39,6 +39,7 @@ export const en: TranslationTable = {
 		random: "Random",
 		chooseCharacter: "Choose your character",
 		ironclad: "Ironclad",
+		silent: "Silent",
 		slayTheSpire: "Slay the Spire",
 		rest: "Rest",
 		smith: "Smith",
