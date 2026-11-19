@@ -151,7 +151,7 @@ export function getMonster(id: string): MonsterDef | undefined {
 }
 
 export function getPower(id: string): PowerDef | undefined {
-	return powers.get(id);
+	return powers.get(id) ?? powers.get(id.toUpperCase());
 }
 
 export function getAllCards(): CardDef[] {

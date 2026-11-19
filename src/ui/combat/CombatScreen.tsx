@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { getCard } from "../../engine/content/loader";
+import { getCard, getMonster, getPower } from "../../engine/content/loader";
 import type { CardInstance, MonsterState, PowerInstance } from "../../engine/core/types";
 import { useGameStore } from "../../store/gameStore";
 import { type FloatingText, FloatLayer, useFloatingTexts } from "./CombatAnimations";
@@ -156,9 +156,9 @@ function PowerList({ powers }: { powers: PowerInstance[] }) {
 						fontSize: "0.7rem",
 						color: p.amount > 0 ? "var(--accent-blue)" : "#fff",
 					}}
-					title={p.id.replace(/_/g, " ")}
+					title={getPower(p.id)?.text ?? p.id}
 				>
-					{p.id.replace(/_/g, " ")} {p.amount}
+					{getPower(p.id)?.name ?? p.id} {p.amount}
 				</span>
 			))}
 		</span>
@@ -197,7 +197,7 @@ function MonsterCard({
 			<FloatLayer items={floats} />
 			<IntentDisplay monster={monster} />
 			<div style={{ fontWeight: "bold", marginBottom: "0.5rem", fontSize: "0.85rem" }}>
-				{monster.id.replace(/_/g, " ")}
+				{getMonster(monster.id)?.name ?? monster.id}
 			</div>
 			<HpBar current={monster.currentHp} max={monster.maxHp} />
 			{monster.block > 0 && (
