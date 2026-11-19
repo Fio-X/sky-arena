@@ -132,7 +132,7 @@ function settle(s: GameState): GameState {
 				return [{ type: "rest" }];
 			case "cardSelect":
 				return [
-					{ type: "chooseCard", indices: [0] },
+					...[...Array(10).keys()].map((i) => ({ type: "chooseCard", indices: [i] }) as Command),
 					{ type: "chooseCard", indices: [] },
 				];
 			default:
@@ -143,14 +143,17 @@ function settle(s: GameState): GameState {
 		const next = step(s, cmd).state;
 		if (next.phase.type !== s.phase.type || next !== s) return next;
 	}
-	throw new Error(`stuck in phase ${s.phase.type}`);
+	throw new Error(
+		`stuck in phase ${JSON.stringify(s.phase)} relics=${s.relics.map((r) => r.id)} act=${s.act} floor=${s.floor}`,
+	);
 }
 
-describe("act progression: seed=42 Act 1 → Act 2 boss", () => {
-	it("reaches and beats the Act 2 boss, then the run ends (no Act 3 yet)", () => {
+describe("act progression: seed=42 Act 1 → Act 3 boss", () => {
+	it("goes through Act 2 and Act 3 and wins after the Act 3 boss (no Act 4 yet)", () => {
 		let s = createGodRun(42n);
-		const seenByAct: Record<number, string[]> = { 1: [], 2: [] };
+		const seenByAct: Record<number, string[]> = { 1: [], 2: [], 3: [] };
 		let transition: GameState | null = null;
+		let transition3: GameState | null = null;
 
 		for (let guard = 0; guard < 3000 && s.phase.type !== "gameOver"; guard++) {
 			const act = s.act;
@@ -158,6 +161,7 @@ describe("act progression: seed=42 Act 1 → Act 2 boss", () => {
 			else if (s.phase.type === "combat") s = fight(s, seenByAct[act] ?? []);
 			else s = settle(s);
 			if (act === 1 && s.act === 2) transition = s;
+			if (act === 2 && s.act === 3) transition3 = s;
 		}
 
 		expect(transition, "entered Act 2").not.toBeNull();
@@ -179,8 +183,33 @@ describe("act progression: seed=42 Act 1 → Act 2 boss", () => {
 			"fought an Act 2 boss",
 		).toBe(true);
 
+		expect(transition3, "entered Act 3").not.toBeNull();
+		expect(transition3?.floor).toBe(34);
+		expect(transition3?.rng.cardRng.counter).toBeGreaterThanOrEqual(500);
+		const act3 = new Set(seenByAct[3]);
+		const act3Only = [
+			"DARKLING",
+			"ORB_WALKER",
+			"SPIKER",
+			"REPULSOR",
+			"EXPLODER",
+			"TRANSIENT",
+			"THE_MAW",
+			"SPIRE_GROWTH",
+			"WRITHING_MASS",
+		];
+		expect(
+			act3Only.some((id) => act3.has(id)),
+			`act 3 monsters: ${[...act3]}`,
+		).toBe(true);
+		const act3Bosses = ["AWAKENED_ONE", "TIME_EATER", "DONU", "DECA"];
+		expect(
+			act3Bosses.some((id) => act3.has(id)),
+			"fought an Act 3 boss",
+		).toBe(true);
+
 		expect(s.phase).toEqual({ type: "gameOver", victory: true });
-		expect(s.act).toBe(2);
-		expect(s.floor).toBe(33);
+		expect(s.act).toBe(3);
+		expect(s.floor).toBe(50);
 	});
 });

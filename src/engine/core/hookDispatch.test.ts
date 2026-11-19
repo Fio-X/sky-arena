@@ -196,3 +196,14 @@ describe("block timing (core/turn.ts)", () => {
 		expect(monsterAt(s, 0).block).toBeGreaterThan(0);
 	});
 });
+
+describe("softlocks", () => {
+	it("Dual Wield with no Attack or Power in hand does nothing (no stuck choice)", () => {
+		const deck = [
+			card("DUAL_WIELD", 1),
+			...Array.from({ length: 4 }, (_, i) => card("DEFEND_RED", i + 2)),
+		];
+		const s = playCard(startFight("CULTIST", 1n, deck), "DUAL_WIELD");
+		expect(s.phase.type).toBe("combat");
+	});
+});

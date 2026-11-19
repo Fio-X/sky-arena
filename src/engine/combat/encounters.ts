@@ -108,6 +108,32 @@ const even = (...ids: string[]): WeightedEncounter[] =>
 const weighted = (total: number, entries: [string, number][]): WeightedEncounter[] =>
 	entries.map(([id, w]) => ({ id, weight: w / total }));
 
+/**
+ * Act 3 (TheBeyond). Weights from MonsterEncounters.h; exclusions from
+ * TheBeyond.generateExclusions (via spire-engine acts.rs).
+ */
+export const ACT3_ENCOUNTER_POOL: ActEncounterPool = {
+	weak: even("THREE_DARKLINGS", "ORB_WALKER", "THREE_SHAPES"),
+	weakCount: 2,
+	strong: even(
+		"SPIRE_GROWTH",
+		"TRANSIENT",
+		"FOUR_SHAPES",
+		"MAW",
+		"SPHERE_AND_TWO_SHAPES",
+		"JAW_WORM_HORDE",
+		"THREE_DARKLINGS",
+		"WRITHING_MASS",
+	),
+	elites: ["GIANT_HEAD", "NEMESIS", "REPTOMANCER"],
+	bosses: ["AWAKENED_ONE", "TIME_EATER", "DONU_AND_DECA"],
+	firstStrongExclusions: {
+		THREE_DARKLINGS: ["THREE_DARKLINGS"],
+		ORB_WALKER: ["ORB_WALKER"],
+		THREE_SHAPES: ["FOUR_SHAPES"],
+	},
+};
+
 export const ACT_ENCOUNTER_POOLS: Readonly<Record<number, ActEncounterPool>> = {
 	1: {
 		weak: even("CULTIST", "JAW_WORM", "TWO_LOUSE", "SMALL_SLIMES"),
@@ -152,34 +178,7 @@ export const ACT_ENCOUNTER_POOLS: Readonly<Record<number, ActEncounterPool>> = {
 			CHOSEN: ["CHOSEN_AND_BYRDS", "CULTIST_AND_CHOSEN"],
 		},
 	},
-};
-
-/**
- * Act 3 (TheBeyond). Weights from MonsterEncounters.h; exclusions from
- * TheBeyond.generateExclusions (via spire-engine acts.rs). Joins
- * ACT_ENCOUNTER_POOLS (key 3) once every Act 3 monster has an AI; until then
- * the run ends after the Act 2 boss.
- */
-export const ACT3_ENCOUNTER_POOL: ActEncounterPool = {
-	weak: even("THREE_DARKLINGS", "ORB_WALKER", "THREE_SHAPES"),
-	weakCount: 2,
-	strong: even(
-		"SPIRE_GROWTH",
-		"TRANSIENT",
-		"FOUR_SHAPES",
-		"MAW",
-		"SPHERE_AND_TWO_SHAPES",
-		"JAW_WORM_HORDE",
-		"THREE_DARKLINGS",
-		"WRITHING_MASS",
-	),
-	elites: ["GIANT_HEAD", "NEMESIS", "REPTOMANCER"],
-	bosses: ["AWAKENED_ONE", "TIME_EATER", "DONU_AND_DECA"],
-	firstStrongExclusions: {
-		THREE_DARKLINGS: ["THREE_DARKLINGS"],
-		ORB_WALKER: ["ORB_WALKER"],
-		THREE_SHAPES: ["FOUR_SHAPES"],
-	},
+	3: ACT3_ENCOUNTER_POOL,
 };
 
 export interface EncounterLists {

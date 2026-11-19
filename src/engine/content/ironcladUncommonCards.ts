@@ -356,7 +356,14 @@ registerCardEffect("FIRE_BREATHING", (_s, card, _t) => {
 	];
 });
 
-registerCardEffect("DUAL_WIELD", (_s, _card, _t) => {
+registerCardEffect("DUAL_WIELD", (s, _card, _t) => {
+	// Original DualWieldAction: with no Attack or Power in hand nothing happens
+	// (opening the choice would leave no valid pick and lock the game).
+	const valid = (s.combat?.hand ?? []).some((c) => {
+		const type = getCard(c.id)?.type;
+		return type === "attack" || type === "power";
+	});
+	if (!valid) return [];
 	return [
 		{
 			type: "custom",
