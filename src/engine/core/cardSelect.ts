@@ -142,6 +142,27 @@ function handleSetup(s: GameState, c: CombatState, idx: number): GameState | nul
 	return toCombat({ ...s, combat: { ...c, hand, drawPile: [...c.drawPile, topCard] } });
 }
 
+function handleHologram(s: GameState, c: CombatState, idx: number): GameState | null {
+	const card = c.discardPile[idx];
+	if (!card || c.hand.length >= 10) return toCombat(s);
+	const discardPile = c.discardPile.filter((_, i) => i !== idx);
+	return toCombat({ ...s, combat: { ...c, discardPile, hand: [...c.hand, card] } });
+}
+
+function handleSeek(s: GameState, c: CombatState, indices: number[]): GameState {
+	let drawPile = [...c.drawPile];
+	const toHand: CardInstance[] = [];
+	// Sort indices descending so removal doesn't shift earlier indices
+	const sorted = [...indices].sort((a, b) => b - a);
+	for (const idx of sorted) {
+		const card = drawPile[idx];
+		if (!card || c.hand.length + toHand.length >= 10) continue;
+		toHand.push(card);
+		drawPile = drawPile.filter((_, i) => i !== idx);
+	}
+	return toCombat({ ...s, combat: { ...c, drawPile, hand: [...c.hand, ...toHand] } });
+}
+
 function handleNightmare(s: GameState, c: CombatState, idx: number): GameState | null {
 	const card = c.hand[idx];
 	if (!card) return null;
@@ -259,6 +280,12 @@ export function stepChooseCard(
 			break;
 		case "nightmare":
 			result = handleNightmare(state, c, idx);
+			break;
+		case "hologram":
+			result = handleHologram(state, c, idx);
+			break;
+		case "seek":
+			result = handleSeek(state, c, indices);
 			break;
 		case "wellLaidPlans":
 			return handleWellLaidPlans(state, c, indices, events);

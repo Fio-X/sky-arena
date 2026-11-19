@@ -29,6 +29,21 @@ registerRelicHooks("RING_OF_THE_SNAKE", () => ({
 	},
 }));
 
+// Cracked Core — channel 1 Lightning at start of combat
+registerRelicHooks("CRACKED_CORE", () => ({
+	relicId: "CRACKED_CORE",
+	hooks: {
+		atBattleStart: (ctx) => {
+			const s = ctx.state;
+			const c = s.combat;
+			if (!c) return s;
+			const orb = { type: "lightning" as const, passive: 3, evoke: 8 };
+			const orbs = [...c.player.orbs, orb];
+			return { ...s, combat: { ...c, player: { ...c.player, orbs } } };
+		},
+	},
+}));
+
 // ═════════════════════════════════════════════════════════
 // COMMON
 // ═════════════════════════════════════════════════════════

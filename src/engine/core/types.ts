@@ -81,7 +81,9 @@ export type CardSelectTask =
 	| "survivor"
 	| "toolsOfTheTrade"
 	| "warcry"
-	| "wellLaidPlans";
+	| "seek"
+	| "wellLaidPlans"
+	| "hologram";
 
 // ── 战斗状态 ──────────────────────────────────────────────
 
@@ -99,6 +101,8 @@ export interface CombatState {
 	readonly cardQueue: CardQueueItem[];
 	readonly cardsPlayedThisTurn: number;
 	readonly cardsDiscardedThisTurn: number;
+	readonly lightningChanneled: number;
+	readonly frostChanneled: number;
 }
 
 export interface PlayerCombatState {

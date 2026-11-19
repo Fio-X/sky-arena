@@ -76,6 +76,7 @@ function getSourceCards(
 ): CardInstance[] {
 	switch (task) {
 		case "headbutt":
+		case "hologram":
 		case "warcry":
 			return combat.discardPile;
 		case "exhume":

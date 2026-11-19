@@ -49,6 +49,8 @@ export function initCombat(state: GameState, monsterIds: MonsterId[]): GameState
 		cardQueue: [],
 		cardsPlayedThisTurn: 0,
 		cardsDiscardedThisTurn: 0,
+		lightningChanneled: 0,
+		frostChanneled: 0,
 	};
 
 	let s: GameState = {

@@ -40,6 +40,7 @@ export const en: TranslationTable = {
 		chooseCharacter: "Choose your character",
 		ironclad: "Ironclad",
 		silent: "Silent",
+		defect: "Defect",
 		slayTheSpire: "Slay the Spire",
 		rest: "Rest",
 		smith: "Smith",
@@ -99,7 +100,9 @@ export const en: TranslationTable = {
 		concentrate: "Choose cards to discard",
 		nightmare: "Choose a card to copy",
 		setup: "Choose a card to put on top of draw pile",
+		seek: "Choose card(s) from draw pile",
 		toolsOfTheTrade: "Choose a card to discard",
 		wellLaidPlans: "Choose card(s) to retain",
+		hologram: "Choose a card from discard pile to put into hand",
 	},
 };

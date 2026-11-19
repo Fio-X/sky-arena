@@ -3,6 +3,7 @@ import { getCard } from "../content/loader";
 import { stsShuffle } from "../rng/stsRandom";
 import { popAction } from "./actionQueue";
 import { fireHook } from "./hooks";
+import { channelOrb as channelOrbImpl, evokeOrb as evokeOrbImpl } from "./orbSystem";
 import type {
 	Action,
 	ActorRef,
@@ -68,6 +69,10 @@ function executeAction(
 			return executeSplit(state, action, events);
 		case "escape":
 			return executeEscape(state, action, events);
+		case "channelOrb":
+			return executeChannelOrb(state, action, events);
+		case "evokeOrb":
+			return executeEvokeOrb(state, action, events);
 		default:
 			return { state };
 	}
@@ -467,6 +472,24 @@ function makeCardInstance(
 }
 
 const SPLITTABLE_MONSTERS = new Set(["ACID_SLIME_L", "SPIKE_SLIME_L", "SLIME_BOSS"]);
+
+function executeChannelOrb(
+	state: GameState,
+	action: Extract<Action, { type: "channelOrb" }>,
+	events: GameEvent[],
+): { state: GameState } {
+	const result = channelOrbImpl(state, action.orbType, events);
+	return { state: result.state };
+}
+
+function executeEvokeOrb(
+	state: GameState,
+	action: Extract<Action, { type: "evokeOrb" }>,
+	events: GameEvent[],
+): { state: GameState } {
+	const result = evokeOrbImpl(state, action.times, events);
+	return { state: result.state };
+}
 
 function checkHalfDead(state: GameState, target: ActorRef): GameState {
 	if (target.type !== "monster") return state;

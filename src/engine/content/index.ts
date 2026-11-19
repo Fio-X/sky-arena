@@ -60,4 +60,8 @@ import "./silentCards";
 import "./silentUncommonCards";
 import "./silentRareCards";
 import "./silentPowers";
+import "./defectCards";
+import "./defectUncommonCards";
+import "./defectRareCards";
+import "./defectPowers";
 import "./statusCards";

@@ -41,6 +41,7 @@ export const zh: TranslationTable = {
 		chooseCharacter: "选择你的角色",
 		ironclad: "铁甲战士",
 		silent: "寂静猎手",
+		defect: "机器人",
 		slayTheSpire: "杀戮尖塔",
 		rest: "休息",
 		smith: "锻造",
@@ -97,7 +98,9 @@ export const zh: TranslationTable = {
 		concentrate: "选择卡牌弃置",
 		nightmare: "选择一张卡牌复制",
 		setup: "选择一张卡牌放到抽牌堆顶部",
+		seek: "从抽牌堆选择卡牌",
 		toolsOfTheTrade: "选择一张卡牌弃置",
 		wellLaidPlans: "选择要保留的卡牌",
+		hologram: "从弃牌堆选择一张卡牌加入手牌",
 	},
 };

@@ -48,6 +48,14 @@ function makeStarterDeck(character: GameState["character"]): GameState["deck"] {
 		cards.push(makeCard("NEUTRALIZE", uid++, 0));
 		return cards;
 	}
+	if (character === "DEFECT") {
+		const cards: GameState["deck"] = [];
+		for (let i = 0; i < 4; i++) cards.push(makeCard("STRIKE_BLUE", uid++));
+		for (let i = 0; i < 4; i++) cards.push(makeCard("DEFEND_BLUE", uid++));
+		cards.push(makeCard("ZAP", uid++));
+		cards.push(makeCard("DUALCAST", uid++));
+		return cards;
+	}
 	const cards: GameState["deck"] = [];
 	for (let i = 0; i < 5; i++) cards.push(makeCard("STRIKE_RED", uid++));
 	for (let i = 0; i < 4; i++) cards.push(makeCard("DEFEND_RED", uid++));
@@ -57,6 +65,7 @@ function makeStarterDeck(character: GameState["character"]): GameState["deck"] {
 
 function getStartingStats(character: GameState["character"]) {
 	if (character === "SILENT") return { maxHp: 70, relic: "RING_OF_THE_SNAKE" as RelicId };
+	if (character === "DEFECT") return { maxHp: 75, relic: "CRACKED_CORE" as RelicId };
 	return { maxHp: 80, relic: "BURNING_BLOOD" as RelicId };
 }
 

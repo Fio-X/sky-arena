@@ -7,6 +7,8 @@ import { resolveCardEffect } from "../content/cardEffects";
 import { getCard } from "../content/loader";
 import { drainActions } from "./actionExecutor";
 import { addToBot } from "./actionQueue";
+import { triggerOrbPassives } from "./orbSystem";
+import { replayIfAmplify, replayIfBurst, replayIfDoubleTap, replayIfEchoForm } from "./replay";
 import { afterRewardPhase, rollGoldReward, stepChooseBossRelic } from "./bossReward";
 import { stepChooseCard } from "./cardSelect";
 import { obtainRandomRelic, pickEvent, stepChooseEventOption } from "./event";
@@ -33,11 +35,6 @@ const TURN_BASED_POWER_IDS = new Set([
 	"regen",
 ]);
 
-/**
- * Pure step function: the entire game engine entry point.
- * Takes current state + player command, returns new state + events for UI.
- * No side effects, no DOM, no async, no Math.random.
- */
 export function step(state: GameState, command: Command): StepResult {
 	const events: GameEvent[] = [];
 
@@ -150,6 +147,8 @@ function stepPlayCard(
 	s = exhaustOrDiscard(s, card, events);
 	s = replayIfDoubleTap(s, card, targetIndex, events);
 	s = replayIfBurst(s, card, targetIndex, events);
+	s = replayIfEchoForm(s, card, targetIndex, events);
+	s = replayIfAmplify(s, card, targetIndex, events);
 
 	return { state: s, events };
 }
@@ -157,67 +156,37 @@ function stepPlayCard(
 function exhaustOrDiscard(s: GameState, card: CardInstance, events: GameEvent[]): GameState {
 	if (!s.combat) return s;
 	const def = getCard(card.id);
+	const cardFlags = card.upgraded ? (def?.upgrade.flags ?? def?.flags ?? []) : (def?.flags ?? []);
 	const exhausts =
-		(def?.flags.includes("exhaust") ?? false) ||
+		cardFlags.includes("exhaust") ||
 		(def?.type === "skill" && s.combat.player.powers.some((p) => p.id === "corruption"));
-	s = {
-		...s,
-		combat: exhausts
-			? { ...s.combat, exhaustPile: [...s.combat.exhaustPile, card] }
-			: { ...s.combat, discardPile: [...s.combat.discardPile, card] },
-	};
 	if (exhausts) {
+		s = {
+			...s,
+			combat: { ...s.combat, exhaustPile: [...s.combat.exhaustPile, card] },
+		};
 		events.push({ type: "cardExhausted", card });
 		s = fireHook(s, { type: "player" }, "onExhaust", card);
+	} else {
+		// REBOUND: put on top of draw pile instead of discard
+		const reboundPower = s.combat.player.powers.find((p) => p.id === "REBOUND");
+		if (reboundPower) {
+			const powers = s.combat.player.powers.filter((p) => p.id !== "REBOUND");
+			s = {
+				...s,
+				combat: {
+					...s.combat,
+					player: { ...s.combat.player, powers },
+					drawPile: [...s.combat.drawPile, card],
+				},
+			};
+		} else {
+			s = {
+				...s,
+				combat: { ...s.combat, discardPile: [...s.combat.discardPile, card] },
+			};
+		}
 	}
-	return s;
-}
-
-function replayIfDoubleTap(
-	s: GameState,
-	card: CardInstance,
-	targetIndex: number,
-	events: GameEvent[],
-): GameState {
-	if (!s.combat) return s;
-	const def = getCard(card.id);
-	if (def?.type !== "attack") return s;
-	const dtIdx = s.combat.player.powers.findIndex((p) => p.id === "doubleTap" && p.amount > 0);
-	if (dtIdx < 0) return s;
-	const powers = [...s.combat.player.powers];
-	const dt = powers[dtIdx]!;
-	powers[dtIdx] = { ...dt, amount: dt.amount - 1 };
-	s = { ...s, combat: { ...s.combat, player: { ...s.combat.player, powers } } };
-	const replayActions = resolveCardEffect(s, card, targetIndex);
-	for (const action of replayActions) {
-		if (!s.combat) break;
-		s = { ...s, combat: addToBot(s.combat, action) };
-	}
-	({ state: s } = drainActions(s, events));
-	return s;
-}
-
-function replayIfBurst(
-	s: GameState,
-	card: CardInstance,
-	targetIndex: number,
-	events: GameEvent[],
-): GameState {
-	if (!s.combat) return s;
-	const def = getCard(card.id);
-	if (def?.type !== "skill") return s;
-	const bIdx = s.combat.player.powers.findIndex((p) => p.id === "BURST" && p.amount > 0);
-	if (bIdx < 0) return s;
-	const powers = [...s.combat.player.powers];
-	const b = powers[bIdx]!;
-	powers[bIdx] = { ...b, amount: b.amount - 1 };
-	s = { ...s, combat: { ...s.combat, player: { ...s.combat.player, powers } } };
-	const replayActions = resolveCardEffect(s, card, targetIndex);
-	for (const action of replayActions) {
-		if (!s.combat) break;
-		s = { ...s, combat: addToBot(s.combat, action) };
-	}
-	({ state: s } = drainActions(s, events));
 	return s;
 }
 
@@ -280,7 +249,6 @@ export function stepEndTurnContinue(
 
 	events.push({ type: "turnEnded", turn: combat.turn });
 
-	// 2. Clear block (player + monsters), respecting barricade
 	const playerRef: ActorRef = { type: "player" };
 	const blockRetain = foldHook(s, playerRef, "modifyBlockRetention", 0);
 	s = blockRetain.state;
@@ -297,16 +265,14 @@ export function stepEndTurnContinue(
 		};
 	}
 
-	// 3. Fire atEndOfTurn for all actors (Metallicize etc. — after block clear)
 	s = fireHookOnAllActors(s, (st, actor) => fireHook(st, actor, "atEndOfTurn", true));
 
-	// 4. Monster turns: execute current intent, roll next move
+	({ state: s, events } = triggerOrbPassives(s, events));
+
 	s = executeMonsterTurns(s, events);
 
-	// 5. End of round: tick turn-based powers, fire atEndOfRound (Ritual etc.)
 	s = fireHookOnAllActors(s, (st, actor) => tickTurnBasedPowers(st, actor, TURN_BASED_POWER_IDS));
 
-	// 6. New turn: restore energy, increment turn, draw 5
 	const c = s.combat;
 	if (!c) return { state: s, events };
 
@@ -325,7 +291,6 @@ export function stepEndTurnContinue(
 		phase: { type: "combat", turn: newTurn },
 	};
 
-	// Remove Entangled at start of turn
 	if (s.combat) {
 		const pp = s.combat.player.powers.filter((p) => p.id !== "ENTANGLED");
 		if (pp.length !== s.combat.player.powers.length) {
@@ -333,14 +298,11 @@ export function stepEndTurnContinue(
 		}
 	}
 
-	// 6. Fire atStartOfTurn for all actors (Demon Form, Metallicize end-block etc.)
 	s = fireHookOnAllActors(s, (st, actor) => fireHook(st, actor, "atStartOfTurn"));
 
-	// Enqueue draw 5 and drain
 	s = { ...s, combat: addToBot(s.combat as typeof c, { type: "drawCards", count: 5 }) };
 	({ state: s } = drainActions(s, events));
 
-	// 7. Fire atStartOfTurnPostDraw
 	s = fireHookOnAllActors(s, (st, actor) => fireHook(st, actor, "atStartOfTurnPostDraw"));
 
 	events.push({ type: "turnStarted", turn: newTurn });
@@ -359,7 +321,6 @@ function stepChooseMapNode(
 	const node = state.map.nodes[y]?.[x];
 	if (!node) return { state, events };
 
-	// Validate reachability
 	if (!isNodeReachable(state, x, y)) return { state, events };
 
 	const newMap = {
@@ -432,7 +393,6 @@ function pickEncounter(state: GameState, roomType: "monster" | "elite"): Monster
 		const encId = state.encounterLists.elites[idx % state.encounterLists.elites.length];
 		return getEncounterMonsters(encId ?? "");
 	}
-	// First 3 floors use weak pool, then strong
 	const isWeak = state.encounterIndex.weak < state.encounterLists.weak.length;
 	if (isWeak) {
 		const idx = state.encounterIndex.weak;

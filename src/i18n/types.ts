@@ -38,6 +38,7 @@ export interface TranslationTable {
 		readonly chooseCharacter: string;
 		readonly ironclad: string;
 		readonly silent: string;
+		readonly defect: string;
 		readonly slayTheSpire: string;
 		readonly rest: string;
 		readonly smith: string;
