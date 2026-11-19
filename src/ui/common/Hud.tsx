@@ -1,5 +1,6 @@
 import { getPotion, getRelic } from "../../engine/content/loader";
 import { useGameStore } from "../../store/gameStore";
+import { CardPileViewer } from "./CardPileViewer";
 
 export function Hud() {
 	const state = useGameStore((s) => s.state);
@@ -21,7 +22,7 @@ export function Hud() {
 			<span>Act {state.act}</span>
 			<HpBar current={state.currentHp} max={state.maxHp} />
 			<span style={{ color: "var(--accent-gold)" }}>Gold: {state.gold}</span>
-			<span style={{ color: "var(--text-dim)" }}>Deck: {state.deck.length}</span>
+			<CardPileViewer />
 			{state.relics.length > 0 && (
 				<span style={{ display: "flex", gap: "0.25rem", color: "var(--text-dim)" }}>
 					{state.relics.map((r) => (

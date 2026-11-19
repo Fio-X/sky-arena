@@ -43,9 +43,13 @@ export function RestScreen() {
 								type="button"
 								key={e.card.uniqueId}
 								onClick={() => dispatch({ type: "smith", cardIndex: e.index })}
-								style={{ padding: "0.5rem 0.75rem", minWidth: 80 }}
+								style={{ padding: "0.5rem 0.75rem", minWidth: 90, textAlign: "center" }}
 							>
-								{def?.name ?? e.card.id}
+								<div style={{ fontSize: "0.7rem", color: "var(--energy)" }}>{def?.cost ?? "?"}</div>
+								<div style={{ fontWeight: "bold" }}>{def?.name ?? e.card.id}</div>
+								<div style={{ fontSize: "0.65rem", color: "var(--text-dim)" }}>
+									{def?.type ?? ""}
+								</div>
 							</button>
 						);
 					})}

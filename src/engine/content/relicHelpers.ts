@@ -1,5 +1,6 @@
-import type { CardInstance, GameState, PowerId } from "../core/types";
-import { getCard, getRelic } from "./loader";
+import type { CardId, CardInstance, GameState, PowerId } from "../core/types";
+import { random } from "../rng/stsRandom";
+import { getCard, getCardsByColor, getRelic } from "./loader";
 
 export function heal(state: GameState, amount: number): GameState {
 	const healed = Math.min(amount, state.maxHp - state.currentHp);
@@ -70,4 +71,36 @@ export function isStrike(card: CardInstance): boolean {
 
 export function relicVal(id: string, index: number, fallback: number): number {
 	return (getRelic(id)?.values?.[index] as number | undefined) ?? fallback;
+}
+
+export function addRandomCardToHand(state: GameState, color: string): GameState {
+	if (!state.combat) return state;
+	const pool = getCardsByColor(color as never).filter(
+		(c) => c.rarity !== "basic" && c.rarity !== "special",
+	);
+	if (pool.length === 0) return state;
+
+	const roll = random(state.rng.cardRng, pool.length - 1);
+	const def = pool[roll.value];
+	if (!def) return state;
+
+	let uid = 1;
+	for (const c of state.deck) if (c.uniqueId >= uid) uid = c.uniqueId + 1;
+	for (const c of state.combat.hand) if (c.uniqueId >= uid) uid = c.uniqueId + 1;
+
+	const card: CardInstance = {
+		id: def.id as CardId,
+		uniqueId: uid,
+		upgraded: false,
+		costOverride: null,
+		costForTurn: def.cost ?? 0,
+		freeToPlay: false,
+		misc: 0,
+	};
+
+	return {
+		...state,
+		rng: { ...state.rng, cardRng: roll.state },
+		combat: { ...state.combat, hand: [...state.combat.hand, card] },
+	};
 }

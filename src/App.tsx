@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { useGameStore } from "./store/gameStore";
+import { CardSelectScreen } from "./ui/combat/CardSelectScreen";
 import { CombatScreen } from "./ui/combat/CombatScreen";
 import { RewardScreen } from "./ui/combat/RewardScreen";
 import { BossRewardScreen } from "./ui/common/BossRewardScreen";
@@ -32,6 +34,8 @@ function Screen({ phase }: { phase: string }) {
 			return <MapScreen />;
 		case "combat":
 			return <CombatScreen />;
+		case "cardSelect":
+			return <CardSelectScreen />;
 		case "reward":
 			return <RewardScreen />;
 		case "rest":
@@ -96,6 +100,12 @@ function GameOverScreen() {
 
 function TitleScreen() {
 	const startGame = useGameStore((s) => s.startGame);
+	const [seedInput, setSeedInput] = useState("42");
+
+	const seed = (() => {
+		const n = Number.parseInt(seedInput, 10);
+		return Number.isFinite(n) && n >= 0 ? BigInt(n) : null;
+	})();
 
 	return (
 		<div
@@ -110,8 +120,39 @@ function TitleScreen() {
 		>
 			<h1>Slay the Spire</h1>
 			<p style={{ color: "var(--text-dim)" }}>Choose your character</p>
+			<div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+				<label style={{ color: "var(--text-dim)", fontSize: "0.875rem" }}>
+					Seed:
+					<input
+						type="text"
+						value={seedInput}
+						onChange={(e) => setSeedInput(e.target.value)}
+						style={{
+							marginLeft: "0.5rem",
+							width: 100,
+							padding: "0.375rem 0.5rem",
+							background: "var(--bg-card)",
+							border: "1px solid var(--border)",
+							borderRadius: 4,
+							color: "var(--text)",
+							fontSize: "0.875rem",
+						}}
+					/>
+				</label>
+				<button
+					type="button"
+					onClick={() => setSeedInput(String(Math.floor(Math.random() * 1_000_000)))}
+					style={{ fontSize: "0.75rem", padding: "0.375rem 0.5rem" }}
+				>
+					Random
+				</button>
+			</div>
 			<div style={{ display: "flex", gap: "0.5rem" }}>
-				<button type="button" onClick={() => startGame(42n, "IRONCLAD")}>
+				<button
+					type="button"
+					disabled={seed === null}
+					onClick={() => seed !== null && startGame(seed, "IRONCLAD")}
+				>
 					Ironclad
 				</button>
 			</div>

@@ -4,6 +4,7 @@ import { getCard } from "./loader";
 import {
 	addPlayerBlock,
 	addPlayerPower,
+	addRandomCardToHand,
 	damageAllMonsters,
 	drawCards,
 	heal,
@@ -223,11 +224,18 @@ registerRelicHooks("CHARONS_ASHES", () => ({
 	},
 }));
 
-// Dead Branch — whenever you exhaust, add a random card to hand (stub)
+const CHARACTER_COLOR: Record<string, string> = {
+	IRONCLAD: "RED",
+	SILENT: "GREEN",
+	DEFECT: "BLUE",
+	WATCHER: "PURPLE",
+};
+
 registerRelicHooks("DEAD_BRANCH", () => ({
 	relicId: "DEAD_BRANCH",
 	hooks: {
-		onExhaust: (ctx) => ctx.state,
+		onExhaust: (ctx) =>
+			addRandomCardToHand(ctx.state, CHARACTER_COLOR[ctx.state.character] ?? "RED"),
 	},
 }));
 

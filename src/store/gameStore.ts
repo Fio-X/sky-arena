@@ -6,19 +6,7 @@ import potionsJson from "../../data-reference/potions.json";
 import powersJson from "../../data-reference/powers.json";
 import relicsJson from "../../data-reference/relics.json";
 import { generateEncounterLists } from "../engine/combat/encounters";
-import "../engine/content/corePowers";
-import "../engine/content/monsterPowers";
-import "../engine/content/commonMonsterAi";
-import "../engine/content/jawWormAi";
-import "../engine/content/louseAi";
-import "../engine/content/slimeAi";
-import "../engine/content/simpleMonsterAi";
-import "../engine/content/eliteAi";
-import "../engine/content/bossAi";
-import "../engine/content/gremlinAi";
-import "../engine/content/ironcladCards";
-import "../engine/content/potionEffects";
-import "../engine/content/relicHooks";
+import "../engine/content";
 import {
 	loadCards,
 	loadMonsters,

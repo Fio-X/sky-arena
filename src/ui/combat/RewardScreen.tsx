@@ -69,9 +69,24 @@ export function RewardScreen() {
 										{def?.cost ?? "?"}
 									</div>
 									<div style={{ fontWeight: "bold", marginBottom: "0.25rem" }}>{name}</div>
-									<div style={{ fontSize: "0.7rem", color: "var(--text-dim)" }}>
+									<div
+										style={{
+											fontSize: "0.65rem",
+											color: "var(--text-dim)",
+											marginBottom: "0.25rem",
+										}}
+									>
 										{def?.rarity} {def?.type}
 									</div>
+									{def?.text && (
+										<div style={{ fontSize: "0.6rem", color: "var(--text-dim)", lineHeight: 1.3 }}>
+											{def.text
+												.replace(/\[(\d+)\|(\d+)]/g, (_m: string, base: string) => base)
+												.replace(/\{\{QueryLink\|[^|]*\|[^|]*\|([^}]*)}}/g, "$1")
+												.replace(/<br\s*\/?>/g, " ")
+												.replace(/\$/g, "")}
+										</div>
+									)}
 								</button>
 							);
 						})}

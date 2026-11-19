@@ -211,7 +211,7 @@ function upgradeRandomCard(state: GameState): GameState {
 	return { ...state, deck: newDeck, rng: { ...state.rng, miscRng: r.state } };
 }
 
-function obtainRandomRelic(state: GameState): GameState {
+export function obtainRandomRelic(state: GameState): GameState {
 	const owned = new Set(state.relics.map((r) => r.id as string));
 	const pool = getAllRelics().filter(
 		(r) =>

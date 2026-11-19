@@ -9,7 +9,7 @@ import { drainActions } from "./actionExecutor";
 import { addToBot } from "./actionQueue";
 import { afterRewardPhase, rollGoldReward, stepChooseBossRelic } from "./bossReward";
 import { stepChooseCard } from "./cardSelect";
-import { pickEvent, stepChooseEventOption } from "./event";
+import { obtainRandomRelic, pickEvent, stepChooseEventOption } from "./event";
 import { fireHook, fireHookOnAllActors, foldHook, vetoHook } from "./hooks";
 import { stepChooseNeowBlessing } from "./neow";
 import { rollPotionDrop, stepDiscardPotion, stepObtainPotionReward, stepUsePotion } from "./potion";
@@ -350,9 +350,11 @@ function stepChooseMapNode(
 			};
 			break;
 		}
-		case "treasure":
-			s = { ...s, phase: { type: "reward", cardRewards: [], potionReward: null, gold: 0 } };
+		case "treasure": {
+			const withRelic = obtainRandomRelic(s);
+			s = { ...withRelic, phase: { type: "reward", cardRewards: [], potionReward: null, gold: 0 } };
 			break;
+		}
 		case "event": {
 			const eventResult = pickEvent(s.rng.eventRng);
 			s = {
