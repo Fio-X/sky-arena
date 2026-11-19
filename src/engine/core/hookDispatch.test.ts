@@ -6,6 +6,7 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import potionsJson from "../../../data-reference/potions.json";
 import { loadPotions } from "../content/loader";
+import { generateMap } from "../map/generate";
 import {
 	card,
 	endTurn,
@@ -134,5 +135,44 @@ describe("obtain entry points (core/obtain.ts)", () => {
 		s = obtainCard(s, "BASH" as never);
 		expect(s.gold).toBe(gold + 18);
 		expect(new Set(s.deck.map((c) => c.uniqueId)).size).toBe(s.deck.length);
+	});
+});
+
+describe("turn-boundary hooks (core/turn.ts)", () => {
+	it("Ice Cream keeps unspent energy", () => {
+		let s = withRelic(startFight("CULTIST", 1n, strikes(10)), "ICE_CREAM");
+		s = playCard(s, "STRIKE_RED", 0); // 3 → 2
+		s = endTurn(s);
+		expect(s.combat?.energy).toBe(5);
+	});
+
+	it("Runic Pyramid keeps the whole hand; draw adds on top", () => {
+		let s = withRelic(startFight("CULTIST", 1n, strikes(15)), "RUNIC_PYRAMID");
+		const kept = s.combat?.hand.map((c) => c.uniqueId) ?? [];
+		s = endTurn(s);
+		const hand = s.combat?.hand.map((c) => c.uniqueId) ?? [];
+		expect(hand.slice(0, kept.length)).toEqual(kept);
+		expect(hand.length).toBe(10);
+	});
+
+	it("onEnterRoom fires with the room type when moving on the map", () => {
+		const seen: string[] = [];
+		registerRelicHooks("TEST_ROOM", () => ({
+			relicId: "TEST_ROOM",
+			hooks: {
+				onEnterRoom: (ctx, roomType) => {
+					seen.push(roomType);
+					return ctx.state;
+				},
+			},
+		}));
+		let s = withRelic(startFight("CULTIST", 1n, strikes(5)), "TEST_ROOM");
+		s = { ...s, combat: null, phase: { type: "map" }, map: generateMap(1n, 1) };
+		const first = s.map.nodes[0]?.find((n) => n && n.edges.length > 0);
+		if (!first) throw new Error("no start node");
+		const floor = s.floor;
+		s = step(s, { type: "chooseMapNode", x: first.x, y: 0 }).state;
+		expect(seen).toEqual([first.type]);
+		expect(s.floor).toBe(floor + 1);
 	});
 });

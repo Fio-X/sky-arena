@@ -104,7 +104,8 @@ export interface HookTable {
 
 	// Run-level
 	onGainGold: (ctx: HookCtx, amount: number) => number | FoldResult;
-	onEnterRoom: (ctx: HookCtx) => GameState;
+	/** Map node entered, before the room starts (Maw Bank, Meal Ticket, Ssserpent Head). */
+	onEnterRoom: (ctx: HookCtx, roomType: string) => GameState;
 	onUsePotion: (ctx: HookCtx, potionId: string) => GameState;
 	/** A card was added to the master deck (core/obtain.ts). */
 	onObtainCard: (ctx: HookCtx, card: CardInstance) => GameState;

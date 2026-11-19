@@ -1,6 +1,6 @@
 import { getCard } from "../content/loader";
 import { fireHook } from "./hooks";
-import { stepEndTurnContinue } from "./step";
+import { stepEndTurnContinue } from "./turn";
 import type { CardInstance, CombatState, GameEvent, GameState, StepResult } from "./types";
 
 function nextUid(combat: CombatState): number {
