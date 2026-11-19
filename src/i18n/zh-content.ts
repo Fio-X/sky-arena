@@ -432,6 +432,28 @@ export const zhMonsters: Record<string, string> = {
 	SLIME_BOSS: "史莱姆之王",
 	THE_GUARDIAN: "守卫者",
 	HEXAGHOST: "六角幽灵",
+
+	// Act 2
+	SPHERIC_GUARDIAN: "球体守卫",
+	CHOSEN: "被选者",
+	SHELLED_PARASITE: "壳甲寄生虫",
+	BYRD: "鸟人",
+	MUGGER: "劫匪",
+	CENTURION: "百夫长",
+	MYSTIC: "秘术师",
+	SNAKE_PLANT: "蛇形植物",
+	SNECKO: "蛇眼怪",
+	BOOK_OF_STABBING: "刺杀之书",
+	GREMLIN_LEADER: "地精首领",
+	TASKMASTER: "监工",
+	BEAR: "熊",
+	ROMEO: "罗密欧",
+	POINTY: "小尖头",
+	BRONZE_AUTOMATON: "青铜机器人",
+	BRONZE_ORB: "青铜球",
+	THE_COLLECTOR: "收藏家",
+	TORCH_HEAD: "火炬头",
+	THE_CHAMP: "冠军",
 };
 
 /** Chinese event translations. */

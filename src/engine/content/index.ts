@@ -64,6 +64,8 @@ import "./defectCards";
 import "./defectUncommonCards";
 import "./defectRareCards";
 import "./defectPowers";
+import "./monstersAct2";
+import "./monstersAct2Elites";
 import "./watcherCards";
 import "./statusCards";
 import "./colorlessCards";
