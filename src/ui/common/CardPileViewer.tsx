@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { getCard } from "../../engine/content/loader";
 import type { CardInstance } from "../../engine/core/types";
-import { tCard, tUi } from "../../i18n";
+import { tCard, tCardText, tUi } from "../../i18n";
 import { useGameStore } from "../../store/gameStore";
 
 type PileType = "deck" | "draw" | "discard" | "exhaust";
@@ -169,8 +169,19 @@ function MiniCard({ card }: { card: CardInstance }) {
 					? "var(--accent-gold)"
 					: "var(--text-dim)";
 
+	const typeLabel =
+		def?.type === "attack"
+			? tUi("cardTypeAttack")
+			: def?.type === "skill"
+				? tUi("cardTypeSkill")
+				: def?.type === "power"
+					? tUi("cardTypePower")
+					: "";
+	const tooltip = tCardText(card.id, def?.text ?? "");
+
 	return (
 		<div
+			title={tooltip}
 			style={{
 				padding: "0.25rem 0.5rem",
 				background: "var(--bg-card)",
@@ -188,7 +199,7 @@ function MiniCard({ card }: { card: CardInstance }) {
 				{card.upgraded ? "+" : ""}
 			</span>
 			<span style={{ color: typeColor, fontSize: "0.6rem", textTransform: "uppercase" }}>
-				{def?.type ?? ""}
+				{typeLabel}
 			</span>
 		</div>
 	);

@@ -1,4 +1,7 @@
 import type { TranslationTable } from "./types";
+import { zhCardTextsBlue } from "./zh-card-texts-blue";
+import { zhCardTextsGreen } from "./zh-card-texts-green";
+import { zhCardTextsRed } from "./zh-card-texts-red";
 import { zhCards } from "./zh-cards";
 import { zhEvents, zhMonsters, zhPotions, zhPowers, zhRelics } from "./zh-content";
 
@@ -8,6 +11,7 @@ import { zhEvents, zhMonsters, zhPotions, zhPowers, zhRelics } from "./zh-conten
  */
 export const zh: TranslationTable = {
 	cards: zhCards,
+	cardTexts: { ...zhCardTextsRed, ...zhCardTextsGreen, ...zhCardTextsBlue },
 	relics: zhRelics,
 	powers: zhPowers,
 	potions: zhPotions,
@@ -70,6 +74,9 @@ export const zh: TranslationTable = {
 		chooseCardToRemove: "选择一张卡牌移除",
 		map: "第{0}幕 地图",
 		goldUnit: "金币",
+		cardTypeAttack: "攻击",
+		cardTypeSkill: "技能",
+		cardTypePower: "能力",
 	},
 
 	neow: {

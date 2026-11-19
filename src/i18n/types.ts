@@ -4,6 +4,7 @@ export type Locale = "en" | "zh";
 export interface TranslationTable {
 	// Content names keyed by ID
 	readonly cards: Record<string, string>;
+	readonly cardTexts: Record<string, string>;
 	readonly relics: Record<string, string>;
 	readonly powers: Record<string, string>;
 	readonly potions: Record<string, string>;
@@ -67,6 +68,9 @@ export interface TranslationTable {
 		readonly chooseCardToRemove: string;
 		readonly map: string;
 		readonly goldUnit: string;
+		readonly cardTypeAttack: string;
+		readonly cardTypeSkill: string;
+		readonly cardTypePower: string;
 	};
 
 	// Neow blessing labels/descriptions

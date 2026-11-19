@@ -9,81 +9,81 @@ export function Hud() {
 	if (!state) return null;
 
 	return (
-		<div
-			style={{
-				display: "flex",
-				gap: "1rem",
-				padding: "0.5rem 1rem",
-				background: "linear-gradient(180deg, var(--bg-panel), var(--bg))",
-				borderBottom: "1px solid var(--border)",
-				fontSize: "0.85rem",
-				alignItems: "center",
-				boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
-			}}
-		>
-			<HudChip label={tUi("floor")} value={String(state.floor)} />
-			<HudChip label={tUi("act")} value={String(state.act)} />
+		<div style={{
+			display: "flex",
+			gap: "0.75rem",
+			padding: "0 1rem",
+			height: "var(--hud-height)",
+			background: "var(--bg-panel)",
+			borderBottom: "1px solid var(--border)",
+			fontSize: "0.8rem",
+			alignItems: "center",
+			boxShadow: "0 2px 12px rgba(0,0,0,0.4)",
+			backdropFilter: "blur(8px)",
+			zIndex: 100,
+		}}>
+			<HudChip label={tUi("floor")} value={String(state.floor)} color="var(--text)" />
+			<HudChip label={tUi("act")} value={String(state.act)} color="var(--text)" />
 			<HpBar current={state.currentHp} max={state.maxHp} />
-			<span
-				style={{
-					color: "var(--accent-gold)",
-					fontWeight: "bold",
-					display: "flex",
-					alignItems: "center",
-					gap: "0.25rem",
-				}}
-			>
-				<svg
-					width={14}
-					height={14}
-					viewBox="0 0 24 24"
-					fill="currentColor"
-					role="img"
-					aria-label="Gold"
-				>
+
+			<span style={{
+				color: "var(--accent-gold)",
+				fontWeight: 700,
+				display: "flex",
+				alignItems: "center",
+				gap: "0.2rem",
+				fontSize: "0.85rem",
+			}}>
+				<svg width={12} height={12} viewBox="0 0 24 24" fill="currentColor">
 					<circle cx={12} cy={12} r={10} />
 				</svg>
 				{state.gold}
 			</span>
+
 			<CardPileViewer />
+
 			{state.relics.length > 0 && (
-				<span style={{ display: "flex", gap: "0.25rem" }}>
-					{state.relics.map((r) => (
-						<span
-							key={r.id}
-							title={`${tRelic(r.id, getRelic(r.id)?.name ?? r.id)}: ${getRelic(r.id)?.text ?? ""}`}
-							style={{
-								padding: "0.125rem 0.5rem",
-								background: "rgba(127,90,240,0.15)",
-								border: "1px solid var(--border)",
-								borderRadius: 10,
-								fontSize: "0.75rem",
-								cursor: "help",
-								color: "var(--text)",
-							}}
-						>
-							{tRelic(r.id, getRelic(r.id)?.name ?? r.id)}
-						</span>
-					))}
+				<span style={{ display: "flex", gap: "0.25rem", flexShrink: 0 }}>
+					{state.relics.map((r) => {
+						const def = getRelic(r.id);
+						return (
+							<span
+								key={r.id}
+								title={`${tRelic(r.id, def?.name ?? r.id)}: ${def?.text ?? ""}`}
+								style={{
+									padding: "2px 8px",
+									background: "rgba(108,92,231,0.12)",
+									border: "1px solid var(--border)",
+									borderRadius: 12,
+									fontSize: "0.7rem",
+									cursor: "help",
+									color: "var(--text)",
+									backdropFilter: "blur(4px)",
+								}}
+							>
+								{tRelic(r.id, def?.name ?? r.id)}
+							</span>
+						);
+					})}
 				</span>
 			)}
+
 			<PotionSlots />
-			<LanguageToggle />
+
+			<div style={{ marginLeft: "auto" }}>
+				<LanguageToggle />
+			</div>
 		</div>
 	);
 }
 
-function HudChip({ label, value }: { label: string; value: string }) {
+function HudChip({ label, value, color }: { label: string; value: string; color: string }) {
 	return (
-		<span
-			style={{
-				display: "flex",
-				alignItems: "center",
-				gap: "0.25rem",
-			}}
-		>
-			<span style={{ color: "var(--text-dim)", fontSize: "0.75rem" }}>{label}</span>
-			<span style={{ fontWeight: "bold" }}>{value}</span>
+		<span style={{ display: "flex", alignItems: "center", gap: "0.2rem" }}>
+			<span style={{ color: "var(--text-dim)", fontSize: "0.7rem", fontWeight: 500 }}>
+				{label}
+			</span>
+			<span style={{ fontWeight: 700, color, fontSize: "0.85rem" }}>{value}</span>
 		</span>
 	);
 }
@@ -103,11 +103,11 @@ function PotionSlots() {
 						<span
 							key={slotKey}
 							style={{
-								padding: "0.125rem 0.5rem",
-								background: "var(--bg-card)",
+								padding: "2px 8px",
+								background: "rgba(255,255,255,0.03)",
 								border: "1px dashed var(--border)",
-								borderRadius: 10,
-								fontSize: "0.75rem",
+								borderRadius: 12,
+								fontSize: "0.7rem",
 								color: "var(--text-dim)",
 							}}
 						>
@@ -130,14 +130,14 @@ function PotionSlots() {
 							dispatch({ type: "discardPotion", index: i });
 						}}
 						style={{
-							padding: "0.125rem 0.5rem",
-							background: "linear-gradient(135deg, #7f5af0, #663399)",
+							padding: "2px 8px",
+							background: "linear-gradient(135deg, rgba(108,92,231,0.3), rgba(108,92,231,0.15))",
 							border: "1px solid var(--accent-blue)",
-							borderRadius: 10,
-							fontSize: "0.75rem",
+							borderRadius: 12,
+							fontSize: "0.7rem",
 							color: "#fff",
 							cursor: "pointer",
-							boxShadow: "0 1px 4px rgba(127,90,240,0.3)",
+							boxShadow: "0 1px 6px rgba(108,92,231,0.25)",
 						}}
 					>
 						{tPotion(p, def?.name ?? p)}
@@ -150,29 +150,33 @@ function PotionSlots() {
 
 function HpBar({ current, max }: { current: number; max: number }) {
 	const pct = Math.max(0, (current / max) * 100);
+	const isLow = pct < 30;
 	return (
-		<div style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
-			<div
-				style={{
-					width: 110,
-					height: 12,
-					background: "var(--hp-bg)",
-					borderRadius: 6,
-					overflow: "hidden",
-					boxShadow: "inset 0 1px 3px rgba(0,0,0,0.4)",
-				}}
-			>
-				<div
-					style={{
-						width: `${pct}%`,
-						height: "100%",
-						background: "linear-gradient(90deg, var(--hp-bar), #ff6b6b)",
-						borderRadius: 6,
-						transition: "width 0.3s",
-					}}
-				/>
+		<div style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
+			<div style={{
+				width: 100,
+				height: 10,
+				background: "var(--hp-bg)",
+				borderRadius: 5,
+				overflow: "hidden",
+				boxShadow: "inset 0 1px 3px rgba(0,0,0,0.5)",
+			}}>
+				<div style={{
+					width: `${pct}%`,
+					height: "100%",
+					background: isLow
+						? "linear-gradient(90deg, #ff4444, #ff6666)"
+						: "linear-gradient(90deg, #e53170, #ff6b8a)",
+					borderRadius: 5,
+					transition: "width 0.3s ease-out",
+					boxShadow: isLow ? "0 0 6px rgba(255,68,68,0.4)" : "none",
+				}} />
 			</div>
-			<span style={{ fontWeight: 600, fontSize: "0.85rem" }}>
+			<span style={{
+				fontWeight: 600,
+				fontSize: "0.8rem",
+				color: isLow ? "var(--accent)" : "var(--text)",
+			}}>
 				{current}/{max}
 			</span>
 		</div>

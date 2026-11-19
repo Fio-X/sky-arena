@@ -25,6 +25,11 @@ export function tCard(id: string, fallback: string): string {
 	return currentTable.cards[id] || fallback;
 }
 
+/** Look up a card description text by ID. Falls back to the English text from JSON data. */
+export function tCardText(id: string, fallback: string): string {
+	return currentTable.cardTexts[id] || fallback;
+}
+
 /** Look up a relic name by ID. */
 export function tRelic(id: string, fallback: string): string {
 	return currentTable.relics[id] || fallback;

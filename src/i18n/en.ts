@@ -7,6 +7,7 @@ import type { TranslationTable } from "./types";
  */
 export const en: TranslationTable = {
 	cards: {},
+	cardTexts: {},
 	relics: {},
 	powers: {},
 	potions: {},
@@ -69,6 +70,9 @@ export const en: TranslationTable = {
 		chooseCardToRemove: "Choose a card to remove",
 		map: "Act {0} Map",
 		goldUnit: "gold",
+		cardTypeAttack: "Attack",
+		cardTypeSkill: "Skill",
+		cardTypePower: "Power",
 	},
 
 	neow: {
