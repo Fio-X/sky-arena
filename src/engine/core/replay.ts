@@ -59,9 +59,7 @@ export function replayIfEchoForm(
 	events: GameEvent[],
 ): GameState {
 	if (!s.combat) return s;
-	const efIdx = s.combat.player.powers.findIndex(
-		(p) => p.id === "ECHO_FORM_READY" && p.amount > 0,
-	);
+	const efIdx = s.combat.player.powers.findIndex((p) => p.id === "ECHO_FORM_READY" && p.amount > 0);
 	if (efIdx < 0) return s;
 	const powers = [...s.combat.player.powers];
 	const ef = powers[efIdx];

@@ -36,7 +36,14 @@ function monster(overrides: Partial<MonsterState> = {}): MonsterState {
 		currentHp: 44,
 		block: 0,
 		powers: [],
-		intent: { moveId: "chomp" as never, baseDamage: 11, hits: 1, isAttack: true, isDebuff: false, isBuff: false },
+		intent: {
+			moveId: "chomp" as never,
+			baseDamage: 11,
+			hits: 1,
+			isAttack: true,
+			isDebuff: false,
+			isBuff: false,
+		},
 		moveHistory: [],
 		alive: true,
 		halfDead: false,
@@ -201,7 +208,13 @@ describe("Silent uncommon & rare cards", () => {
 		const combat = makeCombat({
 			hand: [],
 			energy: 0,
-			player: { block: 0, powers: [withPower("NOXIOUS_FUMES", 2)], stance: "neutral" as const, orbs: [], orbSlots: 3 },
+			player: {
+				block: 0,
+				powers: [withPower("NOXIOUS_FUMES", 2)],
+				stance: "neutral" as const,
+				orbs: [],
+				orbSlots: 3,
+			},
 		});
 		const state = makeState(combat);
 		// End turn → monster acts → new turn → atStartOfTurn fires Noxious Fumes
@@ -255,9 +268,7 @@ describe("Silent uncommon & rare cards", () => {
 	// ── Rare skills ─────────────────────────────────────
 
 	it("Adrenaline gives energy and draws cards", () => {
-		const draws = [1, 2].map((_, i) =>
-			card("STRIKE_GREEN", { uniqueId: 100 + i, costForTurn: 1 }),
-		);
+		const draws = [1, 2].map((_, i) => card("STRIKE_GREEN", { uniqueId: 100 + i, costForTurn: 1 }));
 		const combat = makeCombat({
 			hand: [card("ADRENALINE", { costForTurn: 0 })],
 			drawPile: draws,
@@ -312,9 +323,7 @@ describe("Silent uncommon & rare cards", () => {
 
 	it("Burst replays the next Skill", () => {
 		const combat = makeCombat({
-			hand: [
-				card("DEFEND_GREEN", { uniqueId: 60, costForTurn: 1 }),
-			],
+			hand: [card("DEFEND_GREEN", { uniqueId: 60, costForTurn: 1 })],
 			energy: 3,
 			player: {
 				block: 0,
