@@ -1,6 +1,39 @@
+import { motion } from "framer-motion";
 import { getEvent } from "../../engine/core/event";
 import { tEvent, tUi } from "../../i18n";
 import { useGameStore } from "../../store/gameStore";
+
+const containerStyle: React.CSSProperties = {
+	height: "calc(100vh - 36px)",
+	display: "flex",
+	flexDirection: "column",
+	alignItems: "center",
+	justifyContent: "center",
+	gap: "1.5rem",
+	padding: "2rem 1rem",
+};
+
+const panelStyle = {
+	background: "var(--bg-glass)",
+	backdropFilter: "blur(12px)",
+	WebkitBackdropFilter: "blur(12px)",
+	border: "1px solid var(--border)",
+	borderRadius: 16,
+	padding: "2.5rem 2.5rem 2rem",
+	boxShadow: "var(--shadow-lg), 0 0 40px rgba(108,92,231,0.1)",
+	display: "flex" as const,
+	flexDirection: "column" as const,
+	alignItems: "center" as const,
+	gap: "1.5rem",
+	maxWidth: 520,
+	width: "100%",
+};
+
+const mysteryGlow: React.CSSProperties = {
+	fontSize: "3rem",
+	filter: "drop-shadow(0 0 16px rgba(108,92,231,0.6)) drop-shadow(0 0 32px rgba(108,92,231,0.3))",
+	lineHeight: 1,
+};
 
 export function EventScreen() {
 	const state = useGameStore((s) => s.state);
@@ -11,64 +44,133 @@ export function EventScreen() {
 
 	if (!def) {
 		return (
-			<div
-				style={{
-					height: "calc(100vh - 36px)",
-					display: "flex",
-					flexDirection: "column",
-					alignItems: "center",
-					justifyContent: "center",
-					gap: "1rem",
-				}}
-			>
-				<h2>{tUi("unknownEvent")}</h2>
-				<button type="button" onClick={() => dispatch({ type: "proceed" })}>
-					{tUi("continue")}
-				</button>
+			<div style={containerStyle}>
+				<motion.div
+					initial={{ opacity: 0, scale: 0.95 }}
+					animate={{ opacity: 1, scale: 1 }}
+					transition={{ duration: 0.4 }}
+					style={panelStyle}
+				>
+					<div style={mysteryGlow}>❓</div>
+					<h2 style={{ fontSize: "1.3rem", fontWeight: 700, color: "var(--text-bright)" }}>
+						{tUi("unknownEvent")}
+					</h2>
+					<motion.button
+						type="button"
+						onClick={() => dispatch({ type: "proceed" })}
+						whileHover={{ scale: 1.04, boxShadow: "0 0 16px rgba(108,92,231,0.3)" }}
+						whileTap={{ scale: 0.97 }}
+						style={{
+							padding: "0.75rem 2rem",
+							borderRadius: 10,
+							background: "linear-gradient(135deg, var(--accent-blue), #8b5cf6)",
+							border: "1px solid rgba(108,92,231,0.4)",
+							color: "var(--text-bright)",
+							fontWeight: 600,
+							cursor: "pointer",
+						}}
+					>
+						{tUi("continue")}
+					</motion.button>
+				</motion.div>
 			</div>
 		);
 	}
 
 	return (
-		<div
-			style={{
-				height: "calc(100vh - 36px)",
-				display: "flex",
-				flexDirection: "column",
-				alignItems: "center",
-				justifyContent: "center",
-				gap: "1.5rem",
-				padding: "2rem 1rem",
-			}}
-		>
-			<h2>{tEvent(state.phase.eventId, def.name)}</h2>
-			<p style={{ color: "var(--text-dim)", maxWidth: 500, textAlign: "center" }}>{def.summary}</p>
-
-			<div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", minWidth: 300 }}>
-				{def.options.map((option, i) => (
-					<button
-						type="button"
-						key={option.label}
-						onClick={() => dispatch({ type: "chooseEventOption", index: i })}
-						style={{
-							padding: "0.75rem 1.5rem",
-							border: "2px solid var(--border)",
-							borderRadius: 8,
-							textAlign: "left",
-						}}
-					>
-						{option.label}
-					</button>
-				))}
-			</div>
-
-			<button
-				type="button"
-				onClick={() => dispatch({ type: "proceed" })}
-				style={{ padding: "0.5rem 1.5rem", color: "var(--text-dim)" }}
+		<div style={containerStyle}>
+			<motion.div
+				initial={{ opacity: 0, scale: 0.95 }}
+				animate={{ opacity: 1, scale: 1 }}
+				transition={{ duration: 0.5 }}
+				style={panelStyle}
 			>
-				{tUi("leave")}
-			</button>
+				<div style={mysteryGlow}>✨</div>
+				<h2
+					style={{
+						fontSize: "1.4rem",
+						fontWeight: 700,
+						color: "var(--text-bright)",
+						letterSpacing: "0.02em",
+						textAlign: "center",
+					}}
+				>
+					{tEvent(state.phase.eventId, def.name)}
+				</h2>
+				<p
+					style={{
+						color: "var(--text-dim)",
+						maxWidth: 420,
+						textAlign: "center",
+						fontSize: "0.9rem",
+						lineHeight: 1.6,
+					}}
+				>
+					{def.summary}
+				</p>
+
+				<div
+					style={{
+						display: "flex",
+						flexDirection: "column",
+						gap: "0.6rem",
+						width: "100%",
+						marginTop: "0.25rem",
+					}}
+				>
+					{def.options.map((option, i) => (
+						<motion.button
+							type="button"
+							key={option.label}
+							onClick={() => dispatch({ type: "chooseEventOption", index: i })}
+							initial={{ opacity: 0, x: -16 }}
+							animate={{ opacity: 1, x: 0 }}
+							transition={{ delay: 0.15 + i * 0.08, duration: 0.35 }}
+							whileHover={{
+								scale: 1.02,
+								borderColor: "rgba(108,92,231,0.5)",
+								boxShadow: "0 0 20px rgba(108,92,231,0.2)",
+							}}
+							whileTap={{ scale: 0.98 }}
+							style={{
+								padding: "0.85rem 1.25rem",
+								border: "1px solid var(--border)",
+								borderRadius: 10,
+								textAlign: "left",
+								background: "var(--bg-card)",
+								color: "var(--text)",
+								fontSize: "0.9rem",
+								fontWeight: 500,
+								cursor: "pointer",
+							}}
+						>
+							{option.label}
+						</motion.button>
+					))}
+				</div>
+
+				<motion.button
+					type="button"
+					onClick={() => dispatch({ type: "proceed" })}
+					initial={{ opacity: 0 }}
+					animate={{ opacity: 1 }}
+					transition={{ delay: 0.4, duration: 0.3 }}
+					whileHover={{ scale: 1.03 }}
+					whileTap={{ scale: 0.97 }}
+					style={{
+						padding: "0.5rem 1.5rem",
+						color: "var(--text-dim)",
+						background: "transparent",
+						border: "1px solid var(--border)",
+						borderRadius: 10,
+						cursor: "pointer",
+						fontSize: "0.85rem",
+						marginTop: "0.25rem",
+					}}
+				>
+					{tUi("leave")}
+				</motion.button>
+			</motion.div>
 		</div>
 	);
 }

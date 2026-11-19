@@ -2,8 +2,9 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
 import { getCard } from "../../engine/content/loader";
 import type { CardInstance } from "../../engine/core/types";
-import { getLocale, tCard, tCardText, tUi } from "../../i18n";
+import { tCard, tCardText, tUi } from "../../i18n";
 import { useGameStore } from "../../store/gameStore";
+import { cardTypeLabel, formatCardText } from "../cardTextUtils";
 import { FloatLayer, useFloatingTexts } from "./CombatAnimations";
 import { BlockBadge, EnergyOrb, PowerList } from "./CombatWidgets";
 import { MonsterView } from "./MonsterView";
@@ -329,41 +330,4 @@ function CardView({
 			</div>
 		</motion.button>
 	);
-}
-
-function cardTypeLabel(type: string | undefined): string {
-	if (type === "attack") return tUi("cardTypeAttack");
-	if (type === "skill") return tUi("cardTypeSkill");
-	if (type === "power") return tUi("cardTypePower");
-	return "";
-}
-
-const KEYWORD_ZH: Record<string, string> = {
-	Block: "格挡",
-	Vulnerable: "易伤",
-	Weak: "虚弱",
-	Strength: "力量",
-	Exhaust: "消耗",
-	Exhausted: "已消耗",
-	Ethereal: "虚无",
-	Innate: "固有",
-	Upgrade: "升级",
-	Upgraded: "已升级",
-	Fatal: "致命",
-	Keyword: "",
-};
-
-function formatCardText(text: string, card: CardInstance, def: ReturnType<typeof getCard>): string {
-	if (!def) return text;
-	const upgraded = card.upgraded;
-	let result = text
-		.replace(/\[(\d+)\|(\d+)]/g, (_m, base, up) => (upgraded ? up : base))
-		.replace(/\{\{QueryLink\|[^|]*\|[^|]*\|([^}]*)}}/g, "$1")
-		.replace(/\{\{C\|(?:[^|}]*\|)?([^}]+)\}\}/g, "$1")
-		.replace(/<br\s*\/?>/g, " ")
-		.replace(/@[RGB]E|@PE/g, "[E]");
-	if (getLocale() === "zh") {
-		result = result.replace(/\$([A-Z][A-Za-z]+)/g, (_m, kw) => KEYWORD_ZH[kw] ?? kw);
-	}
-	return result.replace(/\$/g, "");
 }
