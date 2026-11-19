@@ -1,6 +1,7 @@
 import { getAllRelics } from "../content/loader";
 import { random } from "../rng/stsRandom";
 import { hasNextAct, startNextAct } from "./act";
+import { obtainRelic } from "./obtain";
 import type { GameEvent, GamePhase, GameState, RelicId, StepResult } from "./types";
 
 export function rollGoldReward(state: GameState): { gold: number; rng: typeof state.rng.miscRng } {
@@ -68,7 +69,7 @@ export function stepChooseBossRelic(
 	const relicId = state.phase.relics[index];
 	if (!relicId) return { state, events };
 
-	const withRelic: GameState = { ...state, relics: [...state.relics, { id: relicId, counter: 0 }] };
+	const withRelic = obtainRelic(state, relicId);
 	return {
 		state: hasNextAct(withRelic)
 			? startNextAct(withRelic)

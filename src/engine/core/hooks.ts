@@ -106,6 +106,10 @@ export interface HookTable {
 	onGainGold: (ctx: HookCtx, amount: number) => number | FoldResult;
 	onEnterRoom: (ctx: HookCtx) => GameState;
 	onUsePotion: (ctx: HookCtx, potionId: string) => GameState;
+	/** A card was added to the master deck (core/obtain.ts). */
+	onObtainCard: (ctx: HookCtx, card: CardInstance) => GameState;
+	/** Fired only on the relic just obtained: its pickup effect. */
+	onEquip: (ctx: HookCtx) => GameState;
 	modifyPrice: (ctx: HookCtx, price: number) => number | FoldResult;
 
 	// Boolean checks (any-true)
@@ -248,6 +252,25 @@ export function fireRunHook<K extends keyof HookTable>(
 	if (state.combat) return fireHook(state, PLAYER_REF, hookName, ...args);
 	const r = fireHook({ ...state, combat: emptyCombat() }, PLAYER_REF, hookName, ...args);
 	return { ...r, combat: null };
+}
+
+/** Fire one hook of one relic the player owns (pickup effects). Works outside combat. */
+export function fireRelicHook<K extends keyof HookTable>(
+	state: GameState,
+	relicId: string,
+	hookName: K,
+	...args: DropFirst<Parameters<HookTable[K]>>
+): GameState {
+	const relic = state.relics.find((r) => r.id === relicId);
+	const fn = relic
+		? (getRelicHooks(relic)?.hooks[hookName] as ((...a: unknown[]) => GameState) | undefined)
+		: undefined;
+	if (!fn) return state;
+	const base = state.combat ? state : { ...state, combat: emptyCombat() };
+	const ctx = makeCtx(base, PLAYER_REF);
+	if (!ctx) return state;
+	const r = fn(ctx, ...args);
+	return state.combat ? r : { ...r, combat: null };
 }
 
 export function anyHook<K extends BoolHookKeys>(

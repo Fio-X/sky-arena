@@ -1,6 +1,7 @@
 import type { CardDef, PotionDef, RelicDef } from "../content/loader";
-import { getAllCards, getAllPotions, getAllRelics, getCard } from "../content/loader";
+import { getAllCards, getAllPotions, getAllRelics } from "../content/loader";
 import { random } from "../rng/stsRandom";
+import { obtainCard, obtainRelic } from "./obtain";
 import type { GameState, RngState, ShopData, StepResult } from "./types";
 
 // ── Price tables (STS base values) ──────────────────────
@@ -209,26 +210,7 @@ export function stepChooseShopItem(
 
 	switch (item.kind) {
 		case "card": {
-			let uid = 1;
-			for (const c of s.deck) {
-				if (c.uniqueId >= uid) uid = c.uniqueId + 1;
-			}
-			const def = getCard(item.cardId as string);
-			s = {
-				...s,
-				deck: [
-					...s.deck,
-					{
-						id: item.cardId,
-						uniqueId: uid,
-						upgraded: false,
-						costOverride: null,
-						costForTurn: def?.cost ?? 1,
-						freeToPlay: false,
-						misc: 0,
-					},
-				],
-			};
+			s = obtainCard(s, item.cardId);
 			newShop = {
 				...shop,
 				cards: shop.cards.map((c) =>
@@ -238,7 +220,7 @@ export function stepChooseShopItem(
 			break;
 		}
 		case "relic": {
-			s = { ...s, relics: [...s.relics, { id: item.relicId, counter: 0 }] };
+			s = obtainRelic(s, item.relicId);
 			newShop = {
 				...shop,
 				relics: shop.relics.map((r) =>

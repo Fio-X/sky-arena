@@ -16,6 +16,8 @@ import {
 	powerAmount,
 	startFight,
 } from "./fightTestHelpers";
+import { registerRelicHooks } from "./hooks";
+import { obtainCard, obtainRelic } from "./obtain";
 import { step } from "./step";
 import type { GameState, PotionId, RelicId } from "./types";
 
@@ -108,5 +110,29 @@ describe("hook dispatch", () => {
 		let s = startFight("CULTIST", 1n, strikes(6));
 		s = endTurn(s); // 5 drawn of 6 at start; turn 2 needs a reshuffle
 		expect(s.combat?.hand.length).toBe(5);
+	});
+});
+
+describe("obtain entry points (core/obtain.ts)", () => {
+	registerRelicHooks("TEST_FISH", () => ({
+		relicId: "TEST_FISH",
+		hooks: {
+			onObtainCard: (ctx) => ({ ...ctx.state, gold: ctx.state.gold + 9 }),
+			onEquip: (ctx) => ({ ...ctx.state, maxHp: ctx.state.maxHp + 7 }),
+		},
+	}));
+
+	it("onEquip fires once for the new relic; onObtainCard for each card", () => {
+		let s = startFight("CULTIST", 1n, strikes(5));
+		s = { ...s, combat: null, phase: { type: "map" } };
+		const max = s.maxHp;
+		s = obtainRelic(s, "TEST_FISH" as RelicId);
+		expect(s.maxHp).toBe(max + 7);
+		expect(s.combat).toBeNull();
+		const gold = s.gold;
+		s = obtainCard(s, "BASH" as never);
+		s = obtainCard(s, "BASH" as never);
+		expect(s.gold).toBe(gold + 18);
+		expect(new Set(s.deck.map((c) => c.uniqueId)).size).toBe(s.deck.length);
 	});
 });

@@ -1,5 +1,6 @@
 import { getAllPotions, getAllRelics, getCard } from "../content/loader";
 import { random } from "../rng/stsRandom";
+import { obtainCard, obtainRelic } from "./obtain";
 import { gainGold } from "./playerActions";
 import type { CardId, GameEvent, GameState, RngState, StepResult } from "./types";
 
@@ -173,26 +174,7 @@ function resolveAmount(raw: number | string | null, state: GameState): number {
 }
 
 function addCardToDeck(state: GameState, cardId: CardId): GameState {
-	let uid = 1;
-	for (const c of state.deck) {
-		if (c.uniqueId >= uid) uid = c.uniqueId + 1;
-	}
-	const def = getCard(cardId as string);
-	return {
-		...state,
-		deck: [
-			...state.deck,
-			{
-				id: cardId,
-				uniqueId: uid,
-				upgraded: false,
-				costOverride: null,
-				costForTurn: def?.cost ?? 0,
-				freeToPlay: false,
-				misc: 0,
-			},
-		],
-	};
+	return obtainCard(state, cardId);
 }
 
 function upgradeRandomCard(state: GameState): GameState {
@@ -239,11 +221,7 @@ export function obtainRandomRelic(state: GameState): GameState {
 	const relic = finalPool[relicRoll.value];
 	if (!relic) return state;
 
-	return {
-		...state,
-		relics: [...state.relics, { id: relic.id, counter: 0 }],
-		rng: { ...state.rng, relicRng: rng },
-	};
+	return obtainRelic({ ...state, rng: { ...state.rng, relicRng: rng } }, relic.id);
 }
 
 function obtainRandomPotion(state: GameState): GameState {

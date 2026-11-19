@@ -14,6 +14,7 @@ import {
 import { getCard, getPower } from "../content/loader";
 import { random } from "../rng/stsRandom";
 import { canonicalPowerId } from "./hooks";
+import { obtainCard } from "./obtain";
 import type {
 	Action,
 	CardInstance,
@@ -111,17 +112,7 @@ export function executeAddCardToMasterDeck(
 	state: GameState,
 	action: Extract<Action, { type: "addCardToMasterDeck" }>,
 ): Result {
-	const uid = state.deck.reduce((max, c) => Math.max(max, c.uniqueId), 0) + 1;
-	const card: CardInstance = {
-		id: action.cardId,
-		uniqueId: uid,
-		upgraded: false,
-		costOverride: null,
-		costForTurn: getCard(action.cardId as string)?.cost ?? 0,
-		freeToPlay: false,
-		misc: 0,
-	};
-	return { state: { ...state, deck: [...state.deck, card] } };
+	return { state: obtainCard(state, action.cardId) };
 }
 
 export function executeSpawnMonster(

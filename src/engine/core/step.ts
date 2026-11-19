@@ -13,6 +13,7 @@ import { stepChooseCard } from "./cardSelect";
 import { obtainRandomRelic, pickEvent, stepChooseEventOption } from "./event";
 import { fireHook, fireHookOnAllActors, foldHook, vetoHook } from "./hooks";
 import { stepChooseNeowBlessing } from "./neow";
+import { obtainCard } from "./obtain";
 import { triggerOrbPassives } from "./orbSystem";
 import { gainGold } from "./playerActions";
 import { rollPotionDrop, stepDiscardPotion, stepObtainPotionReward, stepUsePotion } from "./potion";
@@ -416,30 +417,10 @@ function stepChooseCardReward(state: GameState, index: number, events: GameEvent
 	const card = state.phase.cardRewards[index];
 	if (!card) return { state, events };
 
-	let uid = 1;
-	for (const c of state.deck) {
-		if (c.uniqueId >= uid) uid = c.uniqueId + 1;
-	}
-
-	const def = getCard(card);
-	const newCard = {
-		id: card,
-		uniqueId: uid,
-		upgraded: false,
-		costOverride: null,
-		costForTurn: def?.cost ?? 1,
-		freeToPlay: false,
-		misc: 0,
-	};
 	events.push({ type: "cardRewardChosen", card });
 	const nextPhase = afterRewardPhase(state);
 	return {
-		state: {
-			...state,
-			deck: [...state.deck, newCard],
-			combat: null,
-			phase: nextPhase,
-		},
+		state: { ...obtainCard({ ...state, combat: null }, card), phase: nextPhase },
 		events,
 	};
 }
