@@ -180,6 +180,8 @@ function resolvePrebattle(
 			block += resolved.value;
 			continue;
 		}
+		// Data lists Strength 0 below its ascension (Awakened One < A4): the original applies nothing.
+		if (entry.power === "STRENGTH" && resolved.value === 0) continue;
 		powers.push({ id: canonicalPowerId(entry.power), amount: resolved.value, justApplied: false });
 	}
 

@@ -86,7 +86,7 @@ describe("Awakened One", () => {
 	it("prebattle (A0): Strength 0, Curiosity 1, Regenerate 10; opens with Slash", () => {
 		const a0 = monsterAt(startFight("AWAKENED_ONE", 1n), AO);
 		expect(a0.maxHp).toBe(300);
-		expect(powerAmount(a0, "STRENGTH")).toBe(0);
+		expect(powerAmount(a0, "STRENGTH") ?? 0).toBe(0);
 		expect(powerAmount(a0, "CURIOSITY")).toBe(1);
 		expect(powerAmount(a0, "REGENERATE")).toBe(10);
 		expect(a0.intent.moveId).toBe("AWAKENED_ONE_SLASH");
@@ -96,7 +96,7 @@ describe("Awakened One", () => {
 	// prebattle asc overrides ({ amount: X }) as objects. Unskip once fixed.
 	it("prebattle asc overrides: Strength 2 (A4), Curiosity 2 and Regenerate 15 (A19)", () => {
 		const a19 = monsterAt(startFight("AWAKENED_ONE", 1n, undefined, 19), AO);
-		expect(powerAmount(a19, "STRENGTH")).toBe(2);
+		expect(powerAmount(a19, "STRENGTH") ?? 0).toBe(2);
 		expect(powerAmount(a19, "CURIOSITY")).toBe(2);
 		expect(powerAmount(a19, "REGENERATE")).toBe(15);
 		const d19 = startFight("DONU_AND_DECA", 1n, undefined, 19);
@@ -107,18 +107,13 @@ describe("Awakened One", () => {
 		const deck = deckOf(["INFLAME", "STRIKE_RED", "STRIKE_RED", "DEFEND_RED", "DEFEND_RED"]);
 		let s = startFight("AWAKENED_ONE", 1n, deck);
 		s = playCard(s, "STRIKE_RED", AO);
-		expect(powerAmount(monsterAt(s, AO), "STRENGTH")).toBe(0);
+		expect(powerAmount(monsterAt(s, AO), "STRENGTH") ?? 0).toBe(0);
 		s = playCard(s, "INFLAME");
 		expect(powerAmount(monsterAt(s, AO), "STRENGTH")).toBe(1);
-		// A19 amount (2), set directly while the prebattle asc bug stands.
-		let a19 = startFight("AWAKENED_ONE", 1n, deck);
-		a19 = patchMonster(a19, AO, {
-			powers: monsterAt(a19, AO).powers.map((p) =>
-				p.id.toUpperCase() === "CURIOSITY" ? { ...p, amount: 2 } : p,
-			),
-		});
+		// A19: Curiosity 2 (prebattle asc override); Strength starts at 2 from A4.
+		let a19 = startFight("AWAKENED_ONE", 1n, deck, 19);
 		a19 = playCard(a19, "INFLAME");
-		expect(powerAmount(monsterAt(a19, AO), "STRENGTH")).toBe(2);
+		expect(powerAmount(monsterAt(a19, AO), "STRENGTH")).toBe(2 + 2);
 	});
 
 	it("Regenerate heals 10 at the end of its turn and stays", () => {
@@ -135,11 +130,7 @@ describe("Awakened One", () => {
 		let s = startFight("AWAKENED_ONE", 1n, strikes(10));
 		s = addPower(s, AO, "weak", 2);
 		s = addPower(s, AO, "poison", 5);
-		s = patchMonster(s, AO, {
-			powers: monsterAt(s, AO).powers.map((p) =>
-				p.id.toUpperCase() === "STRENGTH" ? { ...p, amount: 3 } : p,
-			),
-		});
+		s = addPower(s, AO, "STRENGTH", 3);
 		s = halfKill(s);
 		const m = monsterAt(s, AO);
 		expect(m.alive).toBe(false);
@@ -149,7 +140,7 @@ describe("Awakened One", () => {
 		expect(powerAmount(m, "CURIOSITY")).toBeUndefined();
 		expect(powerAmount(m, "WEAK")).toBeUndefined();
 		expect(powerAmount(m, "POISON")).toBeUndefined();
-		expect(powerAmount(m, "STRENGTH")).toBe(3);
+		expect(powerAmount(m, "STRENGTH") ?? 0).toBe(3);
 		expect(powerAmount(m, "REGENERATE")).toBe(10);
 		expect(s.phase.type).toBe("combat");
 	});

@@ -454,6 +454,28 @@ export const zhMonsters: Record<string, string> = {
 	THE_COLLECTOR: "收藏家",
 	TORCH_HEAD: "火炬头",
 	THE_CHAMP: "冠军",
+
+	// Act 3 / 4（未对照官方简体中文本地化，按本表风格意译）
+	DARKLING: "暗影",
+	ORB_WALKER: "球行者",
+	SPIKER: "尖刺体",
+	REPULSOR: "斥力体",
+	EXPLODER: "爆裂体",
+	TRANSIENT: "瞬逝者",
+	THE_MAW: "巨口",
+	SPIRE_GROWTH: "尖塔增生",
+	WRITHING_MASS: "扭动肉块",
+	GIANT_HEAD: "巨头",
+	NEMESIS: "宿敌",
+	REPTOMANCER: "爬行术士",
+	DAGGER: "匕首",
+	AWAKENED_ONE: "觉醒者",
+	TIME_EATER: "时间吞噬者",
+	DONU: "多努",
+	DECA: "德卡",
+	SPIRE_SHIELD: "尖塔之盾",
+	SPIRE_SPEAR: "尖塔之矛",
+	CORRUPT_HEART: "腐化之心",
 };
 
 /** Chinese event translations. */
