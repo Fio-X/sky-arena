@@ -1,3 +1,4 @@
+import { addToTop } from "../core/actionQueue";
 import type { HookSource } from "../core/hooks";
 import { registerPowerHooks } from "../core/hooks";
 import type { ActorRef, CardInstance, GameState, PowerId, PowerInstance } from "../core/types";
@@ -114,6 +115,9 @@ registerPowerHooks(
 
 // ── Thorns ───────────────────────────────────────────────
 // When attacked, deal X damage back to attacker.
+// One power for both sides (ThornsPower): monster data "THORNS" (Spiker)
+// resolves to this id via canonicalPowerId, so a monster owner hits the
+// attacking player with DamageType.THORNS damage (block applies).
 
 registerPowerHooks(
 	"thorns",
@@ -122,6 +126,20 @@ registerPowerHooks(
 		hooks: {
 			onAttacked: (ctx, damage, source) => {
 				if (damage <= 0) return ctx.state;
+				if (ctx.owner.type === "monster") {
+					if (source.type !== "player") return ctx.state;
+					return {
+						...ctx.state,
+						combat: addToTop(ctx.combat, {
+							type: "damage",
+							source: ctx.owner,
+							target: source,
+							baseDamage: p.amount,
+							hits: 1,
+							nonAttack: true,
+						}),
+					};
+				}
 				if (source.type !== "monster") return ctx.state;
 				if (!ctx.state.combat) return ctx.state;
 				const monsters = [...ctx.state.combat.monsters];
