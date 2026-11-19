@@ -214,3 +214,22 @@ describe("monster powers", () => {
 		expect(s.combat?.hand.some((c) => c.uniqueId === 50)).toBe(true);
 	});
 });
+
+describe("Act 1 split (shared spawn path)", () => {
+	// Split children used to start with an empty intent, skip a turn and record "" in history.
+	it("slimes split from Acid Slime (L) get a real first move and act next turn", () => {
+		let s = forceMove(startFight("LARGE_SLIME"), 0, "ACID_SLIME_L_SPLIT");
+		s = endTurn(s);
+		const children = (s.combat?.monsters ?? []).filter((m) => m.alive);
+		expect(children.map((m) => m.id)).toEqual(["ACID_SLIME_M", "ACID_SLIME_M"]);
+		for (const m of children) {
+			expect(m.intent.moveId).toMatch(/^ACID_SLIME_M_/);
+			expect(m.moveHistory).toEqual([]);
+		}
+		s = endTurn(s);
+		for (const m of (s.combat?.monsters ?? []).filter((x) => x.alive)) {
+			expect(m.moveHistory.length).toBe(1);
+			expect(m.moveHistory[0]).toMatch(/^ACID_SLIME_M_/);
+		}
+	});
+});

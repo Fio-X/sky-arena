@@ -127,6 +127,7 @@ function stepPlayCard(
 		if (!s.combat) break;
 		s = { ...s, combat: addToBot(s.combat, action) };
 	}
+	s = fireHook(s, playerRef, "onUseCard", card); // after queuing, before resolving (Rage)
 
 	({ state: s } = drainActions(s, events));
 

@@ -37,7 +37,9 @@ export function tRelic(id: string, fallback: string): string {
 
 /** Look up a power name by ID. */
 export function tPower(id: string, fallback: string): string {
-	return currentTable.powers[id] || fallback;
+	// Engine power ids are lowercase or UPPERCASE depending on where the hook is registered;
+	// translation tables use UPPERCASE.
+	return currentTable.powers[id] || currentTable.powers[id.toUpperCase()] || fallback;
 }
 
 /** Look up a potion name by ID. */

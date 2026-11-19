@@ -68,7 +68,10 @@ export function executeSplit(
 	}
 
 	events.push({ type: "monsterSplit", sourceIndex: action.sourceIndex, newIndices });
-	return { state: { ...state, combat: { ...combat, monsters } } };
+	// Spawned monsters roll their first move immediately (AbstractMonster.init → rollMove).
+	let s: GameState = { ...state, combat: { ...combat, monsters } };
+	for (const idx of newIndices) s = rollFirstIntent(s, idx);
+	return { state: s };
 }
 
 export function executeEscape(
