@@ -1,7 +1,9 @@
 /**
- * Executors for monster-side actions: split, escape, summons, monster heals,
- * debuff removal, vampire damage and Bronze Orb card theft.
+ * Executors for monster-side actions: split, escape, suicide, summons, monster
+ * heals, debuff removal, vampire damage, Bronze Orb card theft and master-deck
+ * curses.
  */
+import { resolveMonsterDeath } from "../combat/death";
 import {
 	createMonster,
 	emptySlot,
@@ -88,6 +90,38 @@ export function executeEscape(
 	monsters[action.monsterIndex] = { ...m, alive: false, currentHp: 0 };
 	events.push({ type: "monsterEscaped", index: action.monsterIndex });
 	return { state: { ...state, combat: { ...combat, monsters } } };
+}
+
+/** SuicideAction (Exploder, Dagger EXPLODE, Fading): no damage path, so no Regrow/rebirth. */
+export function executeMonsterDie(
+	state: GameState,
+	action: Extract<Action, { type: "monsterDie" }>,
+	events: GameEvent[],
+): Result {
+	const combat = state.combat;
+	const m = combat?.monsters[action.monsterIndex];
+	if (!combat || !m?.alive) return { state };
+	const monsters = [...combat.monsters];
+	monsters[action.monsterIndex] = { ...m, alive: false, currentHp: 0, block: 0 };
+	const s = { ...state, combat: { ...combat, monsters } };
+	return { state: resolveMonsterDeath(s, action.monsterIndex, events, false) };
+}
+
+export function executeAddCardToMasterDeck(
+	state: GameState,
+	action: Extract<Action, { type: "addCardToMasterDeck" }>,
+): Result {
+	const uid = state.deck.reduce((max, c) => Math.max(max, c.uniqueId), 0) + 1;
+	const card: CardInstance = {
+		id: action.cardId,
+		uniqueId: uid,
+		upgraded: false,
+		costOverride: null,
+		costForTurn: getCard(action.cardId as string)?.cost ?? 0,
+		freeToPlay: false,
+		misc: 0,
+	};
+	return { state: { ...state, deck: [...state.deck, card] } };
 }
 
 export function executeSpawnMonster(

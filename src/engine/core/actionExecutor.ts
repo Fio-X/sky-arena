@@ -1,10 +1,19 @@
-import { applyDamage, calculateBlock, calculateDamage } from "../combat/damage";
+import {
+	applyDamage,
+	calculateBlock,
+	calculateDamage,
+	calculateNonAttackDamage,
+} from "../combat/damage";
+import { resolveMonsterDeath } from "../combat/death";
 import { getCard } from "../content/loader";
 import { stsShuffle } from "../rng/stsRandom";
 import { popAction } from "./actionQueue";
+import { insertAtRandomSpot } from "./drawPile";
 import { fireHook } from "./hooks";
 import {
+	executeAddCardToMasterDeck,
 	executeEscape,
+	executeMonsterDie,
 	executeMonsterHeal,
 	executeRemoveDebuffs,
 	executeSpawnMonster,
@@ -71,6 +80,10 @@ function executeAction(
 			return executeSplit(state, action, events);
 		case "escape":
 			return executeEscape(state, action, events);
+		case "monsterDie":
+			return executeMonsterDie(state, action, events);
+		case "addCardToMasterDeck":
+			return executeAddCardToMasterDeck(state, action);
 		case "spawnMonster":
 			return executeSpawnMonster(state, action, events);
 		case "removeDebuffs":
@@ -101,7 +114,9 @@ function executeDamage(
 	for (let i = 0; i < action.hits; i++) {
 		if (!isTargetAlive(s, action.target)) break;
 
-		const calc = calculateDamage(s, action.source, action.target, action.baseDamage, null);
+		const calc = action.nonAttack
+			? calculateNonAttackDamage(s, action.target, action.baseDamage)
+			: calculateDamage(s, action.source, action.target, action.baseDamage, null);
 		s = calc.state;
 		const applied = applyDamage(s, action.target, calc.damage);
 		s = applied.state;
@@ -114,18 +129,19 @@ function executeDamage(
 			blocked: applied.blocked,
 		});
 
-		if (applied.hpLost > 0) {
+		if (applied.hpLost > 0 && action.nonAttack) {
+			s = fireHook(s, action.target, "wasHPLost", applied.hpLost);
+		} else if (applied.hpLost > 0) {
 			s = fireHook(s, action.target, "onAttacked", applied.hpLost, action.source);
 			s = fireHook(s, action.target, "wasHPLost", applied.hpLost);
 			s = fireHook(s, action.source, "onAttack", applied.hpLost, action.target);
 		}
 
 		if (action.target.type === "monster" && !isTargetAlive(s, action.target)) {
-			s = fireHook(s, action.target, "onMonsterDeath", action.target.index);
-			events.push({ type: "monsterDied", index: action.target.index });
+			s = resolveMonsterDeath(s, action.target.index, events);
 		}
 
-		s = checkHalfDead(s, action.target);
+		s = checkSplitTrigger(s, action.target);
 	}
 	return { state: s };
 }
@@ -377,6 +393,16 @@ function executeAddCardToDrawPile(
 	const combat = state.combat;
 	if (!combat) return { state };
 	const card = makeCardInstance(action.cardId, action.upgraded, combat);
+	if (action.randomSpot) {
+		const placed = insertAtRandomSpot(combat.drawPile, card, state.rng.cardRandomRng);
+		return {
+			state: {
+				...state,
+				combat: { ...combat, drawPile: placed.pile },
+				rng: { ...state.rng, cardRandomRng: placed.rng },
+			},
+		};
+	}
 	const drawPile = action.toTop ? [...combat.drawPile, card] : [card, ...combat.drawPile];
 	return { state: { ...state, combat: { ...combat, drawPile } } };
 }
@@ -442,16 +468,16 @@ function executeEvokeOrb(
 	return { state: result.state };
 }
 
-function checkHalfDead(state: GameState, target: ActorRef): GameState {
+function checkSplitTrigger(state: GameState, target: ActorRef): GameState {
 	if (target.type !== "monster") return state;
 	const combat = state.combat;
 	if (!combat) return state;
 	const m = combat.monsters[target.index];
-	if (!m || !m.alive || m.halfDead) return state;
+	if (!m || !m.alive || m.splitPending) return state;
 	if (!SPLITTABLE_MONSTERS.has(m.id)) return state;
 	if (m.currentHp <= Math.floor(m.maxHp / 2)) {
 		const monsters = [...combat.monsters];
-		monsters[target.index] = { ...m, halfDead: true };
+		monsters[target.index] = { ...m, splitPending: true };
 		return { ...state, combat: { ...combat, monsters } };
 	}
 	return state;

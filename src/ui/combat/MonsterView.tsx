@@ -16,7 +16,8 @@ export function MonsterView({
 	onClick: () => void;
 	highlighted: boolean;
 }) {
-	if (!monster.alive) return null;
+	// halfDead (Darkling regrowing, Awakened One before rebirth): shown dimmed, still has an intent
+	if (!monster.alive && !monster.halfDead) return null;
 	const hpPct = Math.max(0, (monster.currentHp / monster.maxHp) * 100);
 	const isLowHp = hpPct < 30;
 
@@ -25,7 +26,7 @@ export function MonsterView({
 			type="button"
 			onClick={onClick}
 			initial={{ opacity: 0, y: 20 }}
-			animate={{ opacity: 1, y: 0 }}
+			animate={{ opacity: monster.halfDead ? 0.45 : 1, y: 0 }}
 			exit={{ opacity: 0, scale: 0.8 }}
 			whileHover={highlighted ? { scale: 1.05 } : {}}
 			style={{
@@ -158,7 +159,7 @@ function IntentDisplay({ monster }: { monster: MonsterState }) {
 	return (
 		<motion.div
 			initial={{ opacity: 0, y: -8 }}
-			animate={{ opacity: 1, y: 0 }}
+			animate={{ opacity: monster.halfDead ? 0.45 : 1, y: 0 }}
 			style={{
 				display: "flex",
 				alignItems: "center",

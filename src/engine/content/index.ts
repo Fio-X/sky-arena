@@ -76,3 +76,7 @@ import "./watcherUncommonCards";
 import "./watcherRareCards";
 import "./act2MoveEffects";
 import "./act2Powers";
+import "./genericMoveEffects";
+import "./act3Normals";
+import "./act3Elites";
+import "./act3Bosses";

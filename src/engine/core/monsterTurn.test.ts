@@ -386,7 +386,7 @@ describe("split mechanic — resolveMonsterMove", () => {
 });
 
 describe("split mechanic — integration via step", () => {
-	it("Acid Slime L splits when halfDead, spawning 2 M slimes with its HP", () => {
+	it("Acid Slime L splits when splitPending, spawning 2 M slimes with its HP", () => {
 		const combat = makeCombat({
 			hand: [],
 			drawPile: makeCards(5, "D"),
@@ -396,7 +396,8 @@ describe("split mechanic — integration via step", () => {
 					id: "ACID_SLIME_L" as MonsterId,
 					maxHp: 65,
 					currentHp: 20,
-					halfDead: true,
+					halfDead: false,
+					splitPending: true,
 					intent: {
 						moveId: "ACID_SLIME_L_SPLIT" as MonsterMoveId,
 						baseDamage: null,
@@ -434,7 +435,7 @@ describe("split mechanic — integration via step", () => {
 		expect(splitEvents.length).toBe(1);
 	});
 
-	it("halfDead is set when large slime HP drops to 50%", () => {
+	it("splitPending is set when large slime HP drops to 50%", () => {
 		const combat = makeCombat({
 			hand: [
 				{
@@ -470,7 +471,7 @@ describe("split mechanic — integration via step", () => {
 		// Strike does 6 damage → 36 - 6 = 30 = 50% of 60
 		const result = step(state, { type: "playCard", handIndex: 0, targetIndex: 0 });
 		const m = getCombat(result).monsters[0];
-		expect(m?.halfDead).toBe(true);
+		expect(m?.splitPending).toBe(true);
 		expect(m?.currentHp).toBe(30);
 	});
 });

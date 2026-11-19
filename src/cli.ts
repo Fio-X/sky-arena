@@ -15,6 +15,7 @@ import cardsJson from "../data-reference/cards.json";
 import eventsJson from "../data-reference/events.json";
 import monstersAct1Json from "../data-reference/monsters-act1.json";
 import monstersAct2Json from "../data-reference/monsters-act2.json";
+import monstersAct34Json from "../data-reference/monsters-act34.json";
 import potionsJson from "../data-reference/potions.json";
 import powersJson from "../data-reference/powers.json";
 import relicsJson from "../data-reference/relics.json";
@@ -39,6 +40,7 @@ function loadContent() {
 	loadCards(cardsJson as never);
 	loadMonsters(monstersAct1Json as never);
 	loadMonsters(monstersAct2Json as never);
+	loadMonsters(monstersAct34Json.monsters as never);
 	loadPowers(powersJson as never);
 	loadRelics(relicsJson as never);
 	loadPotions(potionsJson as never);

@@ -45,6 +45,25 @@ export function calculateDamage(
 }
 
 /**
+ * DamageType.THORNS damage (Exploder's explosion): the base amount, with only
+ * Intangible applied (AbstractPlayer.damage caps at 1 before block).
+ */
+export function calculateNonAttackDamage(
+	state: GameState,
+	target: ActorRef,
+	baseDamage: number,
+): { damage: number; state: GameState } {
+	const combat = state.combat;
+	const powers =
+		target.type === "player" ? combat?.player.powers : combat?.monsters[target.index]?.powers;
+	const intangible = (powers ?? []).some(
+		(p) => p.id.toUpperCase() === "INTANGIBLE" && p.amount > 0,
+	);
+	const damage = Math.max(0, baseDamage);
+	return { damage: intangible && damage > 1 ? 1 : damage, state };
+}
+
+/**
  * Calculate block gained, modified by hooks (Dexterity, Frail).
  */
 export function calculateBlock(

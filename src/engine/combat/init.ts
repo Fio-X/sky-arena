@@ -1,7 +1,8 @@
 import { drainActions } from "../core/actionExecutor";
 import { addToBot } from "../core/actionQueue";
-import type { CombatState, GameState, MonsterId, MonsterState } from "../core/types";
-import { stsShuffle } from "../rng/stsRandom";
+import type { CombatState, GameState, MonsterId, MonsterState, RngState } from "../core/types";
+import { random, stsShuffle } from "../rng/stsRandom";
+import { applyEncounterSetup } from "./encounterSetup";
 import type { EncounterSlot } from "./encounters";
 import {
 	createMonster,
@@ -11,19 +12,60 @@ import {
 	withMinion,
 } from "./monsterFactory";
 
-export function initCombat(state: GameState, slots: readonly EncounterSlot[]): GameState {
+/** createShapes pool (MonsterGroup.cpp:508): drawn without replacement, removal shifts left. */
+const SHAPE_POOL = ["REPULSOR", "REPULSOR", "EXPLODER", "EXPLODER", "SPIKER", "SPIKER"];
+/** getAncientShape (MonsterGroup.cpp:532): uniform, with replacement. */
+const ANCIENT_SHAPES = ["SPIKER", "REPULSOR", "EXPLODER"];
+
+/** Resolve random slots with miscRng, in slot order. */
+export function resolveEncounterSlots(
+	slots: readonly EncounterSlot[],
+	rng: RngState,
+): { ids: (MonsterId | null)[]; rng: RngState } {
+	let miscRng = rng;
+	const shapePool = [...SHAPE_POOL];
+	const ids = slots.map((slot): MonsterId | null => {
+		switch (slot) {
+			case "EMPTY":
+				return null;
+			case "RANDOM_GREMLIN": {
+				const pick = pickGremlin(miscRng);
+				miscRng = pick.rng;
+				return pick.id;
+			}
+			case "SHAPE_POOL": {
+				const r = random(miscRng, shapePool.length - 1);
+				miscRng = r.state;
+				return shapePool.splice(r.value, 1)[0] as MonsterId;
+			}
+			case "RANDOM_SHAPE": {
+				const r = random(miscRng, ANCIENT_SHAPES.length - 1);
+				miscRng = r.state;
+				return ANCIENT_SHAPES[r.value] as MonsterId;
+			}
+			default:
+				return slot;
+		}
+	});
+	return { ids, rng: miscRng };
+}
+
+/**
+ * @param encounterId optional; enables per-encounter setup (e.g. JAW_WORM_HORDE
+ * pre-buffs). Fights started from bare slot lists skip it.
+ */
+export function initCombat(
+	state: GameState,
+	slots: readonly EncounterSlot[],
+	encounterId?: string,
+): GameState {
 	let hpRng = state.rng.monsterHpRng;
-	let miscRng = state.rng.miscRng;
 	const monsters: MonsterState[] = [];
 
 	// Random picks first (miscRng), then HP rolls in slot order (monsterHpRng).
-	const ids: (MonsterId | null)[] = slots.map((slot) => {
-		if (slot === "EMPTY") return null;
-		if (slot !== "RANDOM_GREMLIN") return slot;
-		const pick = pickGremlin(miscRng);
-		miscRng = pick.rng;
-		return pick.id;
-	});
+	const resolved = resolveEncounterSlots(slots, state.rng.miscRng);
+	const ids = resolved.ids;
+	const miscRng = resolved.rng;
 
 	for (let i = 0; i < ids.length; i++) {
 		const id = ids[i];
@@ -61,6 +103,7 @@ export function initCombat(state: GameState, slots: readonly EncounterSlot[]): G
 		rng: { ...state.rng, monsterHpRng: hpRng, miscRng },
 		phase: { type: "combat", turn: 1 },
 	};
+	if (encounterId) s = applyEncounterSetup(s, encounterId);
 
 	for (let i = 0; i < monsters.length; i++) {
 		s = rollFirstIntent(s, i);

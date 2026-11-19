@@ -28,8 +28,33 @@ export type MoveEffectHandler = (
 
 export type MoveHandler = (ctx: MoveCtx, actions: readonly Action[]) => Action[];
 
+/**
+ * Damage or hit count the data cannot express (Darkling NIP rolls its damage,
+ * Transient grows +10 per turn, Maw NOM hits ceil(turn/2) times). Used for both
+ * the shown intent and the executed attack, so they always agree.
+ */
+export type MoveStatFn = (monster: MonsterState, ascension: number) => number;
+
 const effectRegistry = new Map<string, MoveEffectHandler>();
 const moveRegistry = new Map<string, MoveHandler>();
+const damageRegistry = new Map<string, MoveStatFn>();
+const hitsRegistry = new Map<string, MoveStatFn>();
+
+export function registerMoveDamage(moveId: string, fn: MoveStatFn): void {
+	damageRegistry.set(moveId, fn);
+}
+
+export function registerMoveHits(moveId: string, fn: MoveStatFn): void {
+	hitsRegistry.set(moveId, fn);
+}
+
+export function getMoveDamage(moveId: string): MoveStatFn | undefined {
+	return damageRegistry.get(moveId);
+}
+
+export function getMoveHits(moveId: string): MoveStatFn | undefined {
+	return hitsRegistry.get(moveId);
+}
 
 export function registerMoveEffect(effectName: string, handler: MoveEffectHandler): void {
 	effectRegistry.set(effectName, handler);
@@ -41,6 +66,19 @@ export function registerMoveHandler(moveId: string, handler: MoveHandler): void 
 
 export function getMoveEffect(effectName: string): MoveEffectHandler | undefined {
 	return effectRegistry.get(effectName);
+}
+
+/**
+ * Effect word of a data string: the part before ":" or "(".
+ * "AddCard:BURN:discard" → "AddCard", "Suicide(triggerRelics=true)" → "Suicide".
+ */
+export function effectKey(effectName: string): string {
+	return effectName.split(/[:(]/, 1)[0] ?? effectName;
+}
+
+/** Exact name first (SUMMON_GREMLINS, "FOCUS(-1)|STRENGTH(-1)"), then its effect word. */
+export function findMoveEffect(effectName: string): MoveEffectHandler | undefined {
+	return effectRegistry.get(effectName) ?? effectRegistry.get(effectKey(effectName));
 }
 
 export function getMoveHandler(moveId: string): MoveHandler | undefined {

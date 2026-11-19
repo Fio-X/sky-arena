@@ -5,6 +5,7 @@
  */
 import { buildIntent } from "../combat/monsterTurn";
 import { addToBot } from "../core/actionQueue";
+import { insertAtRandomSpot } from "../core/drawPile";
 import type { HookSource } from "../core/hooks";
 import { registerPowerHooks } from "../core/hooks";
 import type {
@@ -15,7 +16,6 @@ import type {
 	MonsterState,
 	PowerInstance,
 } from "../core/types";
-import { random } from "../rng/stsRandom";
 import { getCard } from "./loader";
 
 // ── helpers ─────────────────────────────────────────────────
@@ -196,8 +196,7 @@ registerPowerHooks(
 
 // ── Hex (Chosen → player) ───────────────────────────────────
 // Whenever the player plays a non-Attack, shuffle X Dazed into the draw pile
-// (random positions, cardRandomRng). Fired after the card resolves: onUseCard
-// is not dispatched by the engine yet.
+// (CardGroup.addToRandomSpot: cardRandomRng.random(size - 1), never on top).
 
 registerPowerHooks(
 	"HEX",
@@ -210,10 +209,16 @@ registerPowerHooks(
 				for (let i = 0; i < p.amount; i++) {
 					const c = s.combat;
 					if (!c) return s;
-					const roll = random(s.rng.cardRandomRng, c.drawPile.length);
-					const drawPile = [...c.drawPile];
-					drawPile.splice(roll.value, 0, makeCard("DAZED", nextUid(s)));
-					s = { ...s, combat: { ...c, drawPile }, rng: { ...s.rng, cardRandomRng: roll.state } };
+					const placed = insertAtRandomSpot(
+						c.drawPile,
+						makeCard("DAZED", nextUid(s)),
+						s.rng.cardRandomRng,
+					);
+					s = {
+						...s,
+						combat: { ...c, drawPile: placed.pile },
+						rng: { ...s.rng, cardRandomRng: placed.rng },
+					};
 				}
 				return s;
 			},

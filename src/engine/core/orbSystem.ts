@@ -1,4 +1,5 @@
 import { applyDamage, calculateBlock } from "../combat/damage";
+import { resolveMonsterDeath } from "../combat/death";
 import { random } from "../rng/stsRandom";
 import { fireHook } from "./hooks";
 import type {
@@ -128,8 +129,7 @@ function executeEvokeEffect(
 			s = pick.state;
 			if (pick.target) {
 				const dmg = applyLockOn(Math.max(0, baseDmg), s, pick.target);
-				const applied = applyDamage(s, pick.target, dmg);
-				s = applied.state;
+				s = orbHit(s, pick.target, dmg, events);
 				events.push({ type: "orbEvoked", orbType: "lightning", damage: dmg });
 			}
 			break;
@@ -154,8 +154,7 @@ function executeEvokeEffect(
 			const target = pickDarkTarget(s);
 			if (target) {
 				const dmg = applyLockOn(accumulated, s, target);
-				const applied = applyDamage(s, target, dmg);
-				s = applied.state;
+				s = orbHit(s, target, dmg, events);
 				events.push({ type: "orbEvoked", orbType: "dark", damage: dmg });
 			}
 			break;
@@ -172,6 +171,15 @@ function executeEvokeEffect(
 			break;
 	}
 	return { state: s, events };
+}
+
+/** Orb damage bypasses the attack pipeline but a kill still goes through death handling. */
+function orbHit(s: GameState, target: ActorRef, dmg: number, events: GameEvent[]): GameState {
+	if (target.type !== "monster") return applyDamage(s, target, dmg).state;
+	const wasAlive = s.combat?.monsters[target.index]?.alive ?? false;
+	const applied = applyDamage(s, target, dmg).state;
+	const died = wasAlive && !applied.combat?.monsters[target.index]?.alive;
+	return died ? resolveMonsterDeath(applied, target.index, events) : applied;
 }
 
 export function triggerOrbPassives(
@@ -192,8 +200,7 @@ export function triggerOrbPassives(
 				s = pick.state;
 				if (pick.target) {
 					const dmg = applyLockOn(baseDmg, s, pick.target);
-					const applied = applyDamage(s, pick.target, dmg);
-					s = applied.state;
+					s = orbHit(s, pick.target, dmg, events);
 				}
 				newOrbs.push(orb);
 				break;

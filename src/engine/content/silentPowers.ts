@@ -1,3 +1,4 @@
+import { resolveMonsterDeath } from "../combat/death";
 import type { HookSource } from "../core/hooks";
 import { registerPowerHooks } from "../core/hooks";
 import type { ActorRef, CardInstance, GameState, PowerId, PowerInstance } from "../core/types";
@@ -73,7 +74,8 @@ registerPowerHooks(
 						: removePowerFromList(monsters[idx]!.powers, "POISON");
 				monsters[idx] = { ...monsters[idx]!, powers };
 
-				return { ...ctx.state, combat: { ...ctx.state.combat!, monsters } };
+				const s = { ...ctx.state, combat: { ...ctx.state.combat!, monsters } };
+				return alive ? s : resolveMonsterDeath(s, idx, []);
 			},
 		},
 	}),

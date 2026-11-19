@@ -6,6 +6,7 @@
 import cardsJson from "../../../data-reference/cards.json";
 import monstersAct1Json from "../../../data-reference/monsters-act1.json";
 import monstersAct2Json from "../../../data-reference/monsters-act2.json";
+import monstersAct34Json from "../../../data-reference/monsters-act34.json";
 import powersJson from "../../../data-reference/powers.json";
 import relicsJson from "../../../data-reference/relics.json";
 import { getEncounterMonsters } from "../combat/encounters";
@@ -27,6 +28,7 @@ export function loadAllData(): void {
 	loadRelics(relicsJson as never);
 	loadMonsters(monstersAct1Json as never);
 	loadMonsters(monstersAct2Json as never);
+	loadMonsters(monstersAct34Json.monsters as never);
 }
 
 export function card(id: string, uid: number): CardInstance {
@@ -73,7 +75,11 @@ export function startFight(
 	deck?: CardInstance[],
 	ascension = 0,
 ): GameState {
-	return initCombat(runState(seed, deck, ascension), getEncounterMonsters(encounterId));
+	return initCombat(
+		runState(seed, deck, ascension),
+		getEncounterMonsters(encounterId),
+		encounterId,
+	);
 }
 
 export function monsterAt(s: GameState, i: number): MonsterState {

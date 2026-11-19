@@ -1,5 +1,6 @@
 import { generateCardReward } from "../combat/cardReward";
-import { type EncounterSlot, getEncounterMonsters } from "../combat/encounters";
+import { allMonstersGone, takesTurns } from "../combat/death";
+import { getEncounterMonsters } from "../combat/encounters";
 import { initCombat } from "../combat/init";
 import { buildIntent, resolveMonsterMove, rollMonsterMove } from "../combat/monsterTurn";
 import { clearBlockAtEndOfTurn, tickTurnBasedPowers } from "../combat/powers";
@@ -32,7 +33,9 @@ export function step(state: GameState, command: Command): StepResult {
 	let result: StepResult;
 	switch (command.type) {
 		case "playCard":
-			result = stepPlayCard(state, command.handIndex, command.targetIndex, events);
+			result = honorEndTurnRequest(
+				checkCombatEnd(stepPlayCard(state, command.handIndex, command.targetIndex, events)),
+			);
 			break;
 		case "endTurn":
 			result = stepEndTurn(state, events);
@@ -75,6 +78,14 @@ export function step(state: GameState, command: Command): StepResult {
 			return { state, events };
 	}
 	return checkCombatEnd(result);
+}
+
+/** A hook asked to end the player's turn early (Time Eater's Time Warp at 12 cards). */
+function honorEndTurnRequest(result: StepResult): StepResult {
+	const combat = result.state.combat;
+	if (!combat?.endTurnRequested || result.state.phase.type !== "combat") return result;
+	const s = { ...result.state, combat: { ...combat, endTurnRequested: false } };
+	return stepEndTurn(s, result.events);
 }
 
 function stepPlayCard(
@@ -321,16 +332,16 @@ function stepChooseMapNode(
 	switch (node.type) {
 		case "monster":
 		case "elite": {
-			const monsterIds = pickEncounter(s, node.type);
-			s = initCombat({ ...s, encounterIndex: advanceEncounterIndex(s, node.type) }, monsterIds);
+			const encId = pickEncounter(s, node.type);
+			const next = { ...s, encounterIndex: advanceEncounterIndex(s, node.type) };
+			s = initCombat(next, getEncounterMonsters(encId), encId);
 			s = fireHook(s, { type: "player" }, "atBattleStart");
 			events.push({ type: "combatStarted" });
 			break;
 		}
 		case "boss": {
 			const bossId = s.encounterLists.boss;
-			const monsterIds = getEncounterMonsters(bossId);
-			s = initCombat(s, monsterIds);
+			s = initCombat(s, getEncounterMonsters(bossId), bossId);
 			s = fireHook(s, { type: "player" }, "atBattleStart");
 			events.push({ type: "combatStarted" });
 			break;
@@ -374,21 +385,11 @@ function isNodeReachable(state: GameState, x: number, y: number): boolean {
 	return currentNode?.edges.some((e) => e.x === x && e.y === y) ?? false;
 }
 
-function pickEncounter(state: GameState, roomType: "monster" | "elite"): EncounterSlot[] {
-	if (roomType === "elite") {
-		const idx = state.encounterIndex.elite;
-		const encId = state.encounterLists.elites[idx % state.encounterLists.elites.length];
-		return getEncounterMonsters(encId ?? "");
-	}
-	const isWeak = state.encounterIndex.weak < state.encounterLists.weak.length;
-	if (isWeak) {
-		const idx = state.encounterIndex.weak;
-		const encId = state.encounterLists.weak[idx];
-		return getEncounterMonsters(encId ?? "");
-	}
-	const idx = state.encounterIndex.strong;
-	const encId = state.encounterLists.strong[idx % state.encounterLists.strong.length];
-	return getEncounterMonsters(encId ?? "");
+function pickEncounter(state: GameState, roomType: "monster" | "elite"): string {
+	const { encounterIndex: idx, encounterLists: lists } = state;
+	if (roomType === "elite") return lists.elites[idx.elite % lists.elites.length] ?? "";
+	if (idx.weak < lists.weak.length) return lists.weak[idx.weak] ?? "";
+	return lists.strong[idx.strong % lists.strong.length] ?? "";
 }
 
 function advanceEncounterIndex(
@@ -496,8 +497,7 @@ function checkCombatEnd(result: StepResult): StepResult {
 		return { state: { ...state, phase: { type: "gameOver", victory: false } }, events };
 	}
 
-	const allDead = combat.monsters.every((m) => !m.alive);
-	if (allDead) {
+	if (allMonstersGone(state)) {
 		events.push({ type: "combatEnded", victory: true });
 
 		const s = fireHook(state, { type: "player" }, "onVictory");
@@ -547,7 +547,8 @@ function executeMonsterTurns(state: GameState, events: GameEvent[]): GameState {
 
 	for (let i = 0; i < combat.monsters.length; i++) {
 		const monster = s.combat?.monsters[i];
-		if (!monster?.alive || !combat.monsters[i]?.alive) continue; // summoned this turn: no action
+		// halfDead monsters still act (Regrow/Rebirth); summoned this turn: no action
+		if (!monster || !takesTurns(monster) || !takesTurns(combat.monsters[i])) continue;
 
 		const moveId = monster.intent.moveId;
 		const actions = resolveMonsterMove(monster, moveId, s.ascension, s.currentHp, s);

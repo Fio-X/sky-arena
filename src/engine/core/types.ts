@@ -103,6 +103,8 @@ export interface CombatState {
 	readonly cardsDiscardedThisTurn: number;
 	readonly lightningChanneled: number;
 	readonly frostChanneled: number;
+	/** Set by a hook to end the player's turn once the current card finishes (Time Warp). */
+	readonly endTurnRequested?: boolean;
 }
 
 export interface PlayerCombatState {
@@ -123,7 +125,14 @@ export interface MonsterState {
 	readonly intent: MonsterIntent;
 	readonly moveHistory: MonsterMoveId[];
 	readonly alive: boolean;
+	/**
+	 * Original AbstractMonster.halfDead: at 0 HP, alive = false (untargetable),
+	 * but still takes turns and blocks victory (Darkling Regrow, Awakened One
+	 * rebirth). See combat/death.ts.
+	 */
 	readonly halfDead: boolean;
+	/** Slime split trigger: HP fell to half or below, next move is SPLIT. */
+	readonly splitPending?: boolean;
 	readonly miscInfo: number;
 	/** Card taken by Bronze Orb STASIS; returned to hand when this monster dies. */
 	readonly heldCard?: CardInstance;
@@ -229,7 +238,19 @@ export type Command =
 // ── 动作（内部效果队列）──────────────────────────────────
 
 export type Action =
-	| { type: "damage"; source: ActorRef; target: ActorRef; baseDamage: number; hits: number }
+	/**
+	 * nonAttack: DamageType.THORNS in the original (Exploder's explosion) — no
+	 * Strength/Weak/Vulnerable/stance modifiers and no onAttack/onAttacked hooks;
+	 * block and Intangible still apply.
+	 */
+	| {
+			type: "damage";
+			source: ActorRef;
+			target: ActorRef;
+			baseDamage: number;
+			hits: number;
+			nonAttack?: boolean;
+	  }
 	| { type: "block"; source: ActorRef; amount: number }
 	| { type: "heal"; target: ActorRef; amount: number }
 	| { type: "loseHp"; target: ActorRef; amount: number }
@@ -238,7 +259,16 @@ export type Action =
 	| { type: "discardCard"; handIndex: number }
 	| { type: "exhaustCard"; handIndex: number }
 	| { type: "addCardToHand"; cardId: CardId; upgraded: boolean }
-	| { type: "addCardToDrawPile"; cardId: CardId; upgraded: boolean; toTop: boolean }
+	/** randomSpot: CardGroup.addToRandomSpot — index cardRandomRng.random(size - 1), never the top. */
+	| {
+			type: "addCardToDrawPile";
+			cardId: CardId;
+			upgraded: boolean;
+			toTop: boolean;
+			randomSpot?: boolean;
+	  }
+	/** Permanent: into the master deck (Writhing Mass IMPLANT → Parasite). */
+	| { type: "addCardToMasterDeck"; cardId: CardId }
 	| { type: "addCardToDiscardPile"; cardId: CardId; upgraded: boolean }
 	| { type: "gainEnergy"; amount: number }
 	| { type: "loseEnergy"; amount: number }
@@ -260,6 +290,8 @@ export type Action =
 			count: number;
 	  }
 	| { type: "escape"; monsterIndex: number }
+	/** SuicideAction: HP → 0 and die() without the damage path (no Regrow/rebirth). */
+	| { type: "monsterDie"; monsterIndex: number }
 	/** Summon into a slot (replacing a dead/empty one). RANDOM_GREMLIN picks with aiRng. */
 	| {
 			type: "spawnMonster";

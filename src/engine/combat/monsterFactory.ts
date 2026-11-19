@@ -48,7 +48,25 @@ const HP_QUIRKS: Record<string, { fixed?: true; burnFirst?: [number, number]; ro
 		TASKMASTER: { burnFirst: [54, 60] },
 		BRONZE_ORB: { burnFirst: [52, 58] },
 		TORCH_HEAD: { rollTwice: true }, // construct + initHp again; the second roll is kept
+		// Act 3 (monsters-act34.json notes.hpRolls)
+		ORB_WALKER: { burnFirst: [90, 96] },
+		REPTOMANCER: { burnFirst: [180, 190] },
+		THE_MAW: { fixed: true },
+		TRANSIENT: { fixed: true },
 	};
+
+/**
+ * Construction-time roll stored in miscInfo, made with monsterHpRng right after
+ * the HP roll (Darkling's Nip damage). Without one, the first ranged-damage
+ * move in the data is rolled (Louse BITE).
+ */
+export type MiscRoll = (ascension: number, rng: RngState) => { miscInfo: number; rng: RngState };
+
+const miscRolls = new Map<string, MiscRoll>();
+
+export function registerMiscRoll(monsterId: string, fn: MiscRoll): void {
+	miscRolls.set(monsterId, fn);
+}
 
 /** Monster state that starts at a value other than the pre-rolled damage (miscInfo). */
 const INITIAL_MISC_INFO: Record<string, number> = {
@@ -89,7 +107,10 @@ export function createMonster(
 	const hp = rollHp(id, ascension >= def.hp.ascLevel ? def.hp.asc : def.hp.base, rng);
 	let nextRng = hp.rng;
 
-	const miscRoll = rollMonsterMiscInfo(id, ascension, nextRng);
+	const miscRoll = (miscRolls.get(id) ?? ((asc, r) => rollMonsterMiscInfo(id, asc, r)))(
+		ascension,
+		nextRng,
+	);
 	nextRng = miscRoll.rng;
 
 	const pre = resolvePrebattle((def.prebattle ?? []) as PrebattleEntry[], ascension, nextRng);

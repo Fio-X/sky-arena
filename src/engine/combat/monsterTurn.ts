@@ -14,7 +14,14 @@ import type {
 	RngState,
 } from "../core/types";
 import { random } from "../rng/stsRandom";
-import { allyRefs, getMoveEffect, getMoveHandler, type MoveCtx } from "./moveEffects";
+import {
+	allyRefs,
+	findMoveEffect,
+	getMoveDamage,
+	getMoveHandler,
+	getMoveHits,
+	type MoveCtx,
+} from "./moveEffects";
 
 const SPLIT_MAP: Record<string, Array<{ spawnId: string; count: number }>> = {
 	ACID_SLIME_L: [{ spawnId: "ACID_SLIME_M", count: 2 }],
@@ -33,7 +40,8 @@ export function rollMonsterMove(
 	if (!combat) return { moveId: "" as MonsterMoveId, state };
 
 	const monster = combat.monsters[monsterIndex];
-	if (!monster?.alive) return { moveId: "" as MonsterMoveId, state };
+	if (!monster || !(monster.alive || monster.halfDead))
+		return { moveId: "" as MonsterMoveId, state };
 
 	const aiFn = getMonsterAi(monster.id);
 	if (!aiFn) return { moveId: "" as MonsterMoveId, state };
@@ -71,9 +79,9 @@ export function resolveMonsterMove(
 	const player = { type: "player" as const };
 	const ctx: MoveCtx | null = state ? { state, monster, moveId, self } : null;
 
-	const baseDamage = resolveDamage(resolved, monster, moveId, playerHp);
+	const baseDamage = resolveDamage(resolved, monster, moveId, playerHp, ascension);
 	if (baseDamage != null) {
-		const hits = resolveHits(resolved, monster);
+		const hits = resolveHits(resolved, monster, moveId, ascension);
 		actions.push({ type: "damage", source: self, target: player, baseDamage, hits });
 	}
 
@@ -107,8 +115,18 @@ export function resolveMonsterMove(
 	return moveHandler && ctx ? moveHandler(ctx, actions) : actions;
 }
 
-/** Data with hits = null and a damage value means "hits stored in miscInfo" (Book of Stabbing). */
-function resolveHits(move: MonsterMoveDef, monster: MonsterState): number {
+/**
+ * Registered hits (registerMoveHits) win; else data. Data with hits = null and a
+ * damage value means "hits stored in miscInfo" (Book of Stabbing).
+ */
+function resolveHits(
+	move: MonsterMoveDef,
+	monster: MonsterState,
+	moveId: MonsterMoveId,
+	ascension: number,
+): number {
+	const fn = getMoveHits(moveId as string);
+	if (fn) return fn(monster, ascension);
 	if (typeof move.hits === "number") return move.hits;
 	return move.damage != null ? Math.max(1, monster.miscInfo) : 1;
 }
@@ -123,7 +141,7 @@ function resolveEffects(
 	let actions = initial;
 	for (const effect of effects) {
 		if (!effect.power) continue;
-		const handler = ctx ? getMoveEffect(effect.power) : undefined;
+		const handler = ctx ? findMoveEffect(effect.power) : undefined;
 		if (handler && ctx) {
 			actions = handler(ctx, effect, actions);
 		} else if (effect.amount != null) {
@@ -172,7 +190,10 @@ function resolveDamage(
 	monster: MonsterState,
 	moveId: MonsterMoveId,
 	playerHp: number,
+	ascension: number,
 ): number | null {
+	const fn = getMoveDamage(moveId as string);
+	if (fn) return fn(monster, ascension);
 	if (resolved.damage != null) {
 		if (Array.isArray(resolved.damage)) {
 			// Range damage (e.g. Louse BITE [5,7]): use pre-rolled miscInfo
@@ -241,24 +262,10 @@ export function buildIntent(
 		return { moveId, baseDamage: null, hits: 1, isAttack: false, isDebuff: false, isBuff: false };
 	}
 
-	let resolved = moveDef;
-	if (moveDef.asc) {
-		for (const [t, override] of Object.entries(moveDef.asc)) {
-			if (ascension >= Number(t) && override) {
-				resolved = { ...resolved, ...override };
-			}
-		}
-	}
-
-	const hits = resolveHits(resolved, monster);
+	const resolved = applyAscension(moveDef, ascension);
+	const hits = resolveHits(resolved, monster, moveId, ascension);
 	const intent = (resolved.intent ?? "").toUpperCase();
-
-	let baseDamage: number | null = null;
-	if (resolved.damage != null) {
-		baseDamage = Array.isArray(resolved.damage) ? monster.miscInfo : resolved.damage;
-	} else if (hits > 0 && String(moveId).includes("DIVIDER")) {
-		baseDamage = Math.floor(playerHp / 12) + 1;
-	}
+	const baseDamage = resolveDamage(resolved, monster, moveId, playerHp, ascension);
 
 	return {
 		moveId,

@@ -3,10 +3,14 @@ import { random, randomFloat } from "../rng/stsRandom";
 
 /**
  * One position in an encounter layout. The array index is the monster's slot
- * (which also fixes turn order). "EMPTY" reserves a slot for a later summon;
- * "RANDOM_GREMLIN" is resolved at combat start with miscRng.
+ * (which also fixes turn order). "EMPTY" reserves a slot for a later summon.
+ * Random slots are resolved at combat start with miscRng, in slot order:
+ * - "RANDOM_GREMLIN": getGremlin (8-entry pool, with replacement)
+ * - "SHAPE_POOL": createShapes — draws WITHOUT replacement from one 6-shape pool
+ *   shared by every SHAPE_POOL slot of the encounter
+ * - "RANDOM_SHAPE": getAncientShape — uniform over 3 shapes, with replacement
  */
-export type EncounterSlot = MonsterId | "EMPTY" | "RANDOM_GREMLIN";
+export type EncounterSlot = MonsterId | "EMPTY" | "RANDOM_GREMLIN" | "SHAPE_POOL" | "RANDOM_SHAPE";
 
 const L = (...ids: string[]): EncounterSlot[] => ids as EncounterSlot[];
 
@@ -59,6 +63,24 @@ const ENCOUNTER_MONSTERS: Record<string, EncounterSlot[]> = {
 	COLLECTOR: L("EMPTY", "EMPTY", "THE_COLLECTOR"),
 	CHAMP: L("THE_CHAMP"),
 	MASKED_BANDITS_EVENT: L("POINTY", "ROMEO", "BEAR"),
+	// ── Act 3 (MonsterGroup.cpp; layouts in data-reference/monsters-act34.json) ──
+	THREE_DARKLINGS: L("DARKLING", "DARKLING", "DARKLING"),
+	ORB_WALKER: L("ORB_WALKER"),
+	THREE_SHAPES: L("SHAPE_POOL", "SHAPE_POOL", "SHAPE_POOL"),
+	SPIRE_GROWTH: L("SPIRE_GROWTH"),
+	TRANSIENT: L("TRANSIENT"),
+	FOUR_SHAPES: L("SHAPE_POOL", "SHAPE_POOL", "SHAPE_POOL", "SHAPE_POOL"),
+	MAW: L("THE_MAW"),
+	SPHERE_AND_TWO_SHAPES: L("RANDOM_SHAPE", "RANDOM_SHAPE", "SPHERIC_GUARDIAN"),
+	JAW_WORM_HORDE: L("JAW_WORM", "JAW_WORM", "JAW_WORM"), // buffs: encounterSetup.ts
+	WRITHING_MASS: L("WRITHING_MASS"),
+	GIANT_HEAD: L("GIANT_HEAD"),
+	NEMESIS: L("NEMESIS"),
+	REPTOMANCER: L("EMPTY", "DAGGER", "REPTOMANCER", "EMPTY", "DAGGER"),
+	AWAKENED_ONE: L("CULTIST", "CULTIST", "AWAKENED_ONE"),
+	TIME_EATER: L("TIME_EATER"),
+	DONU_AND_DECA: L("DECA", "DONU"),
+	MYSTERIOUS_SPHERE_EVENT: L("ORB_WALKER", "ORB_WALKER"),
 };
 
 export function getEncounterMonsters(encounterId: string): EncounterSlot[] {
@@ -129,6 +151,34 @@ export const ACT_ENCOUNTER_POOLS: Readonly<Record<number, ActEncounterPool>> = {
 			THREE_BYRDS: ["CHOSEN_AND_BYRDS"],
 			CHOSEN: ["CHOSEN_AND_BYRDS", "CULTIST_AND_CHOSEN"],
 		},
+	},
+};
+
+/**
+ * Act 3 (TheBeyond). Weights from MonsterEncounters.h; exclusions from
+ * TheBeyond.generateExclusions (via spire-engine acts.rs). Joins
+ * ACT_ENCOUNTER_POOLS (key 3) once every Act 3 monster has an AI; until then
+ * the run ends after the Act 2 boss.
+ */
+export const ACT3_ENCOUNTER_POOL: ActEncounterPool = {
+	weak: even("THREE_DARKLINGS", "ORB_WALKER", "THREE_SHAPES"),
+	weakCount: 2,
+	strong: even(
+		"SPIRE_GROWTH",
+		"TRANSIENT",
+		"FOUR_SHAPES",
+		"MAW",
+		"SPHERE_AND_TWO_SHAPES",
+		"JAW_WORM_HORDE",
+		"THREE_DARKLINGS",
+		"WRITHING_MASS",
+	),
+	elites: ["GIANT_HEAD", "NEMESIS", "REPTOMANCER"],
+	bosses: ["AWAKENED_ONE", "TIME_EATER", "DONU_AND_DECA"],
+	firstStrongExclusions: {
+		THREE_DARKLINGS: ["THREE_DARKLINGS"],
+		ORB_WALKER: ["ORB_WALKER"],
+		THREE_SHAPES: ["FOUR_SHAPES"],
 	},
 };
 

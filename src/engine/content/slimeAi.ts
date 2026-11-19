@@ -136,7 +136,7 @@ registerMonsterAi("ACID_SLIME_L", (ctx): MonsterAiResult => {
 	const monster = ctx.state.combat?.monsters[ctx.monsterIndex];
 	if (!monster) return { moveId: AL_SPIT, aiRng: ctx.aiRng };
 
-	if (monster.halfDead) return { moveId: AL_SPLIT, aiRng: ctx.aiRng };
+	if (monster.splitPending) return { moveId: AL_SPLIT, aiRng: ctx.aiRng };
 
 	const { value: roll, state: rng } = random(ctx.aiRng, 99);
 	const h = monster.moveHistory;
@@ -227,7 +227,7 @@ registerMonsterAi("SPIKE_SLIME_L", (ctx): MonsterAiResult => {
 	const monster = ctx.state.combat?.monsters[ctx.monsterIndex];
 	if (!monster) return { moveId: SL_LICK, aiRng: ctx.aiRng };
 
-	if (monster.halfDead) return { moveId: SL_SPLIT, aiRng: ctx.aiRng };
+	if (monster.splitPending) return { moveId: SL_SPLIT, aiRng: ctx.aiRng };
 
 	const { value: roll, state: rng } = random(ctx.aiRng, 99);
 	const h = monster.moveHistory;
