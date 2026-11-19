@@ -202,6 +202,54 @@ export function foldHook<K extends FoldHookKeys>(
 	return { value: currentValue, state: currentState };
 }
 
+// ── Run-level dispatch (works outside combat) ─────────────
+// Hook sources are collected from combat state. Outside combat, relics are
+// dispatched against an empty placeholder combat that is dropped afterwards,
+// so run-level relic hooks (gold, rooms, prices) must not rely on ctx.combat.
+
+function emptyCombat(): NonNullable<GameState["combat"]> {
+	return {
+		turn: 0,
+		player: { block: 0, powers: [], stance: "neutral", orbs: [], orbSlots: 0 },
+		monsters: [],
+		drawPile: [],
+		hand: [],
+		discardPile: [],
+		exhaustPile: [],
+		energy: 0,
+		maxEnergy: 0,
+		actionQueue: [],
+		cardQueue: [],
+		cardsPlayedThisTurn: 0,
+		cardsDiscardedThisTurn: 0,
+		lightningChanneled: 0,
+		frostChanneled: 0,
+	};
+}
+
+const PLAYER_REF: ActorRef = { type: "player" };
+
+export function foldRunHook<K extends FoldHookKeys>(
+	state: GameState,
+	hookName: K,
+	value: number,
+	...args: DropFirstTwo<Parameters<HookTable[K]>>
+): FoldResult {
+	if (state.combat) return foldHook(state, PLAYER_REF, hookName, value, ...args);
+	const r = foldHook({ ...state, combat: emptyCombat() }, PLAYER_REF, hookName, value, ...args);
+	return { value: r.value, state: { ...r.state, combat: null } };
+}
+
+export function fireRunHook<K extends keyof HookTable>(
+	state: GameState,
+	hookName: K,
+	...args: DropFirst<Parameters<HookTable[K]>>
+): GameState {
+	if (state.combat) return fireHook(state, PLAYER_REF, hookName, ...args);
+	const r = fireHook({ ...state, combat: emptyCombat() }, PLAYER_REF, hookName, ...args);
+	return { ...r, combat: null };
+}
+
 export function anyHook<K extends BoolHookKeys>(
 	state: GameState,
 	actor: ActorRef,

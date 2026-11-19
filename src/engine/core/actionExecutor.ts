@@ -7,7 +7,6 @@ import {
 import { resolveMonsterDeath } from "../combat/death";
 import { negateWithArtifact } from "../combat/powers";
 import { getCard } from "../content/loader";
-import { stsShuffle } from "../rng/stsRandom";
 import { popAction } from "./actionQueue";
 import { insertAtRandomSpot } from "./drawPile";
 import { fireHook, vetoHook } from "./hooks";
@@ -23,6 +22,14 @@ import {
 	executeVampireDamage,
 } from "./monsterActions";
 import { channelOrb as channelOrbImpl, evokeOrb as evokeOrbImpl } from "./orbSystem";
+import {
+	executeGainGold,
+	executeGainMaxHp,
+	executeLoseMaxHp,
+	executePlayerHeal,
+	executePlayerLoseHp,
+	executeShuffle,
+} from "./playerActions";
 import type { Action, ActorRef, CardInstance, GameEvent, GameState, PowerInstance } from "./types";
 
 export function drainActions(
@@ -75,6 +82,14 @@ function executeAction(
 			return executeAddCardToHand(state, action);
 		case "loseGold":
 			return executeLoseGold(state, action);
+		case "gainGold":
+			return executeGainGold(state, action, events);
+		case "gainMaxHp":
+			return executeGainMaxHp(state, action, events);
+		case "loseMaxHp":
+			return executeLoseMaxHp(state, action);
+		case "shuffle":
+			return executeShuffle(state, events);
 		case "custom":
 			return { state: action.execute(state) };
 		case "split":
@@ -239,9 +254,7 @@ function executeHeal(
 	events: GameEvent[],
 ): { state: GameState } {
 	if (action.target.type !== "player") return { state };
-	const healed = Math.min(action.amount, state.maxHp - state.currentHp);
-	events.push({ type: "healed", target: action.target, amount: healed });
-	return { state: { ...state, currentHp: state.currentHp + healed } };
+	return executePlayerHeal(state, action.amount, events);
 }
 
 function executeLoseHp(
@@ -250,9 +263,7 @@ function executeLoseHp(
 	events: GameEvent[],
 ): { state: GameState } {
 	if (action.target.type !== "player") return { state };
-	const newHp = Math.max(0, state.currentHp - action.amount);
-	events.push({ type: "hpLost", target: action.target, amount: state.currentHp - newHp });
-	return { state: { ...state, currentHp: newHp } };
+	return executePlayerLoseHp(state, action.amount, events);
 }
 
 function executeGainEnergy(
@@ -301,25 +312,28 @@ function executeDrawCards(
 
 		if (drawPile.length === 0) {
 			if (discardPile.length === 0) break;
-			const shuffled = stsShuffle(discardPile, rng.shuffleRng);
-			drawPile = shuffled.result;
-			discardPile = [];
-			rng = { ...rng, shuffleRng: shuffled.rng };
-			events.push({ type: "shuffled" });
+			// EmptyDeckShuffleAction: reshuffle, then onShuffle (Sundial, Abacus) before drawing.
+			({ state: s } = executeShuffle(s, events));
+			const after = s.combat;
+			if (!after) break;
+			drawPile = [...after.drawPile];
+			discardPile = [...after.discardPile];
+			rng = s.rng;
 		}
 
 		const card = drawPile[drawPile.length - 1];
 		if (!card) break;
 		drawPile = drawPile.slice(0, -1);
 
+		const current = s.combat ?? combat;
 		s = {
 			...s,
 			rng,
 			combat: {
-				...combat,
+				...current,
 				drawPile,
 				discardPile,
-				hand: [...combat.hand, card],
+				hand: [...current.hand, card],
 			},
 		};
 		events.push({ type: "cardDrawn", card });
@@ -347,17 +361,16 @@ function executeDiscardCard(
 	const hand = combat.hand.filter((_, i) => i !== action.handIndex);
 	const discardPile = [...combat.discardPile, card];
 	events.push({ type: "cardDiscarded", card });
-	return {
-		state: {
-			...state,
-			combat: {
-				...combat,
-				hand,
-				discardPile,
-				cardsDiscardedThisTurn: combat.cardsDiscardedThisTurn + 1,
-			},
+	const s: GameState = {
+		...state,
+		combat: {
+			...combat,
+			hand,
+			discardPile,
+			cardsDiscardedThisTurn: combat.cardsDiscardedThisTurn + 1,
 		},
 	};
+	return { state: fireHook(s, { type: "player" }, "onManualDiscard", card) };
 }
 
 function executeExhaustCard(
@@ -560,10 +573,9 @@ function executeScry(
 		events.push({ type: "cardDiscarded", card });
 	}
 
-	return {
-		state: {
-			...state,
-			combat: { ...combat, drawPile: newDrawPile, discardPile: newDiscardPile },
-		},
+	const s: GameState = {
+		...state,
+		combat: { ...combat, drawPile: newDrawPile, discardPile: newDiscardPile },
 	};
+	return { state: fireHook(s, { type: "player" }, "onScry", count) };
 }

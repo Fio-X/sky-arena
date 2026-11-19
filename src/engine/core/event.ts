@@ -1,5 +1,6 @@
 import { getAllPotions, getAllRelics, getCard } from "../content/loader";
 import { random } from "../rng/stsRandom";
+import { gainGold } from "./playerActions";
 import type { CardId, GameEvent, GameState, RngState, StepResult } from "./types";
 
 // ── Event definition (loaded from JSON) ─────────────────
@@ -125,10 +126,8 @@ function applyOutcome(state: GameState, outcome: EventOutcome, events: GameEvent
 			const newMax = Math.max(1, state.maxHp - amount);
 			return { ...state, maxHp: newMax, currentHp: Math.min(state.currentHp, newMax) };
 		}
-		case "gainGold": {
-			events.push({ type: "goldChanged", delta: amount });
-			return { ...state, gold: state.gold + amount };
-		}
+		case "gainGold":
+			return gainGold(state, amount, events);
 		case "loseGold": {
 			const lost = Math.min(amount, state.gold);
 			events.push({ type: "goldChanged", delta: -lost });

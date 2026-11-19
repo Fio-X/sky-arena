@@ -1,4 +1,5 @@
 import { getCard } from "../content/loader";
+import { fireHook } from "./hooks";
 import { stepEndTurnContinue } from "./step";
 import type { CardInstance, CombatState, GameEvent, GameState, StepResult } from "./types";
 
@@ -94,7 +95,14 @@ function handleGamble(s: GameState, c: CombatState, indices: number[]): GameStat
 	const hand = c.hand.filter((_, i) => !indices.includes(i));
 	const discardPile = [...c.discardPile, ...toDiscard];
 	const nc = drawN({ ...c, hand, discardPile }, toDiscard.length);
-	return toCombat({ ...s, combat: nc });
+	return toCombat(fireManualDiscards({ ...s, combat: nc }, toDiscard));
+}
+
+/** onManualDiscard for each card the player chose to discard (Tingsha, Tough Bandages…). */
+function fireManualDiscards(s: GameState, cards: readonly CardInstance[]): GameState {
+	let st = s;
+	for (const card of cards) st = fireHook(st, { type: "player" }, "onManualDiscard", card);
+	return st;
 }
 
 function handleRecycle(s: GameState, c: CombatState, idx: number): GameState | null {
@@ -131,7 +139,7 @@ function handleDiscard(s: GameState, c: CombatState, indices: number[]): GameSta
 			nc = { ...nc, energy: nc.energy + energy };
 		}
 	}
-	return toCombat({ ...s, combat: nc });
+	return toCombat(fireManualDiscards({ ...s, combat: nc }, toDiscard));
 }
 
 function handleSetup(s: GameState, c: CombatState, idx: number): GameState | null {

@@ -1,5 +1,6 @@
 import { getCard } from "../content/loader";
 import { random } from "../rng/stsRandom";
+import { gainGold } from "./playerActions";
 import type { CardId, CardInstance, GameEvent, GameState } from "./types";
 
 export interface NeowBlessing {
@@ -36,8 +37,7 @@ export function stepChooseNeowBlessing(
 
 	switch (blessing.id) {
 		case "gold100":
-			s = { ...s, gold: s.gold + 100 };
-			events.push({ type: "goldChanged", delta: 100 });
+			s = gainGold(s, 100, events);
 			break;
 
 		case "upgradeRandom": {

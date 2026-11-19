@@ -14,6 +14,7 @@ import { obtainRandomRelic, pickEvent, stepChooseEventOption } from "./event";
 import { fireHook, fireHookOnAllActors, foldHook, vetoHook } from "./hooks";
 import { stepChooseNeowBlessing } from "./neow";
 import { triggerOrbPassives } from "./orbSystem";
+import { gainGold } from "./playerActions";
 import { rollPotionDrop, stepDiscardPotion, stepObtainPotionReward, stepUsePotion } from "./potion";
 import { replayIfAmplify, replayIfBurst, replayIfDoubleTap, replayIfEchoForm } from "./replay";
 import { generateShop, stepChooseShopItem, stepShopPurge } from "./shop";
@@ -522,13 +523,11 @@ function checkCombatEnd(result: StepResult): StepResult {
 			cardRng: reward.rng,
 			potionRng: potionResult.rng,
 		};
-		events.push({ type: "goldChanged", delta: goldResult.gold });
+		const withGold = gainGold({ ...s, rng: newRng }, goldResult.gold, events);
 		events.push({ type: "cardRewardOffered", cards: reward.cards });
 		return {
 			state: {
-				...s,
-				gold: s.gold + goldResult.gold,
-				rng: newRng,
+				...withGold,
 				phase: {
 					type: "reward",
 					cardRewards: reward.cards,

@@ -1,3 +1,4 @@
+import { allMonstersGone } from "../combat/death";
 import { registerRelicHooks } from "../core/hooks";
 import type { CardInstance, PowerId, PowerInstance } from "../core/types";
 import { getCard } from "./loader";
@@ -22,6 +23,8 @@ registerRelicHooks("GREMLIN_HORN", () => ({
 	relicId: "GREMLIN_HORN",
 	hooks: {
 		onMonsterDeath: (ctx) => {
+			// Original: only while the fight goes on (not for the last kill).
+			if (allMonstersGone(ctx.state)) return ctx.state;
 			let s = drawCards(ctx.state, 1);
 			if (s.combat) s = { ...s, combat: { ...s.combat, energy: s.combat.energy + 1 } };
 			return s;

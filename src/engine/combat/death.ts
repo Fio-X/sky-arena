@@ -22,11 +22,12 @@ export function registerDeathInterceptor(monsterId: string, fn: DeathInterceptor
 }
 
 /**
- * Call exactly once, right after damage or HP loss took a living monster to 0 HP
- * (applyDamage has already set alive = false). Callers must check the monster
- * was alive before the hit: an already-dead monster would fire its death again. Runs the monster's interceptor; if it does not
- * take over, fires the dying monster's onMonsterDeath powers (Minion Leader,
- * Spore Cloud, Stasis…) and records the death.
+ * Call exactly once, right after damage or HP loss took a living monster to
+ * 0 HP (applyDamage has already set alive = false). Callers must check the
+ * monster was alive before the hit: an already-dead monster would fire its
+ * death again. Runs the monster's interceptor; if it does not take over,
+ * fires onMonsterDeath on the dying monster, then on the player, and records
+ * the death.
  *
  * @param intercept false for deaths that bypass damage() in the original
  * (SuicideAction sets HP to 0 and calls die() directly).
@@ -44,12 +45,11 @@ export function resolveMonsterDeath(
 	const intercepted = interceptor?.(state, monsterIndex);
 	if (intercepted) return intercepted;
 
-	const s = fireHook(
-		state,
-		{ type: "monster", index: monsterIndex },
-		"onMonsterDeath",
-		monsterIndex,
-	);
+	// The dying monster's powers first (Spore Cloud, Minion Leader…), then the
+	// player's powers and relics (Gremlin Horn, The Specimen).
+	const self = { type: "monster" as const, index: monsterIndex };
+	let s = fireHook(state, self, "onMonsterDeath", monsterIndex);
+	s = fireHook(s, { type: "player" }, "onMonsterDeath", monsterIndex);
 	events.push({ type: "monsterDied", index: monsterIndex });
 	return s;
 }

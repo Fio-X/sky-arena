@@ -3,6 +3,7 @@ import { getPotionEffect } from "../content/potionEffects";
 import { random } from "../rng/stsRandom";
 import { drainActions } from "./actionExecutor";
 import { addToBot } from "./actionQueue";
+import { fireRunHook } from "./hooks";
 import type { GameEvent, GameState, PotionId, RngState, StepResult } from "./types";
 
 // ── Potion pool for Ironclad ─────────────────────────────
@@ -96,7 +97,7 @@ export function stepUsePotion(
 		({ state: s } = drainActions(s, events));
 	}
 
-	return { state: s, events };
+	return { state: fireRunHook(s, "onUsePotion", potionId), events };
 }
 
 // ── Discard potion ───────────────────────────────────────
