@@ -19,6 +19,8 @@ export interface MonsterAiContext {
 export interface MonsterAiResult {
 	readonly moveId: MonsterMoveId;
 	readonly aiRng: RngState;
+	/** New miscInfo for AIs that update state at selection time (Champ phase, Book stab count). */
+	readonly miscInfo?: number;
 }
 
 export type MonsterAiFn = (ctx: MonsterAiContext) => MonsterAiResult;

@@ -3,6 +3,7 @@ import type {
 	CardInstance,
 	CombatState,
 	GameState,
+	PowerId,
 	PowerInstance,
 	RelicInstance,
 	StanceId,
@@ -247,6 +248,21 @@ export function registerPowerHooks(
 	factory: (p: PowerInstance) => HookSource,
 ): void {
 	powerHookRegistry.set(powerId, factory);
+}
+
+/**
+ * Map a power name from monster data (e.g. "CURL_UP", "STRENGTH") to the id
+ * its hooks were registered under. Registrations use two conventions
+ * (lowercase for shared/player powers, UPPERCASE for most monster powers), and
+ * hook lookup is exact, so data must be converted through here.
+ * Preference: lowercase if registered, else UPPERCASE if registered, else lowercase.
+ */
+export function canonicalPowerId(raw: string): PowerId {
+	const lower = raw.toLowerCase();
+	if (powerHookRegistry.has(lower)) return lower as PowerId;
+	const upper = raw.toUpperCase();
+	if (powerHookRegistry.has(upper)) return upper as PowerId;
+	return lower as PowerId;
 }
 
 export function registerRelicHooks(

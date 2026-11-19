@@ -340,15 +340,16 @@ registerMonsterAi("BOOK_OF_STABBING", (ctx): MonsterAiResult => {
 	const h = monster.moveHistory;
 	const { value: roll, state: rng } = random(ctx.aiRng, 99);
 
-	// stabCount is tracked via miscInfo; starts at 1 (set at preBattle).
-	// The AI selection logic decides whether to increment it.
-	// We replicate the selection logic here; the actual miscInfo update
-	// happens in the action executor.
+	// stabCount lives in miscInfo (starts at 1) and is incremented at selection time
+	// whenever MULTI_STAB is chosen; at A18+ also when SINGLE_STAB is chosen.
+	const multi = { moveId: BOS_MULTI, aiRng: rng, miscInfo: monster.miscInfo + 1 };
+	const single = {
+		moveId: BOS_SINGLE,
+		aiRng: rng,
+		miscInfo: ctx.state.ascension >= 18 ? monster.miscInfo + 1 : monster.miscInfo,
+	};
 
-	if (roll < 15) {
-		if (!lastMove(h, BOS_SINGLE)) return { moveId: BOS_SINGLE, aiRng: rng };
-		return { moveId: BOS_MULTI, aiRng: rng }; // ++stabCount
-	}
-	if (lastTwoMoves(h, BOS_MULTI)) return { moveId: BOS_SINGLE, aiRng: rng };
-	return { moveId: BOS_MULTI, aiRng: rng }; // ++stabCount
+	if (roll < 15) return lastMove(h, BOS_SINGLE) ? multi : single;
+	if (lastTwoMoves(h, BOS_MULTI)) return single;
+	return multi;
 });

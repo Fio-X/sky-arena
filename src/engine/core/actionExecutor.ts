@@ -3,17 +3,17 @@ import { getCard } from "../content/loader";
 import { stsShuffle } from "../rng/stsRandom";
 import { popAction } from "./actionQueue";
 import { fireHook } from "./hooks";
+import {
+	executeEscape,
+	executeMonsterHeal,
+	executeRemoveDebuffs,
+	executeSpawnMonster,
+	executeSplit,
+	executeStealCard,
+	executeVampireDamage,
+} from "./monsterActions";
 import { channelOrb as channelOrbImpl, evokeOrb as evokeOrbImpl } from "./orbSystem";
-import type {
-	Action,
-	ActorRef,
-	CardInstance,
-	GameEvent,
-	GameState,
-	MonsterMoveId,
-	MonsterState,
-	PowerInstance,
-} from "./types";
+import type { Action, ActorRef, CardInstance, GameEvent, GameState, PowerInstance } from "./types";
 
 export function drainActions(
 	state: GameState,
@@ -42,7 +42,9 @@ function executeAction(
 		case "applyPower":
 			return executeApplyPower(state, action, events);
 		case "heal":
-			return executeHeal(state, action, events);
+			return action.target.type === "monster"
+				? executeMonsterHeal(state, action, events)
+				: executeHeal(state, action, events);
 		case "loseHp":
 			return executeLoseHp(state, action, events);
 		case "drawCards":
@@ -69,6 +71,14 @@ function executeAction(
 			return executeSplit(state, action, events);
 		case "escape":
 			return executeEscape(state, action, events);
+		case "spawnMonster":
+			return executeSpawnMonster(state, action, events);
+		case "removeDebuffs":
+			return executeRemoveDebuffs(state, action);
+		case "vampireDamage":
+			return executeVampireDamage(state, action, events, executeDamage);
+		case "stealCard":
+			return executeStealCard(state, action);
 		case "channelOrb":
 			return executeChannelOrb(state, action, events);
 		case "evokeOrb":
@@ -107,6 +117,7 @@ function executeDamage(
 		if (applied.hpLost > 0) {
 			s = fireHook(s, action.target, "onAttacked", applied.hpLost, action.source);
 			s = fireHook(s, action.target, "wasHPLost", applied.hpLost);
+			s = fireHook(s, action.source, "onAttack", applied.hpLost, action.target);
 		}
 
 		if (action.target.type === "monster" && !isTargetAlive(s, action.target)) {
@@ -391,70 +402,6 @@ function executeLoseGold(
 	action: Extract<Action, { type: "loseGold" }>,
 ): { state: GameState } {
 	return { state: { ...state, gold: Math.max(0, state.gold - action.amount) } };
-}
-
-function executeSplit(
-	state: GameState,
-	action: Extract<Action, { type: "split" }>,
-	events: GameEvent[],
-): { state: GameState } {
-	const combat = state.combat;
-	if (!combat) return { state };
-	const source = combat.monsters[action.sourceIndex];
-	if (!source) return { state };
-
-	const monsters = [...combat.monsters];
-	const sourceHp = source.currentHp;
-	if (source.alive) {
-		monsters[action.sourceIndex] = { ...source, alive: false, currentHp: 0 };
-		events.push({ type: "monsterDied", index: action.sourceIndex });
-	}
-
-	const newIndices: number[] = [];
-	for (let i = 0; i < action.count; i++) {
-		const idx = monsters.length;
-		newIndices.push(idx);
-		const child: MonsterState = {
-			id: action.spawnId,
-			index: idx,
-			maxHp: sourceHp,
-			currentHp: sourceHp,
-			block: 0,
-			powers: [],
-			intent: {
-				moveId: "" as MonsterMoveId,
-				baseDamage: null,
-				hits: 1,
-				isAttack: false,
-				isDebuff: false,
-				isBuff: false,
-			},
-			moveHistory: [],
-			alive: true,
-			halfDead: false,
-			miscInfo: 0,
-		};
-		monsters.push(child);
-	}
-
-	events.push({ type: "monsterSplit", sourceIndex: action.sourceIndex, newIndices });
-	return { state: { ...state, combat: { ...combat, monsters } } };
-}
-
-function executeEscape(
-	state: GameState,
-	action: Extract<Action, { type: "escape" }>,
-	events: GameEvent[],
-): { state: GameState } {
-	const combat = state.combat;
-	if (!combat) return { state };
-	const m = combat.monsters[action.monsterIndex];
-	if (!m?.alive) return { state };
-
-	const monsters = [...combat.monsters];
-	monsters[action.monsterIndex] = { ...m, alive: false, currentHp: 0 };
-	events.push({ type: "monsterEscaped", index: action.monsterIndex });
-	return { state: { ...state, combat: { ...combat, monsters } } };
 }
 
 let nextUniqueCardId = 10000;

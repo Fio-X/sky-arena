@@ -1,6 +1,7 @@
 import type { MonsterMoveDef, MonsterMoveEffect } from "../content/loader";
 import { getMonster } from "../content/loader";
 import { getMonsterAi } from "../content/monsterAi";
+import { canonicalPowerId } from "../core/hooks";
 import type {
 	Action,
 	ActorRef,
@@ -10,10 +11,10 @@ import type {
 	MonsterIntent,
 	MonsterMoveId,
 	MonsterState,
-	PowerId,
 	RngState,
 } from "../core/types";
 import { random } from "../rng/stsRandom";
+import { allyRefs, getMoveEffect, getMoveHandler, type MoveCtx } from "./moveEffects";
 
 const SPLIT_MAP: Record<string, Array<{ spawnId: string; count: number }>> = {
 	ACID_SLIME_L: [{ spawnId: "ACID_SLIME_M", count: 2 }],
@@ -38,8 +39,14 @@ export function rollMonsterMove(
 	if (!aiFn) return { moveId: "" as MonsterMoveId, state };
 
 	const result = aiFn({ state, monsterIndex, aiRng: state.rng.aiRng });
+	let monsters = combat.monsters;
+	if (result.miscInfo !== undefined) {
+		monsters = [...combat.monsters];
+		monsters[monsterIndex] = { ...monster, miscInfo: result.miscInfo };
+	}
 	const newState: GameState = {
 		...state,
+		combat: { ...combat, monsters },
 		rng: { ...state.rng, aiRng: result.aiRng },
 	};
 	return { moveId: result.moveId, state: newState };
@@ -50,6 +57,7 @@ export function resolveMonsterMove(
 	moveId: MonsterMoveId,
 	ascension: number,
 	playerHp = 0,
+	state?: GameState,
 ): Action[] {
 	const def = getMonster(monster.id);
 	if (!def) return [];
@@ -58,13 +66,14 @@ export function resolveMonsterMove(
 	if (!moveDef) return [];
 
 	const resolved = applyAscension(moveDef, ascension);
-	const actions: Action[] = [];
+	let actions: Action[] = [];
 	const self = { type: "monster" as const, index: monster.index };
 	const player = { type: "player" as const };
+	const ctx: MoveCtx | null = state ? { state, monster, moveId, self } : null;
 
 	const baseDamage = resolveDamage(resolved, monster, moveId, playerHp);
 	if (baseDamage != null) {
-		const hits = typeof resolved.hits === "number" ? resolved.hits : 1;
+		const hits = resolveHits(resolved, monster);
 		actions.push({ type: "damage", source: self, target: player, baseDamage, hits });
 	}
 
@@ -74,7 +83,7 @@ export function resolveMonsterMove(
 	}
 
 	if (resolved.effects) {
-		resolveEffects(resolved.effects, actions, self, player);
+		actions = resolveEffects(resolved.effects, actions, self, player, ctx);
 	}
 
 	const intentStr = (resolved.intent ?? "").toUpperCase();
@@ -94,46 +103,68 @@ export function resolveMonsterMove(
 		}
 	}
 
-	return actions;
+	const moveHandler = ctx ? getMoveHandler(moveId as string) : undefined;
+	return moveHandler && ctx ? moveHandler(ctx, actions) : actions;
+}
+
+/** Data with hits = null and a damage value means "hits stored in miscInfo" (Book of Stabbing). */
+function resolveHits(move: MonsterMoveDef, monster: MonsterState): number {
+	if (typeof move.hits === "number") return move.hits;
+	return move.damage != null ? Math.max(1, monster.miscInfo) : 1;
 }
 
 function resolveEffects(
 	effects: MonsterMoveEffect[],
-	actions: Action[],
+	initial: Action[],
 	self: ActorRef,
 	player: ActorRef,
-): void {
+	ctx: MoveCtx | null,
+): Action[] {
+	let actions = initial;
 	for (const effect of effects) {
-		if (!effect.power || effect.amount == null) continue;
-		const power = effect.power;
-
-		if (power.startsWith("CARD:")) {
-			const cardId = power.slice(5) as CardId;
-			for (let i = 0; i < effect.amount; i++) {
-				actions.push({ type: "addCardToDiscardPile", cardId, upgraded: false });
-			}
-			continue;
+		if (!effect.power) continue;
+		const handler = ctx ? getMoveEffect(effect.power) : undefined;
+		if (handler && ctx) {
+			actions = handler(ctx, effect, actions);
+		} else if (effect.amount != null) {
+			actions.push(
+				...dataEffectActions(effect.power, effect.amount, effect.target, self, player, ctx),
+			);
 		}
-
-		if (power === "STEAL_GOLD") {
-			actions.push({ type: "loseGold", amount: effect.amount });
-			continue;
-		}
-
-		if (power === "BLOCK" && effect.target === "allies") {
-			actions.push({ type: "block", source: self, amount: effect.amount });
-			continue;
-		}
-
-		const target = effect.target === "player" ? player : self;
-		actions.push({
-			type: "applyPower",
-			source: self,
-			target,
-			powerId: power.toLowerCase() as PowerId,
-			amount: effect.amount,
-		});
 	}
+	return actions;
+}
+
+/** Effects expressible from data alone: CARD:X, STEAL_GOLD, BLOCK and plain powers. */
+function dataEffectActions(
+	power: string,
+	amount: number,
+	targetKind: string | undefined,
+	self: ActorRef,
+	player: ActorRef,
+	ctx: MoveCtx | null,
+): Action[] {
+	if (power.startsWith("CARD:")) {
+		const cardId = power.slice(5) as CardId;
+		return Array.from(
+			{ length: amount },
+			(): Action => ({
+				type: "addCardToDiscardPile",
+				cardId,
+				upgraded: false,
+			}),
+		);
+	}
+	if (power === "STEAL_GOLD") return [{ type: "loseGold", amount }];
+
+	const targets: ActorRef[] =
+		targetKind === "player" ? [player] : targetKind === "allies" && ctx ? allyRefs(ctx) : [self];
+	return targets.map(
+		(target): Action =>
+			power === "BLOCK"
+				? { type: "block", source: target, amount } // block credits its source: the ally
+				: { type: "applyPower", source: self, target, powerId: canonicalPowerId(power), amount },
+	);
 }
 
 function resolveDamage(
@@ -219,7 +250,7 @@ export function buildIntent(
 		}
 	}
 
-	const hits = typeof resolved.hits === "number" ? resolved.hits : 1;
+	const hits = resolveHits(resolved, monster);
 	const intent = (resolved.intent ?? "").toUpperCase();
 
 	let baseDamage: number | null = null;

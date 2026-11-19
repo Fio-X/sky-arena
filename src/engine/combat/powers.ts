@@ -1,4 +1,4 @@
-import { fireHook, vetoHook } from "../core/hooks";
+import { fireHook, foldHook, vetoHook } from "../core/hooks";
 import type { ActorRef, GameState, PowerId, PowerInstance } from "../core/types";
 
 const DEBUFF_IDS = new Set(["vulnerable", "weak", "frail", "ENTANGLED"]);
@@ -123,4 +123,29 @@ function setPowers(state: GameState, actor: ActorRef, powers: PowerInstance[]): 
 	if (!m) return state;
 	monsters[actor.index] = { ...m, powers };
 	return { ...state, combat: { ...state.combat, monsters } };
+}
+
+/**
+ * End of the player's turn: the player keeps `playerRetained` block; each monster
+ * keeps what its modifyBlockRetention allows (Barricade on Spheric Guardian keeps all).
+ */
+export function clearBlockAtEndOfTurn(state: GameState, playerRetained: number): GameState {
+	const c0 = state.combat;
+	if (!c0) return state;
+	let s: GameState = {
+		...state,
+		combat: { ...c0, player: { ...c0.player, block: playerRetained } },
+	};
+	const monsters = s.combat?.monsters ?? [];
+	for (const m of monsters) {
+		if (!m.alive || m.block === 0) continue;
+		const retain = foldHook(s, { type: "monster", index: m.index }, "modifyBlockRetention", 0);
+		s = retain.state;
+		const c = s.combat;
+		if (!c) return s;
+		const next = [...c.monsters];
+		next[m.index] = { ...m, block: Math.min(retain.value, m.block) };
+		s = { ...s, combat: { ...c, monsters: next } };
+	}
+	return s;
 }

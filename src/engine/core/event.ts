@@ -31,21 +31,23 @@ export interface EventDef {
 // ── Event registry ──────────────────────────────────────
 
 const events = new Map<string, EventDef>();
-const act1Pool: string[] = [];
 const shrinePool: string[] = [];
-const oneTimePool: string[] = [];
+
 export function loadEvents(data: { events: EventDef[] }): void {
 	events.clear();
-	act1Pool.length = 0;
 	shrinePool.length = 0;
-	oneTimePool.length = 0;
-
 	for (const e of data.events) {
 		events.set(e.id, e);
-		if (e.pool === "act1") act1Pool.push(e.id);
 		if (e.pool === "shrine") shrinePool.push(e.id);
-		if (e.pool === "oneTime" && e.acts.includes(1)) oneTimePool.push(e.id);
 	}
+}
+
+/** Act pool + one-time events allowed in this act, in data order. */
+function eventPoolForAct(act: number): string[] {
+	const all = [...events.values()];
+	const actPool = all.filter((e) => e.pool === `act${act}`).map((e) => e.id);
+	const oneTime = all.filter((e) => e.pool === "oneTime" && e.acts.includes(act)).map((e) => e.id);
+	return [...actPool, ...oneTime];
 }
 
 export function getEvent(id: string): EventDef | undefined {
@@ -56,7 +58,7 @@ export function getEvent(id: string): EventDef | undefined {
 
 const SHRINE_CHANCE = 0.25;
 
-export function pickEvent(rng: RngState): { eventId: string; rng: RngState } {
+export function pickEvent(rng: RngState, act = 1): { eventId: string; rng: RngState } {
 	const shrineRoll = random(rng, 99);
 	rng = shrineRoll.state;
 
@@ -64,7 +66,7 @@ export function pickEvent(rng: RngState): { eventId: string; rng: RngState } {
 	if (shrineRoll.value < SHRINE_CHANCE * 100 && shrinePool.length > 0) {
 		pool = shrinePool;
 	} else {
-		pool = [...act1Pool, ...oneTimePool.filter((id) => events.has(id))];
+		pool = eventPoolForAct(act);
 	}
 
 	if (pool.length === 0) {

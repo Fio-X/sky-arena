@@ -281,7 +281,7 @@ registerMonsterAi("THE_CHAMP", (ctx): MonsterAiResult => {
 	} else {
 		// Phase 1: check for phase transition
 		if (monster.currentHp < monster.maxHp / 2) {
-			return { moveId: TC2_ANGER, aiRng: rng }; // action executor sets phase2 flag
+			return { moveId: TC2_ANGER, aiRng: rng, miscInfo: monster.miscInfo | 0x4 };
 		}
 
 		// TAUNT on turns 4, 8, 12 … (turn number = h.length + 1; check (h.length + 1) % 4 == 0)
@@ -296,7 +296,7 @@ registerMonsterAi("THE_CHAMP", (ctx): MonsterAiResult => {
 	// Shared table (phase 1 non-taunt, phase 2 non-execute)
 	const stanceThreshold = asc >= 19 ? 30 : 15;
 	if (roll <= stanceThreshold && !lastMove(h, TC2_STANCE) && stanceUseCount < 2) {
-		return { moveId: TC2_STANCE, aiRng: rng };
+		return { moveId: TC2_STANCE, aiRng: rng, miscInfo: monster.miscInfo + 1 };
 	}
 	if (roll <= 30 && !lastMove(h, TC2_GLOAT) && !lastMove(h, TC2_STANCE)) {
 		return { moveId: TC2_GLOAT, aiRng: rng };

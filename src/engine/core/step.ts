@@ -1,8 +1,8 @@
 import { generateCardReward } from "../combat/cardReward";
-import { getEncounterMonsters } from "../combat/encounters";
+import { type EncounterSlot, getEncounterMonsters } from "../combat/encounters";
 import { initCombat } from "../combat/init";
 import { buildIntent, resolveMonsterMove, rollMonsterMove } from "../combat/monsterTurn";
-import { tickTurnBasedPowers } from "../combat/powers";
+import { clearBlockAtEndOfTurn, tickTurnBasedPowers } from "../combat/powers";
 import { resolveCardEffect } from "../content/cardEffects";
 import { getCard } from "../content/loader";
 import { drainActions } from "./actionExecutor";
@@ -16,15 +16,7 @@ import { triggerOrbPassives } from "./orbSystem";
 import { rollPotionDrop, stepDiscardPotion, stepObtainPotionReward, stepUsePotion } from "./potion";
 import { replayIfAmplify, replayIfBurst, replayIfDoubleTap, replayIfEchoForm } from "./replay";
 import { generateShop, stepChooseShopItem, stepShopPurge } from "./shop";
-import type {
-	ActorRef,
-	CardInstance,
-	Command,
-	GameEvent,
-	GameState,
-	MonsterId,
-	StepResult,
-} from "./types";
+import type { ActorRef, CardInstance, Command, GameEvent, GameState, StepResult } from "./types";
 
 const TURN_BASED_POWER_IDS = new Set([
 	"vulnerable",
@@ -252,16 +244,7 @@ export function stepEndTurnContinue(
 	const blockRetain = foldHook(s, playerRef, "modifyBlockRetention", 0);
 	s = blockRetain.state;
 	if (s.combat) {
-		const retainedBlock = Math.min(blockRetain.value, s.combat.player.block);
-		const clearedMonsters = s.combat.monsters.map((m) => (m.alive ? { ...m, block: 0 } : m));
-		s = {
-			...s,
-			combat: {
-				...s.combat,
-				player: { ...s.combat.player, block: retainedBlock },
-				monsters: clearedMonsters,
-			},
-		};
+		s = clearBlockAtEndOfTurn(s, Math.min(blockRetain.value, s.combat.player.block));
 	}
 
 	s = fireHookOnAllActors(s, (st, actor) => fireHook(st, actor, "atEndOfTurn", true));
@@ -332,7 +315,7 @@ function stepChooseMapNode(
 		visitedNodes: [...state.map.visitedNodes, { x, y }],
 	};
 
-	let s: GameState = { ...state, map: newMap, floor: y + 1 };
+	let s: GameState = { ...state, map: newMap, floor: state.floor + 1 };
 
 	switch (node.type) {
 		case "monster":
@@ -369,7 +352,7 @@ function stepChooseMapNode(
 			break;
 		}
 		case "event": {
-			const eventResult = pickEvent(s.rng.eventRng);
+			const eventResult = pickEvent(s.rng.eventRng, s.act);
 			s = {
 				...s,
 				rng: { ...s.rng, eventRng: eventResult.rng },
@@ -390,7 +373,7 @@ function isNodeReachable(state: GameState, x: number, y: number): boolean {
 	return currentNode?.edges.some((e) => e.x === x && e.y === y) ?? false;
 }
 
-function pickEncounter(state: GameState, roomType: "monster" | "elite"): MonsterId[] {
+function pickEncounter(state: GameState, roomType: "monster" | "elite"): EncounterSlot[] {
 	if (roomType === "elite") {
 		const idx = state.encounterIndex.elite;
 		const encId = state.encounterLists.elites[idx % state.encounterLists.elites.length];
@@ -563,10 +546,10 @@ function executeMonsterTurns(state: GameState, events: GameEvent[]): GameState {
 
 	for (let i = 0; i < combat.monsters.length; i++) {
 		const monster = s.combat?.monsters[i];
-		if (!monster?.alive) continue;
+		if (!monster?.alive || !combat.monsters[i]?.alive) continue; // summoned this turn: no action
 
 		const moveId = monster.intent.moveId;
-		const actions = resolveMonsterMove(monster, moveId, s.ascension, s.currentHp);
+		const actions = resolveMonsterMove(monster, moveId, s.ascension, s.currentHp, s);
 
 		for (const action of actions) {
 			if (!s.combat) break;

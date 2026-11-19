@@ -74,3 +74,5 @@ import "./colorlessPowers";
 import "./watcherPowers";
 import "./watcherUncommonCards";
 import "./watcherRareCards";
+import "./act2MoveEffects";
+import "./act2Powers";

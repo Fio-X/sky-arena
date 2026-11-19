@@ -13,6 +13,7 @@ import "../content/eliteAi";
 import "../content/bossAi";
 import "../content/gremlinAi";
 import { loadCards, loadMonsters, loadPowers } from "../content/loader";
+import { step } from "../core/step";
 import type { CardId, MonsterId } from "../core/types";
 import { createAllStreams } from "../rng/stsRandom";
 import { initCombat } from "./init";
@@ -114,10 +115,26 @@ describe("initCombat", () => {
 		const state = makeRunState(123n);
 		const result = initCombat(state, ["RED_LOUSE" as MonsterId]);
 		const m = result.combat?.monsters[0];
-		const curlUp = m?.powers.find((p) => p.id === "curl_up");
+		const curlUp = m?.powers.find((p) => p.id === "CURL_UP");
 		expect(curlUp).toBeDefined();
 		expect(curlUp?.amount).toBeGreaterThanOrEqual(3);
 		expect(curlUp?.amount).toBeLessThanOrEqual(7);
+	});
+
+	// Regression: data power names used to be lowercased ("curl_up") while the hook is
+	// registered as "CURL_UP", so Curl Up never fired in a real combat.
+	it("Curl Up from prebattle data triggers on the first hit", () => {
+		const start = initCombat(makeRunState(123n), ["RED_LOUSE" as MonsterId]);
+		const before = start.combat?.monsters[0];
+		const curl = before?.powers.find((p) => p.id === "CURL_UP")?.amount ?? 0;
+		const strikeIdx = start.combat?.hand.findIndex((c) => c.id === "STRIKE_RED") ?? -1;
+		expect(strikeIdx).toBeGreaterThanOrEqual(0);
+
+		const after = step(start, { type: "playCard", handIndex: strikeIdx, targetIndex: 0 }).state;
+		const m = after.combat?.monsters[0];
+		expect(m?.currentHp).toBe((before?.currentHp ?? 0) - 6);
+		expect(m?.block).toBe(curl);
+		expect(m?.powers.find((p) => p.id === "CURL_UP")).toBeUndefined();
 	});
 
 	it("rolls miscInfo for Louse (range damage)", () => {
@@ -165,7 +182,7 @@ describe("initCombat", () => {
 		const state = makeRunState(10n);
 		const result = initCombat(state, ["LAGAVULIN" as MonsterId]);
 		const m = result.combat?.monsters[0];
-		const asleep = m?.powers.find((p) => p.id === "asleep");
+		const asleep = m?.powers.find((p) => p.id === "ASLEEP");
 		const metallicize = m?.powers.find((p) => p.id === "metallicize");
 		expect(asleep).toBeDefined();
 		expect(metallicize).toBeDefined();

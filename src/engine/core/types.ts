@@ -125,6 +125,8 @@ export interface MonsterState {
 	readonly alive: boolean;
 	readonly halfDead: boolean;
 	readonly miscInfo: number;
+	/** Card taken by Bronze Orb STASIS; returned to hand when this monster dies. */
+	readonly heldCard?: CardInstance;
 }
 
 export interface MonsterIntent {
@@ -258,6 +260,20 @@ export type Action =
 			count: number;
 	  }
 	| { type: "escape"; monsterIndex: number }
+	/** Summon into a slot (replacing a dead/empty one). RANDOM_GREMLIN picks with aiRng. */
+	| {
+			type: "spawnMonster";
+			monsterId: MonsterId | "RANDOM_GREMLIN";
+			slot: number;
+			minion: boolean;
+			/** Burn one aiRng.random(99) after spawning (Torch Head parity). */
+			burnAiRoll?: boolean;
+	  }
+	| { type: "removeDebuffs"; target: ActorRef }
+	/** Single hit; the source heals by the HP the target actually lost (Shelled Parasite SUCK). */
+	| { type: "vampireDamage"; source: ActorRef; target: ActorRef; baseDamage: number }
+	/** Bronze Orb STASIS: take a card from the draw (else discard) pile and hold it. */
+	| { type: "stealCard"; monsterIndex: number }
 	| { type: "custom"; execute: (state: GameState) => GameState };
 
 export type ActorRef = { type: "player" } | { type: "monster"; index: number };

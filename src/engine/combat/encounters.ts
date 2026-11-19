@@ -1,76 +1,136 @@
 import type { MonsterId, RngState } from "../core/types";
 import { random, randomFloat } from "../rng/stsRandom";
 
-type EncounterId = string;
+/**
+ * One position in an encounter layout. The array index is the monster's slot
+ * (which also fixes turn order). "EMPTY" reserves a slot for a later summon;
+ * "RANDOM_GREMLIN" is resolved at combat start with miscRng.
+ */
+export type EncounterSlot = MonsterId | "EMPTY" | "RANDOM_GREMLIN";
 
-const ENCOUNTER_MONSTERS: Record<EncounterId, MonsterId[]> = {
-	CULTIST: ["CULTIST" as MonsterId],
-	JAW_WORM: ["JAW_WORM" as MonsterId],
-	TWO_LOUSE: ["RED_LOUSE" as MonsterId, "GREEN_LOUSE" as MonsterId],
-	SMALL_SLIMES: ["SPIKE_SLIME_M" as MonsterId, "ACID_SLIME_M" as MonsterId],
-	// Strong encounters
-	GREMLIN_GANG: [
-		"MAD_GREMLIN" as MonsterId,
-		"SNEAKY_GREMLIN" as MonsterId,
-		"FAT_GREMLIN" as MonsterId,
-		"SHIELD_GREMLIN" as MonsterId,
-	],
-	LOTS_OF_SLIMES: [
-		"SPIKE_SLIME_S" as MonsterId,
-		"ACID_SLIME_S" as MonsterId,
-		"SPIKE_SLIME_M" as MonsterId,
-		"ACID_SLIME_S" as MonsterId,
-		"SPIKE_SLIME_S" as MonsterId,
-	],
-	RED_SLAVER: ["RED_SLAVER" as MonsterId],
-	EXORDIUM_THUGS: ["LOOTER" as MonsterId, "CULTIST" as MonsterId],
-	EXORDIUM_WILDLIFE: ["FUNGI_BEAST" as MonsterId, "JAW_WORM" as MonsterId],
-	BLUE_SLAVER: ["BLUE_SLAVER" as MonsterId],
-	LOOTER: ["LOOTER" as MonsterId],
-	LARGE_SLIME: ["ACID_SLIME_L" as MonsterId],
-	THREE_LOUSE: ["RED_LOUSE" as MonsterId, "RED_LOUSE" as MonsterId, "GREEN_LOUSE" as MonsterId],
-	TWO_FUNGI_BEASTS: ["FUNGI_BEAST" as MonsterId, "FUNGI_BEAST" as MonsterId],
-	// Elites
-	GREMLIN_NOB: ["GREMLIN_NOB" as MonsterId],
-	LAGAVULIN: ["LAGAVULIN" as MonsterId],
-	SENTRY: ["SENTRY" as MonsterId, "SENTRY" as MonsterId, "SENTRY" as MonsterId],
-	// Bosses
-	SLIME_BOSS: ["SLIME_BOSS" as MonsterId],
-	THE_GUARDIAN: ["THE_GUARDIAN" as MonsterId],
-	HEXAGHOST: ["HEXAGHOST" as MonsterId],
+const L = (...ids: string[]): EncounterSlot[] => ids as EncounterSlot[];
+
+const ENCOUNTER_MONSTERS: Record<string, EncounterSlot[]> = {
+	// ── Act 1 ──
+	CULTIST: L("CULTIST"),
+	JAW_WORM: L("JAW_WORM"),
+	TWO_LOUSE: L("RED_LOUSE", "GREEN_LOUSE"),
+	SMALL_SLIMES: L("SPIKE_SLIME_M", "ACID_SLIME_M"),
+	GREMLIN_GANG: L("MAD_GREMLIN", "SNEAKY_GREMLIN", "FAT_GREMLIN", "SHIELD_GREMLIN"),
+	LOTS_OF_SLIMES: L(
+		"SPIKE_SLIME_S",
+		"ACID_SLIME_S",
+		"SPIKE_SLIME_M",
+		"ACID_SLIME_S",
+		"SPIKE_SLIME_S",
+	),
+	RED_SLAVER: L("RED_SLAVER"),
+	EXORDIUM_THUGS: L("LOOTER", "CULTIST"),
+	EXORDIUM_WILDLIFE: L("FUNGI_BEAST", "JAW_WORM"),
+	BLUE_SLAVER: L("BLUE_SLAVER"),
+	LOOTER: L("LOOTER"),
+	LARGE_SLIME: L("ACID_SLIME_L"),
+	THREE_LOUSE: L("RED_LOUSE", "RED_LOUSE", "GREEN_LOUSE"),
+	TWO_FUNGI_BEASTS: L("FUNGI_BEAST", "FUNGI_BEAST"),
+	GREMLIN_NOB: L("GREMLIN_NOB"),
+	LAGAVULIN: L("LAGAVULIN"),
+	SENTRY: L("SENTRY", "SENTRY", "SENTRY"),
+	SLIME_BOSS: L("SLIME_BOSS"),
+	THE_GUARDIAN: L("THE_GUARDIAN"),
+	HEXAGHOST: L("HEXAGHOST"),
+	// ── Act 2 (slot orders per MonsterGroup.cpp / spire-engine) ──
+	SPHERIC_GUARDIAN: L("SPHERIC_GUARDIAN"),
+	CHOSEN: L("CHOSEN"),
+	SHELL_PARASITE: L("SHELLED_PARASITE"),
+	THREE_BYRDS: L("BYRD", "BYRD", "BYRD"),
+	TWO_THIEVES: L("LOOTER", "MUGGER"),
+	CHOSEN_AND_BYRDS: L("BYRD", "CHOSEN"),
+	SENTRY_AND_SPHERE: L("SENTRY", "SPHERIC_GUARDIAN"),
+	CULTIST_AND_CHOSEN: L("CULTIST", "CHOSEN"),
+	THREE_CULTIST: L("CULTIST", "CULTIST", "CULTIST"),
+	SHELLED_PARASITE_AND_FUNGI: L("SHELLED_PARASITE", "FUNGI_BEAST"),
+	SNECKO: L("SNECKO"),
+	SNAKE_PLANT: L("SNAKE_PLANT"),
+	CENTURION_AND_HEALER: L("CENTURION", "MYSTIC"),
+	GREMLIN_LEADER: L("EMPTY", "RANDOM_GREMLIN", "RANDOM_GREMLIN", "GREMLIN_LEADER"),
+	SLAVERS: L("BLUE_SLAVER", "TASKMASTER", "RED_SLAVER"),
+	BOOK_OF_STABBING: L("BOOK_OF_STABBING"),
+	AUTOMATON: L("EMPTY", "BRONZE_AUTOMATON", "EMPTY"),
+	COLLECTOR: L("EMPTY", "EMPTY", "THE_COLLECTOR"),
+	CHAMP: L("THE_CHAMP"),
+	MASKED_BANDITS_EVENT: L("POINTY", "ROMEO", "BEAR"),
 };
 
-export function getEncounterMonsters(encounterId: string): MonsterId[] {
+export function getEncounterMonsters(encounterId: string): EncounterSlot[] {
 	return ENCOUNTER_MONSTERS[encounterId] ?? [];
 }
 
-interface WeightedEncounter {
-	id: string;
-	weight: number;
+export interface WeightedEncounter {
+	readonly id: string;
+	readonly weight: number;
 }
 
-const ACT1_WEAK: WeightedEncounter[] = [
-	{ id: "CULTIST", weight: 1 / 4 },
-	{ id: "JAW_WORM", weight: 1 / 4 },
-	{ id: "TWO_LOUSE", weight: 1 / 4 },
-	{ id: "SMALL_SLIMES", weight: 1 / 4 },
-];
+export interface ActEncounterPool {
+	readonly weak: readonly WeightedEncounter[];
+	readonly weakCount: number;
+	/** Already in normalizeWeights order (ascending weight, stable). */
+	readonly strong: readonly WeightedEncounter[];
+	readonly elites: readonly string[];
+	readonly bosses: readonly string[];
+	/** generateExclusions: last weak encounter → strong encounters the first strong may not be. */
+	readonly firstStrongExclusions: Readonly<Record<string, readonly string[]>>;
+}
 
-const ACT1_STRONG: WeightedEncounter[] = [
-	{ id: "GREMLIN_GANG", weight: 2 / 32 },
-	{ id: "LOTS_OF_SLIMES", weight: 2 / 32 },
-	{ id: "RED_SLAVER", weight: 2 / 32 },
-	{ id: "EXORDIUM_THUGS", weight: 3 / 32 },
-	{ id: "EXORDIUM_WILDLIFE", weight: 3 / 32 },
-	{ id: "BLUE_SLAVER", weight: 2 / 32 },
-	{ id: "LOOTER", weight: 2 / 32 },
-	{ id: "LARGE_SLIME", weight: 2 / 32 },
-	{ id: "THREE_LOUSE", weight: 2 / 32 },
-	{ id: "TWO_FUNGI_BEASTS", weight: 2 / 32 },
-];
+const even = (...ids: string[]): WeightedEncounter[] =>
+	ids.map((id) => ({ id, weight: 1 / ids.length }));
+const weighted = (total: number, entries: [string, number][]): WeightedEncounter[] =>
+	entries.map(([id, w]) => ({ id, weight: w / total }));
 
-const ACT1_ELITES = ["GREMLIN_NOB", "LAGAVULIN", "SENTRY"];
-const ACT1_BOSSES = ["THE_GUARDIAN", "SLIME_BOSS", "HEXAGHOST"];
+export const ACT_ENCOUNTER_POOLS: Readonly<Record<number, ActEncounterPool>> = {
+	1: {
+		weak: even("CULTIST", "JAW_WORM", "TWO_LOUSE", "SMALL_SLIMES"),
+		weakCount: 3,
+		strong: weighted(32, [
+			["GREMLIN_GANG", 2],
+			["LOTS_OF_SLIMES", 2],
+			["RED_SLAVER", 2],
+			["EXORDIUM_THUGS", 3],
+			["EXORDIUM_WILDLIFE", 3],
+			["BLUE_SLAVER", 2],
+			["LOOTER", 2],
+			["LARGE_SLIME", 2],
+			["THREE_LOUSE", 2],
+			["TWO_FUNGI_BEASTS", 2],
+		]),
+		elites: ["GREMLIN_NOB", "LAGAVULIN", "SENTRY"],
+		bosses: ["THE_GUARDIAN", "SLIME_BOSS", "HEXAGHOST"],
+		firstStrongExclusions: {
+			SMALL_SLIMES: ["LARGE_SLIME", "LOTS_OF_SLIMES"],
+			TWO_LOUSE: ["THREE_LOUSE"],
+		},
+	},
+	2: {
+		weak: even("SPHERIC_GUARDIAN", "CHOSEN", "SHELL_PARASITE", "THREE_BYRDS", "TWO_THIEVES"),
+		weakCount: 2,
+		strong: weighted(29, [
+			["CHOSEN_AND_BYRDS", 2],
+			["SENTRY_AND_SPHERE", 2],
+			["CULTIST_AND_CHOSEN", 3],
+			["THREE_CULTIST", 3],
+			["SHELLED_PARASITE_AND_FUNGI", 3],
+			["SNECKO", 4],
+			["SNAKE_PLANT", 6],
+			["CENTURION_AND_HEALER", 6],
+		]),
+		elites: ["GREMLIN_LEADER", "SLAVERS", "BOOK_OF_STABBING"],
+		bosses: ["AUTOMATON", "COLLECTOR", "CHAMP"],
+		firstStrongExclusions: {
+			SPHERIC_GUARDIAN: ["SENTRY_AND_SPHERE"],
+			THREE_BYRDS: ["CHOSEN_AND_BYRDS"],
+			CHOSEN: ["CHOSEN_AND_BYRDS", "CULTIST_AND_CHOSEN"],
+		},
+	},
+};
 
 export interface EncounterLists {
 	weak: string[];
@@ -79,53 +139,59 @@ export interface EncounterLists {
 	boss: string;
 }
 
-export function generateEncounterLists(rng: RngState): { lists: EncounterLists; rng: RngState } {
+/**
+ * Weak and strong encounters share one history in the game (populateMonsterList
+ * appends to a single monsterList), so the no-repeat rule spans the boundary.
+ */
+export function generateEncounterLists(
+	rng: RngState,
+	act = 1,
+): { lists: EncounterLists; rng: RngState } {
+	const pool = ACT_ENCOUNTER_POOLS[act] ?? ACT_ENCOUNTER_POOLS[1];
+	if (!pool) throw new Error(`no encounter pool for act ${act}`);
 	let r = rng;
+	const history: string[] = [];
 
-	// Generate 3 weak encounters
-	const weak: string[] = [];
-	for (let i = 0; i < 3; i++) {
-		const result = rollWeightedAvoidRepeat(r, ACT1_WEAK, weak);
-		weak.push(result.id);
+	for (let i = 0; i < pool.weakCount; i++) {
+		const result = rollWeightedAvoidRepeat(r, pool.weak, history);
+		history.push(result.id);
 		r = result.rng;
 	}
+	const weak = [...history];
 
-	// Generate first strong (avoid slime/louse overlap with last weak)
-	let firstStrong = rollWeighted(r, ACT1_STRONG);
-	r = firstStrong.rng;
-	const lastWeak = weak[weak.length - 1] ?? "";
-	if (shouldRerollFirstStrong(firstStrong.id, lastWeak)) {
-		firstStrong = rollWeighted(r, ACT1_STRONG);
-		r = firstStrong.rng;
+	const excluded = pool.firstStrongExclusions[weak[weak.length - 1] ?? ""] ?? [];
+	let first = rollWeighted(r, pool.strong);
+	r = first.rng;
+	for (let attempts = 0; excluded.includes(first.id) && attempts < 100; attempts++) {
+		first = rollWeighted(r, pool.strong);
+		r = first.rng;
 	}
+	history.push(first.id);
 
-	// Generate 12 more strong encounters
-	const strong: string[] = [firstStrong.id];
 	for (let i = 0; i < 12; i++) {
-		const result = rollWeightedAvoidRepeat(r, ACT1_STRONG, strong);
-		strong.push(result.id);
+		const result = rollWeightedAvoidRepeat(r, pool.strong, history);
+		history.push(result.id);
 		r = result.rng;
 	}
+	const strong = history.slice(weak.length);
 
-	// Generate 10 elite encounters (equal chance, no consecutive repeats)
 	const elites: string[] = [];
 	for (let i = 0; i < 10; i++) {
-		const result = rollElite(r, ACT1_ELITES, elites);
+		const result = rollElite(r, pool.elites, elites);
 		elites.push(result.id);
 		r = result.rng;
 	}
 
-	// Boss selection: shuffle indices
-	const bossResult = rollBoss(r, ACT1_BOSSES);
+	const bossResult = rollBoss(r, pool.bosses);
 	r = bossResult.rng;
 
-	return {
-		lists: { weak, strong, elites, boss: bossResult.id },
-		rng: r,
-	};
+	return { lists: { weak, strong, elites, boss: bossResult.id }, rng: r };
 }
 
-function rollWeighted(rng: RngState, pool: WeightedEncounter[]): { id: string; rng: RngState } {
+function rollWeighted(
+	rng: RngState,
+	pool: readonly WeightedEncounter[],
+): { id: string; rng: RngState } {
 	const result = randomFloat(rng);
 	const roll = result.value;
 	let cumulative = 0;
@@ -138,7 +204,7 @@ function rollWeighted(rng: RngState, pool: WeightedEncounter[]): { id: string; r
 
 function rollWeightedAvoidRepeat(
 	rng: RngState,
-	pool: WeightedEncounter[],
+	pool: readonly WeightedEncounter[],
 	history: string[],
 ): { id: string; rng: RngState } {
 	const last = history[history.length - 1];
@@ -152,20 +218,9 @@ function rollWeightedAvoidRepeat(
 	return result;
 }
 
-function shouldRerollFirstStrong(strongId: string, lastWeakId: string): boolean {
-	if (
-		lastWeakId === "SMALL_SLIMES" &&
-		(strongId === "LARGE_SLIME" || strongId === "LOTS_OF_SLIMES")
-	) {
-		return true;
-	}
-	if (lastWeakId === "TWO_LOUSE" && strongId === "THREE_LOUSE") return true;
-	return false;
-}
-
 function rollElite(
 	rng: RngState,
-	pool: string[],
+	pool: readonly string[],
 	history: string[],
 ): { id: string; rng: RngState } {
 	const last = history[history.length - 1];
@@ -182,7 +237,7 @@ function rollElite(
 	return { id, rng: r };
 }
 
-function rollBoss(rng: RngState, pool: string[]): { id: string; rng: RngState } {
+function rollBoss(rng: RngState, pool: readonly string[]): { id: string; rng: RngState } {
 	const result = random(rng, pool.length - 1);
 	return { id: pool[result.value] ?? pool[0] ?? "", rng: result.state };
 }

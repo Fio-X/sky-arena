@@ -1,6 +1,7 @@
 import type { HookSource } from "../core/hooks";
 import { registerPowerHooks } from "../core/hooks";
 import type { ActorRef, GameState, PowerId, PowerInstance } from "../core/types";
+import { setMonsterMove } from "./act2Powers";
 import { getCard } from "./loader";
 
 // ── helpers ──────────────────────────────────────────────
@@ -331,7 +332,11 @@ registerPowerHooks(
 								pw.id === "PLATED_ARMOR" ? { ...pw, amount: newAmount } : pw,
 							)
 						: removePowerFromList(monster.powers, "PLATED_ARMOR");
-				return setMonsterPowers(ctx.state, idx, powers);
+				const s = setMonsterPowers(ctx.state, idx, powers);
+				// Shelled Parasite loses its next turn when its Plated Armor breaks.
+				return newAmount <= 0 && monster.id === "SHELLED_PARASITE"
+					? setMonsterMove(s, idx, "SHELLED_PARASITE_STUNNED")
+					: s;
 			},
 		},
 	}),
