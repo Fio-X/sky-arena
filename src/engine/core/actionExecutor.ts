@@ -5,11 +5,12 @@ import {
 	calculateNonAttackDamage,
 } from "../combat/damage";
 import { resolveMonsterDeath } from "../combat/death";
+import { negateWithArtifact } from "../combat/powers";
 import { getCard } from "../content/loader";
 import { stsShuffle } from "../rng/stsRandom";
 import { popAction } from "./actionQueue";
 import { insertAtRandomSpot } from "./drawPile";
-import { fireHook } from "./hooks";
+import { fireHook, vetoHook } from "./hooks";
 import {
 	executeAddCardToMasterDeck,
 	executeEscape,
@@ -188,9 +189,15 @@ function executeApplyPower(
 	action: Extract<Action, { type: "applyPower" }>,
 	events: GameEvent[],
 ): { state: GameState } {
-	const combat = state.combat;
-	if (!combat) return { state };
+	if (!state.combat) return { state };
 	const { target, powerId, amount } = action;
+	const negated = negateWithArtifact(state, target, powerId, amount);
+	if (negated) {
+		events.push({ type: "powerNegated", target, powerId });
+		return { state: negated };
+	}
+	if (!vetoHook(state, target, "onApplyPower", powerId, amount)) return { state };
+	const combat = state.combat;
 	let newCombat: typeof combat;
 
 	if (target.type === "player") {

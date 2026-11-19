@@ -1,7 +1,43 @@
+import { getPower } from "../content/loader";
 import { fireHook, foldHook, vetoHook } from "../core/hooks";
 import type { ActorRef, GameState, PowerId, PowerInstance } from "../core/types";
 
-const DEBUFF_IDS = new Set(["vulnerable", "weak", "frail", "ENTANGLED"]);
+const STAT_IDS = new Set(["STRENGTH", "DEXTERITY", "FOCUS"]);
+
+/**
+ * PowerType.DEBUFF in the original: powers.json kind "debuff", or a negative
+ * Strength/Dexterity/Focus amount (StrengthPower turns into a debuff below 0).
+ */
+export function isDebuffApplication(powerId: string, amount: number): boolean {
+	const id = powerId.toUpperCase();
+	if (STAT_IDS.has(id)) return amount < 0;
+	return getPower(id)?.kind === "debuff";
+}
+
+/**
+ * ApplyPowerAction: a debuff on a target with Artifact is negated and one
+ * Artifact stack is used. Returns the new state, or null when not negated.
+ */
+export function negateWithArtifact(
+	state: GameState,
+	target: ActorRef,
+	powerId: string,
+	amount: number,
+): GameState | null {
+	if (!isDebuffApplication(powerId, amount)) return null;
+	const powers = getPowers(state, target);
+	const artifact = powers.find((p) => p.id.toUpperCase() === "ARTIFACT");
+	if (!artifact || artifact.amount <= 0) return null;
+	const newPowers =
+		artifact.amount > 1
+			? powers.map((p) => (p === artifact ? { ...p, amount: p.amount - 1 } : p))
+			: powers.filter((p) => p !== artifact);
+	return setPowers(state, target, newPowers);
+}
+
+export function hasArtifact(state: GameState, target: ActorRef): boolean {
+	return getPowers(state, target).some((p) => p.id.toUpperCase() === "ARTIFACT" && p.amount > 0);
+}
 
 /**
  * Apply a power to an actor. Handles:
@@ -18,19 +54,8 @@ export function applyPower(
 ): GameState {
 	if (!state.combat) return state;
 
-	// Artifact: consume a stack when blocking a debuff
-	if (DEBUFF_IDS.has(powerId)) {
-		const artifact = getPowers(state, target).find((p) => p.id === "ARTIFACT");
-		if (artifact && artifact.amount > 0) {
-			const newAmount = artifact.amount - 1;
-			const powers = getPowers(state, target);
-			const newPowers =
-				newAmount > 0
-					? powers.map((p) => (p.id === "ARTIFACT" ? { ...p, amount: newAmount } : p))
-					: powers.filter((p) => p.id !== "ARTIFACT");
-			return setPowers(state, target, newPowers);
-		}
-	}
+	const negated = negateWithArtifact(state, target, powerId, amount);
+	if (negated) return negated;
 
 	// Veto check (other onApplyPower hooks)
 	const allowed = vetoHook(state, target, "onApplyPower", powerId, amount);

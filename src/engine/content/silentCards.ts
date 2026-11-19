@@ -1,3 +1,4 @@
+import { hasArtifact } from "../combat/powers";
 import type { GameState } from "../core/types";
 import { registerCardEffect } from "./cardEffects";
 import { type Action, M, P, vals } from "./cardUtils";
@@ -270,6 +271,8 @@ registerCardEffect("PIERCING_WAIL", (s, card, _t) => {
 				powerId: "strength" as never,
 				amount: -v.magic,
 			});
+			// Original: the Strength comes back only if Artifact did not block the loss.
+			if (hasArtifact(s, M(i))) continue;
 			actions.push({
 				type: "applyPower",
 				source: P,

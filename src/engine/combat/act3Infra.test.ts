@@ -258,3 +258,29 @@ describe("early end of turn", () => {
 		expect(s.combat?.endTurnRequested).toBe(false);
 	});
 });
+
+describe("Artifact and prebattle aliases", () => {
+	it("Artifact negates a debuff and loses a stack; buffs pass through", () => {
+		let s = startFight("SPHERIC_GUARDIAN", 1n, [
+			...strikes(4),
+			card("NEUTRALIZE", 20),
+			card("DARK_SHACKLES", 21),
+		]);
+		const art = powerAmount(monsterAt(s, 0), "ARTIFACT") ?? 0;
+		expect(art).toBeGreaterThan(0);
+		s = playCard(s, "NEUTRALIZE", 0);
+		expect(powerAmount(monsterAt(s, 0), "WEAK")).toBeUndefined();
+		expect(powerAmount(monsterAt(s, 0), "ARTIFACT") ?? 0).toBe(art - 1);
+		// Dark Shackles: the Strength loss is negated, and no Strength comes back later.
+		s = playCard(s, "DARK_SHACKLES", 0);
+		expect(powerAmount(monsterAt(s, 0), "STRENGTH") ?? 0).toBe(0);
+		expect(powerAmount(monsterAt(s, 0), "LOSE_STRENGTH")).toBeUndefined();
+	});
+
+	it("Darkling starts with Life Link; Awakened One with Regenerate (not Regen)", () => {
+		expect(powerAmount(monsterAt(startFight("THREE_DARKLINGS"), 0), "LIFE_LINK")).toBe(1);
+		const ao = monsterAt(startFight("AWAKENED_ONE"), 2);
+		expect(powerAmount(ao, "REGENERATE")).toBe(10);
+		expect(powerAmount(ao, "REGEN")).toBeUndefined();
+	});
+});

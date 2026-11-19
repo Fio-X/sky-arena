@@ -1,3 +1,4 @@
+import { hasArtifact } from "../combat/powers";
 import type { CardInstance, GameState } from "../core/types";
 import { random } from "../rng/stsRandom";
 import { registerCardEffect } from "./cardEffects";
@@ -77,16 +78,19 @@ registerCardEffect("BLIND", (s, card, t) => {
 // Enemy loses 9(15) Strength this turn. Exhaust. Cost 0.
 // Uses LOSE_STRENGTH power (restores at end of round).
 
-registerCardEffect("DARK_SHACKLES", (_s, card, t) => {
+registerCardEffect("DARK_SHACKLES", (s, card, t) => {
 	const v = vals(card);
+	const loss: Action = {
+		type: "applyPower",
+		source: P,
+		target: M(t),
+		powerId: "strength" as never,
+		amount: -v.magic,
+	};
+	// Original: the Strength comes back only if Artifact did not block the loss.
+	if (hasArtifact(s, M(t))) return [loss];
 	return [
-		{
-			type: "applyPower",
-			source: P,
-			target: M(t),
-			powerId: "strength" as never,
-			amount: -v.magic,
-		},
+		loss,
 		{
 			type: "applyPower",
 			source: P,

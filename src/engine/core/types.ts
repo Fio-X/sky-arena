@@ -323,6 +323,8 @@ export type GameEvent =
 	| { type: "cardExhausted"; card: CardInstance }
 	| { type: "cardDiscarded"; card: CardInstance }
 	| { type: "monsterDied"; index: number }
+	/** A debuff was cancelled by Artifact. */
+	| { type: "powerNegated"; target: ActorRef; powerId: PowerId }
 	| { type: "turnStarted"; turn: number }
 	| { type: "turnEnded"; turn: number }
 	| { type: "combatStarted" }

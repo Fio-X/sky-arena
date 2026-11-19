@@ -68,6 +68,16 @@ export function registerMiscRoll(monsterId: string, fn: MiscRoll): void {
 	miscRolls.set(monsterId, fn);
 }
 
+/**
+ * Prebattle power names in the monster data that differ from the power the
+ * original gives (powers.json ids): Darkling "REGROW" is Life Link; the Awakened
+ * One's "REGEN" is RegenerateMonsterPower (permanent), not the player's Regen.
+ */
+const PREBATTLE_POWER_ALIASES: Record<string, Record<string, string>> = {
+	DARKLING: { REGROW: "LIFE_LINK" },
+	AWAKENED_ONE: { REGEN: "REGENERATE" },
+};
+
 /** Monster state that starts at a value other than the pre-rolled damage (miscInfo). */
 const INITIAL_MISC_INFO: Record<string, number> = {
 	BOOK_OF_STABBING: 1, // stabCount
@@ -113,7 +123,11 @@ export function createMonster(
 	);
 	nextRng = miscRoll.rng;
 
-	const pre = resolvePrebattle((def.prebattle ?? []) as PrebattleEntry[], ascension, nextRng);
+	const aliases = PREBATTLE_POWER_ALIASES[id] ?? {};
+	const entries = ((def.prebattle ?? []) as PrebattleEntry[]).map((e) =>
+		aliases[e.power] ? { ...e, power: aliases[e.power] as string } : e,
+	);
+	const pre = resolvePrebattle(entries, ascension, nextRng);
 	nextRng = pre.rng;
 
 	return {
