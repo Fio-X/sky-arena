@@ -1,20 +1,27 @@
 :root {
-	--bg: #1a1a2e;
-	--bg-panel: #16213e;
-	--bg-card: #0f3460;
-	--text: #e0e0e0;
-	--text-dim: #888;
-	--accent: #e94560;
-	--accent-green: #4ecca3;
-	--accent-gold: #f5c542;
-	--accent-blue: #53a8ff;
-	--border: #333;
-	--hp-bar: #c0392b;
-	--hp-bg: #444;
-	--energy: #f5c542;
-	--common: #aaa;
-	--uncommon: #53a8ff;
-	--rare: #f5c542;
+	--bg: #0f0e17;
+	--bg-panel: #1a1932;
+	--bg-card: #232246;
+	--bg-card-hover: #2d2c5a;
+	--text: #fffffe;
+	--text-dim: #94a1b2;
+	--accent: #e53170;
+	--accent-green: #2cb67d;
+	--accent-gold: #ffd803;
+	--accent-blue: #7f5af0;
+	--border: #393659;
+	--hp-bar: #e53170;
+	--hp-bg: #2a2940;
+	--energy: #ffd803;
+	--common: #94a1b2;
+	--uncommon: #7f5af0;
+	--rare: #ffd803;
+	--shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+	--shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+	--shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.6);
+	--card-attack: #e53170;
+	--card-skill: #7f5af0;
+	--card-power: #ffd803;
 }
 
 * {
@@ -36,16 +43,24 @@ button {
 	background: var(--bg-panel);
 	color: var(--text);
 	padding: 0.5rem 1rem;
-	border-radius: 4px;
+	border-radius: 6px;
 	font-size: 0.875rem;
-	transition: background 0.15s;
+	transition:
+		background 0.15s,
+		transform 0.1s;
+	box-shadow: var(--shadow-sm);
 }
 
 button:hover {
 	background: var(--bg-card);
 }
 
+button:active {
+	transform: scale(0.97);
+}
+
 button:disabled {
 	opacity: 0.4;
 	cursor: default;
+	box-shadow: none;
 }

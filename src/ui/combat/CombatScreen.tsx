@@ -51,8 +51,9 @@ export function CombatScreen() {
 					display: "flex",
 					justifyContent: "center",
 					alignItems: "center",
-					gap: "1.5rem",
-					padding: "1rem",
+					gap: "2rem",
+					padding: "1.5rem",
+					background: "radial-gradient(ellipse at 50% 60%, rgba(127,90,240,0.06), transparent 70%)",
 				}}
 			>
 				{combat.monsters.map((m, i) => (
@@ -71,9 +72,9 @@ export function CombatScreen() {
 				style={{
 					display: "flex",
 					justifyContent: "center",
-					gap: "1.5rem",
-					padding: "0.5rem 1rem",
-					background: "var(--bg-panel)",
+					gap: "1.25rem",
+					padding: "0.625rem 1rem",
+					background: "linear-gradient(180deg, var(--bg-panel), var(--bg))",
 					borderTop: "1px solid var(--border)",
 					alignItems: "center",
 					position: "relative",
@@ -81,7 +82,27 @@ export function CombatScreen() {
 			>
 				<FloatLayer items={playerFloats} />
 				{combat.player.block > 0 && (
-					<span style={{ color: "var(--accent-blue)" }}>🛡 {combat.player.block}</span>
+					<span
+						style={{
+							color: "var(--accent-blue)",
+							display: "flex",
+							alignItems: "center",
+							gap: "0.25rem",
+							fontWeight: "bold",
+						}}
+					>
+						<svg
+							width={16}
+							height={16}
+							viewBox="0 0 24 24"
+							fill="currentColor"
+							role="img"
+							aria-label="Block"
+						>
+							<path d="M12 2L3 9v6c0 5.55 3.84 9.74 9 11 5.16-1.26 9-5.45 9-11V9l-9-7z" />
+						</svg>
+						{combat.player.block}
+					</span>
 				)}
 				<EnergyOrb current={combat.energy} max={combat.maxEnergy} />
 				<span style={{ color: "var(--text-dim)", fontSize: "0.8rem" }}>
@@ -89,7 +110,20 @@ export function CombatScreen() {
 					{combat.exhaustPile.length > 0 && ` · Exhaust ${combat.exhaustPile.length}`}
 				</span>
 				{combat.player.powers.length > 0 && <PowerList powers={combat.player.powers} />}
-				<button type="button" onClick={() => dispatch({ type: "endTurn" })}>
+				<button
+					type="button"
+					onClick={() => dispatch({ type: "endTurn" })}
+					style={{
+						background: "var(--accent)",
+						color: "#fff",
+						border: "none",
+						padding: "0.5rem 1.25rem",
+						fontWeight: "bold",
+						fontSize: "0.9rem",
+						borderRadius: 6,
+						boxShadow: "0 2px 8px rgba(229,49,112,0.3)",
+					}}
+				>
 					End Turn
 				</button>
 			</div>
@@ -99,42 +133,59 @@ export function CombatScreen() {
 				style={{
 					display: "flex",
 					justifyContent: "center",
-					gap: "0.375rem",
-					padding: "0.5rem 0.75rem",
+					padding: "0.75rem 1rem 1.25rem",
 					background: "var(--bg-panel)",
-					flexWrap: "wrap",
+					position: "relative",
 				}}
 			>
-				{combat.hand.map((c, i) => (
-					<CardView
-						key={c.uniqueId}
-						card={c}
-						selected={selectedCard === i}
-						playable={(c.freeToPlay || c.costForTurn <= combat.energy) && c.costForTurn >= 0}
-						onClick={() => handleCardClick(i)}
-					/>
-				))}
+				{combat.hand.map((c, i) => {
+					const count = combat.hand.length;
+					const mid = (count - 1) / 2;
+					const offset = i - mid;
+					const maxAngle = Math.min(4, 20 / Math.max(count, 1));
+					const angle = offset * maxAngle;
+					const lift = -Math.abs(offset) * 3;
+					return (
+						<CardView
+							key={c.uniqueId}
+							card={c}
+							selected={selectedCard === i}
+							playable={(c.freeToPlay || c.costForTurn <= combat.energy) && c.costForTurn >= 0}
+							onClick={() => handleCardClick(i)}
+							fanStyle={{
+								transform: `rotate(${angle}deg) translateY(${lift}px)`,
+								marginLeft: i === 0 ? 0 : -6,
+								zIndex: selectedCard === i ? 20 : i,
+							}}
+						/>
+					);
+				})}
 			</div>
 		</div>
 	);
 }
 
 function EnergyOrb({ current, max }: { current: number; max: number }) {
+	const hasEnergy = current > 0;
 	return (
 		<div
 			style={{
-				width: 40,
-				height: 40,
+				width: 52,
+				height: 52,
 				borderRadius: "50%",
-				border: "2px solid var(--energy)",
+				border: "3px solid var(--energy)",
 				display: "flex",
 				alignItems: "center",
 				justifyContent: "center",
 				fontWeight: "bold",
-				fontSize: "1rem",
+				fontSize: "1.1rem",
 				color: "var(--energy)",
-				background: "var(--bg-card)",
+				background: "radial-gradient(circle at 40% 35%, var(--bg-card-hover), var(--bg-card))",
 				flexShrink: 0,
+				boxShadow: hasEnergy
+					? "0 0 12px rgba(255,216,3,0.4), inset 0 0 8px rgba(255,216,3,0.15)"
+					: "var(--shadow-sm)",
+				transition: "box-shadow 0.3s",
 			}}
 		>
 			{current}/{max}
@@ -145,22 +196,27 @@ function EnergyOrb({ current, max }: { current: number; max: number }) {
 function PowerList({ powers }: { powers: PowerInstance[] }) {
 	return (
 		<span style={{ display: "flex", gap: "0.25rem", flexWrap: "wrap" }}>
-			{powers.map((p) => (
-				<span
-					key={p.id}
-					style={{
-						padding: "0 0.375rem",
-						background: p.amount > 0 ? "var(--bg-card)" : "var(--accent)",
-						border: "1px solid var(--border)",
-						borderRadius: 4,
-						fontSize: "0.7rem",
-						color: p.amount > 0 ? "var(--accent-blue)" : "#fff",
-					}}
-					title={getPower(p.id)?.text ?? p.id}
-				>
-					{getPower(p.id)?.name ?? p.id} {p.amount}
-				</span>
-			))}
+			{powers.map((p) => {
+				const def = getPower(p.id);
+				const isBuff = def?.kind === "buff" || p.amount > 0;
+				return (
+					<span
+						key={p.id}
+						style={{
+							padding: "0.125rem 0.5rem",
+							background: isBuff ? "rgba(127,90,240,0.2)" : "rgba(229,49,112,0.2)",
+							border: `1px solid ${isBuff ? "var(--accent-blue)" : "var(--accent)"}`,
+							borderRadius: 10,
+							fontSize: "0.7rem",
+							color: isBuff ? "var(--accent-blue)" : "var(--accent)",
+							fontWeight: 600,
+						}}
+						title={def?.text ?? p.id}
+					>
+						{def?.name ?? p.id} {p.amount}
+					</span>
+				);
+			})}
 		</span>
 	);
 }
@@ -183,30 +239,60 @@ function MonsterCard({
 			type="button"
 			onClick={onClick}
 			style={{
-				padding: "0.75rem",
-				background: "var(--bg-card)",
+				padding: "1rem",
+				background: "linear-gradient(180deg, var(--bg-card-hover), var(--bg-card))",
 				border: `2px solid ${highlighted ? "var(--accent)" : "var(--border)"}`,
-				borderRadius: 8,
+				borderRadius: 12,
 				textAlign: "center",
-				minWidth: 130,
+				minWidth: 160,
 				cursor: highlighted ? "pointer" : "default",
-				transition: "border-color 0.15s",
+				transition: "border-color 0.15s, box-shadow 0.15s",
 				position: "relative",
+				boxShadow: highlighted
+					? "0 0 16px rgba(229,49,112,0.3), var(--shadow-md)"
+					: "var(--shadow-md)",
 			}}
 		>
 			<FloatLayer items={floats} />
 			<IntentDisplay monster={monster} />
-			<div style={{ fontWeight: "bold", marginBottom: "0.5rem", fontSize: "0.85rem" }}>
+			<div
+				style={{
+					fontWeight: "bold",
+					marginBottom: "0.5rem",
+					fontSize: "1rem",
+					letterSpacing: "0.02em",
+				}}
+			>
 				{getMonster(monster.id)?.name ?? monster.id}
 			</div>
 			<HpBar current={monster.currentHp} max={monster.maxHp} />
 			{monster.block > 0 && (
-				<div style={{ fontSize: "0.75rem", color: "var(--accent-blue)", marginTop: "0.25rem" }}>
-					🛡 {monster.block}
+				<div
+					style={{
+						fontSize: "0.8rem",
+						color: "var(--accent-blue)",
+						marginTop: "0.375rem",
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "center",
+						gap: "0.25rem",
+					}}
+				>
+					<svg
+						width={14}
+						height={14}
+						viewBox="0 0 24 24"
+						fill="currentColor"
+						role="img"
+						aria-label="Block"
+					>
+						<path d="M12 2L3 9v6c0 5.55 3.84 9.74 9 11 5.16-1.26 9-5.45 9-11V9l-9-7z" />
+					</svg>
+					{monster.block}
 				</div>
 			)}
 			{monster.powers.length > 0 && (
-				<div style={{ marginTop: "0.25rem" }}>
+				<div style={{ marginTop: "0.375rem" }}>
 					<PowerList powers={monster.powers} />
 				</div>
 			)}
@@ -214,33 +300,111 @@ function MonsterCard({
 	);
 }
 
+function IntentIcon({ type }: { type: "attack" | "buff" | "debuff" | "unknown" }) {
+	const size = 20;
+	const common = { width: size, height: size, display: "inline-block", verticalAlign: "middle" };
+	if (type === "attack") {
+		return (
+			<svg
+				{...common}
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				strokeWidth={2.5}
+				role="img"
+				aria-label="Attack"
+			>
+				<path d="M4 20L20 4M14 4h6v6" strokeLinecap="round" strokeLinejoin="round" />
+			</svg>
+		);
+	}
+	if (type === "buff") {
+		return (
+			<svg
+				{...common}
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				strokeWidth={2.5}
+				role="img"
+				aria-label="Buff"
+			>
+				<path d="M12 3v18M5 10l7-7 7 7" strokeLinecap="round" strokeLinejoin="round" />
+			</svg>
+		);
+	}
+	if (type === "debuff") {
+		return (
+			<svg
+				{...common}
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				strokeWidth={2.5}
+				role="img"
+				aria-label="Debuff"
+			>
+				<path d="M12 3v18M5 14l7 7 7-7" strokeLinecap="round" strokeLinejoin="round" />
+			</svg>
+		);
+	}
+	return (
+		<svg
+			{...common}
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			strokeWidth={2.5}
+			role="img"
+			aria-label="Unknown"
+		>
+			<circle cx={12} cy={12} r={8} />
+			<path d="M12 8v4M12 16h.01" strokeLinecap="round" />
+		</svg>
+	);
+}
+
 function IntentDisplay({ monster }: { monster: MonsterState }) {
 	const { intent } = monster;
 	let label: string;
 	let color: string;
+	let iconType: "attack" | "buff" | "debuff" | "unknown";
 
 	if (intent.isAttack) {
 		const dmg = intent.baseDamage ?? "?";
 		const multi = intent.hits > 1 ? ` ×${intent.hits}` : "";
-		label = `⚔ ${dmg}${multi}`;
+		label = `${dmg}${multi}`;
 		color = "var(--accent)";
+		iconType = "attack";
 	} else if (intent.isBuff) {
-		label = "↑ Buff";
+		label = "Buff";
 		color = "var(--accent-gold)";
+		iconType = "buff";
 	} else if (intent.isDebuff) {
-		label = "↓ Debuff";
+		label = "Debuff";
 		color = "var(--accent-blue)";
-	} else if (intent.isAttack === false && intent.isBuff === false && intent.isDebuff === false) {
-		label = "—";
-		color = "var(--text-dim)";
+		iconType = "debuff";
 	} else {
-		label = "?";
+		label = "";
 		color = "var(--text-dim)";
+		iconType = "unknown";
 	}
 
 	return (
-		<div style={{ fontSize: "0.75rem", color, marginBottom: "0.375rem", fontWeight: "bold" }}>
-			{label}
+		<div
+			style={{
+				display: "flex",
+				alignItems: "center",
+				justifyContent: "center",
+				gap: "0.25rem",
+				fontSize: "0.8rem",
+				color,
+				marginBottom: "0.375rem",
+				fontWeight: "bold",
+			}}
+		>
+			<IntentIcon type={iconType} />
+			{label && <span>{label}</span>}
 		</div>
 	);
 }
@@ -249,20 +413,29 @@ function HpBar({ current, max }: { current: number; max: number }) {
 	const pct = Math.max(0, (current / max) * 100);
 	return (
 		<div
-			style={{ display: "flex", alignItems: "center", gap: "0.25rem", justifyContent: "center" }}
+			style={{ display: "flex", alignItems: "center", gap: "0.375rem", justifyContent: "center" }}
 		>
 			<div
 				style={{
-					width: 80,
-					height: 8,
+					width: 100,
+					height: 10,
 					background: "var(--hp-bg)",
-					borderRadius: 2,
+					borderRadius: 5,
 					overflow: "hidden",
+					boxShadow: "inset 0 1px 3px rgba(0,0,0,0.4)",
 				}}
 			>
-				<div style={{ width: `${pct}%`, height: "100%", background: "var(--hp-bar)" }} />
+				<div
+					style={{
+						width: `${pct}%`,
+						height: "100%",
+						background: "linear-gradient(90deg, var(--hp-bar), #ff6b6b)",
+						borderRadius: 5,
+						transition: "width 0.3s",
+					}}
+				/>
 			</div>
-			<span style={{ fontSize: "0.75rem" }}>
+			<span style={{ fontSize: "0.8rem", fontWeight: 600, minWidth: "3em", textAlign: "right" }}>
 				{current}/{max}
 			</span>
 		</div>
@@ -274,11 +447,13 @@ function CardView({
 	selected,
 	playable,
 	onClick,
+	fanStyle,
 }: {
 	card: CardInstance;
 	selected: boolean;
 	playable: boolean;
 	onClick: () => void;
+	fanStyle?: React.CSSProperties;
 }) {
 	const def = getCard(card.id);
 	const name = def?.name ?? card.id;
@@ -287,11 +462,11 @@ function CardView({
 
 	const typeColor =
 		def?.type === "attack"
-			? "var(--accent)"
+			? "var(--card-attack)"
 			: def?.type === "skill"
-				? "var(--accent-blue)"
+				? "var(--card-skill)"
 				: def?.type === "power"
-					? "var(--accent-gold)"
+					? "var(--card-power)"
 					: "var(--text-dim)";
 
 	const rarityBorder =
@@ -301,39 +476,54 @@ function CardView({
 				? "var(--uncommon)"
 				: "var(--common)";
 
+	const borderColor = selected ? "var(--accent)" : playable ? rarityBorder : "var(--border)";
+
+	const baseTransform = fanStyle?.transform ?? "";
+	const finalTransform = selected
+		? `${baseTransform} translateY(-16px) scale(1.08)`
+		: baseTransform || "none";
+
 	return (
 		<button
 			type="button"
 			onClick={onClick}
 			disabled={!playable}
 			style={{
-				padding: "0.375rem 0.5rem",
-				background: selected ? "var(--bg-card)" : "var(--bg-panel)",
-				border: `2px solid ${selected ? "var(--accent)" : playable ? rarityBorder : "var(--border)"}`,
-				borderRadius: 6,
-				width: 100,
-				transform: selected ? "translateY(-8px)" : "none",
-				transition: "transform 0.15s, border-color 0.15s",
+				padding: 0,
+				background: "var(--bg-card)",
+				border: `2px solid ${borderColor}`,
+				borderRadius: 8,
+				width: 130,
+				transform: finalTransform,
+				transition: "transform 0.2s, border-color 0.15s, box-shadow 0.15s",
 				textAlign: "center",
+				overflow: "hidden",
+				boxShadow: selected ? "0 8px 20px rgba(229,49,112,0.3)" : "var(--shadow-md)",
+				transformOrigin: "bottom center",
+				...(fanStyle ? { marginLeft: fanStyle.marginLeft, zIndex: fanStyle.zIndex } : {}),
 			}}
 		>
+			{/* Color banner replacing illustration */}
 			<div
 				style={{
+					height: 32,
+					background: `linear-gradient(135deg, ${typeColor}44, ${typeColor}22)`,
+					borderBottom: `2px solid ${typeColor}66`,
 					display: "flex",
-					justifyContent: "space-between",
 					alignItems: "center",
-					marginBottom: "0.125rem",
+					justifyContent: "space-between",
+					padding: "0 0.5rem",
 				}}
 			>
 				<span
 					style={{
-						fontSize: "0.7rem",
+						fontSize: "0.85rem",
 						color: "var(--energy)",
 						fontWeight: "bold",
-						background: "var(--bg-card)",
+						background: "rgba(0,0,0,0.5)",
 						borderRadius: "50%",
-						width: 18,
-						height: 18,
+						width: 22,
+						height: 22,
 						display: "inline-flex",
 						alignItems: "center",
 						justifyContent: "center",
@@ -341,23 +531,41 @@ function CardView({
 				>
 					{cost}
 				</span>
-				<span style={{ fontSize: "0.6rem", color: typeColor, textTransform: "uppercase" }}>
+				<span
+					style={{
+						fontSize: "0.55rem",
+						color: typeColor,
+						textTransform: "uppercase",
+						fontWeight: "bold",
+						letterSpacing: "0.05em",
+					}}
+				>
 					{def?.type ?? ""}
 				</span>
 			</div>
-			<div style={{ fontSize: "0.75rem", fontWeight: "bold", marginBottom: "0.125rem" }}>
-				{name}
-				{card.upgraded ? "+" : ""}
-			</div>
-			<div
-				style={{
-					fontSize: "0.6rem",
-					color: "var(--text-dim)",
-					lineHeight: 1.3,
-					minHeight: "1.6em",
-				}}
-			>
-				{desc}
+			{/* Card body */}
+			<div style={{ padding: "0.375rem 0.5rem 0.5rem" }}>
+				<div
+					style={{
+						fontSize: "0.8rem",
+						fontWeight: "bold",
+						marginBottom: "0.25rem",
+						color: "var(--text)",
+					}}
+				>
+					{name}
+					{card.upgraded ? "+" : ""}
+				</div>
+				<div
+					style={{
+						fontSize: "0.65rem",
+						color: "var(--text-dim)",
+						lineHeight: 1.4,
+						minHeight: "2em",
+					}}
+				>
+					{desc}
+				</div>
 			</div>
 		</button>
 	);
