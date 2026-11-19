@@ -86,7 +86,8 @@ const INITIAL_MISC_INFO: Record<string, number> = {
 interface PrebattleEntry {
 	readonly power: string;
 	readonly amount: number | [number, number] | null;
-	readonly asc?: Record<string, number | [number, number]>;
+	/** Act 1/2 data: a bare value; Act 3/4 data: { amount }. */
+	readonly asc?: Record<string, number | [number, number] | { amount: number | [number, number] }>;
 }
 
 export function emptySlot(index: number): MonsterState {
@@ -192,7 +193,9 @@ function resolveAmount(
 ): { value: number; rng: RngState } {
 	let amount = entry.amount as number | [number, number];
 	for (const [threshold, override] of Object.entries(entry.asc ?? {})) {
-		if (ascension >= Number(threshold)) amount = override;
+		if (ascension >= Number(threshold)) {
+			amount = typeof override === "object" && "amount" in override ? override.amount : override;
+		}
 	}
 	return Array.isArray(amount) ? rollRange(rng, amount[0], amount[1]) : { value: amount, rng };
 }
