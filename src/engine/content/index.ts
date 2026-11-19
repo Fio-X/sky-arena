@@ -80,3 +80,4 @@ import "./genericMoveEffects";
 import "./act3Normals";
 import "./act3Elites";
 import "./act3Bosses";
+import "./relicsRun";

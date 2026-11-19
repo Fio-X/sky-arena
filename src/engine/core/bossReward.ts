@@ -1,10 +1,17 @@
 import { getAllRelics } from "../content/loader";
 import { random } from "../rng/stsRandom";
 import { hasNextAct, startNextAct } from "./act";
-import { obtainRelic } from "./obtain";
+import { hasRelic, obtainRelic } from "./obtain";
 import type { GameEvent, GamePhase, GameState, RelicId, StepResult } from "./types";
 
 export function rollGoldReward(state: GameState): { gold: number; rng: typeof state.rng.miscRng } {
+	const base = rollBaseGold(state);
+	// Golden Idol: RewardItem bonusGold = MathUtils.round(gold * 0.25).
+	if (!hasRelic(state, "GOLDEN_IDOL")) return base;
+	return { gold: base.gold + Math.floor(base.gold * 0.25 + 0.5), rng: base.rng };
+}
+
+function rollBaseGold(state: GameState): { gold: number; rng: typeof state.rng.miscRng } {
 	const node = state.map.currentNode;
 	const roomType = node ? state.map.nodes[node.y]?.[node.x]?.type : "monster";
 
@@ -28,6 +35,7 @@ export function getCurrentRoomType(state: GameState): string {
 }
 
 export function afterRewardPhase(state: GameState): GamePhase {
+	if (state.phase.type === "reward" && state.phase.next) return state.phase.next;
 	if (getCurrentRoomType(state) === "boss") {
 		const choices = generateBossRelicChoices(state);
 		return { type: "bossReward", relics: choices.relics };
@@ -69,11 +77,13 @@ export function stepChooseBossRelic(
 	const relicId = state.phase.relics[index];
 	if (!relicId) return { state, events };
 
-	const withRelic = obtainRelic(state, relicId);
+	// The next phase is set first so a pickup choice (Astrolabe, Tiny House…) runs before it.
+	const next: GamePhase = hasNextAct(state) ? { type: "map" } : { type: "gameOver", victory: true };
+	const withRelic = obtainRelic({ ...state, phase: next }, relicId);
 	return {
 		state: hasNextAct(withRelic)
-			? startNextAct(withRelic)
-			: { ...withRelic, phase: { type: "gameOver", victory: true } },
+			? { ...startNextAct(withRelic), phase: withRelic.phase }
+			: withRelic,
 		events,
 	};
 }

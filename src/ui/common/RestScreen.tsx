@@ -1,7 +1,9 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { getCard } from "../../engine/content/loader";
-import { tCard, tCardText, tUi, tUiFmt } from "../../i18n";
+import { restOptionAvailable } from "../../engine/content/relicsRun2";
+import type { RestOption } from "../../engine/core/types";
+import { getLocale, tCard, tCardText, tUi, tUiFmt } from "../../i18n";
 import { useGameStore } from "../../store/gameStore";
 import { cardTypeLabel } from "../cardTextUtils";
 
@@ -101,7 +103,22 @@ export function RestScreen() {
 
 	if (!state) return null;
 
-	const healAmount = Math.floor(state.maxHp * 0.3);
+	const owns = (id: string) => state.relics.some((r) => r.id === id);
+	const healAmount = Math.floor(state.maxHp * 0.3) + (owns("REGAL_PILLOW") ? 15 : 0);
+	const zh = getLocale() === "zh";
+	const relicOptions: { option: RestOption; label: string; color: string }[] = [
+		{ option: "lift", label: zh ? "🏋️ 举重（+1 力量）" : "🏋️ Lift (+1 Strength)", color: "#ff9f43" },
+		{
+			option: "toke",
+			label: zh ? "🚬 抽烟（移除一张牌）" : "🚬 Toke (remove a card)",
+			color: "#a29bfe",
+		},
+		{
+			option: "dig",
+			label: zh ? "⛏️ 挖掘（获得遗物）" : "⛏️ Dig (obtain a relic)",
+			color: "#00d2d3",
+		},
+	];
 	const upgradable = state.deck
 		.map((c, i) => ({ card: c, index: i }))
 		.filter((e) => !e.card.upgraded);
@@ -233,17 +250,34 @@ export function RestScreen() {
 					{tUi("restSite")}
 				</h2>
 				<div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", width: "100%" }}>
-					<ActionButton onClick={() => dispatch({ type: "rest" })} color="#ff6b8a" delay={0.1}>
+					<ActionButton
+						onClick={() => dispatch({ type: "rest" })}
+						disabled={owns("COFFEE_DRIPPER")}
+						color="#ff6b8a"
+						delay={0.1}
+					>
 						❤️ {tUiFmt("restHeal", String(healAmount))}
 					</ActionButton>
 					<ActionButton
 						onClick={() => setMode("smith")}
-						disabled={upgradable.length === 0}
+						disabled={upgradable.length === 0 || owns("FUSION_HAMMER")}
 						color="var(--accent-gold)"
 						delay={0.2}
 					>
 						🔨 {tUi("smithUpgrade")}
 					</ActionButton>
+					{relicOptions
+						.filter((o) => restOptionAvailable(state, o.option))
+						.map((o, i) => (
+							<ActionButton
+								key={o.option}
+								onClick={() => dispatch({ type: "restOption", option: o.option })}
+								color={o.color}
+								delay={0.3 + i * 0.1}
+							>
+								{o.label}
+							</ActionButton>
+						))}
 				</div>
 			</motion.div>
 		</div>

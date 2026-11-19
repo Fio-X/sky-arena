@@ -43,10 +43,24 @@ export type GamePhase =
 	| { type: "event"; eventId: string }
 	| { type: "shop"; shop: ShopData }
 	| { type: "rest" }
-	| { type: "reward"; cardRewards: CardId[]; potionReward: PotionId | null; gold: number }
+	| {
+			type: "reward";
+			cardRewards: CardId[];
+			potionReward: PotionId | null;
+			gold: number;
+			/** Where to go after this reward (Prayer Wheel, Orrery, Dream Catcher, Tiny House). */
+			next?: GamePhase;
+	  }
 	| { type: "bossReward"; relics: RelicId[] }
 	| { type: "cardSelect"; task: CardSelectTask; drawAfter?: number; options?: CardInstance[] }
+	/** Pick cards from the master deck (Astrolabe, Empty Cage, Dolly's Mirror, Peace Pipe), then `next`. */
+	| { type: "deckSelect"; task: DeckSelectTask; count: number; next: GamePhase }
 	| { type: "gameOver"; victory: boolean };
+
+export type DeckSelectTask = "astrolabe" | "emptyCage" | "dollysMirror" | "peacePipe";
+
+/** Extra rest-site options from relics: Girya (lift), Peace Pipe (toke), Shovel (dig). */
+export type RestOption = "lift" | "toke" | "dig";
 
 export interface ShopData {
 	readonly cards: ReadonlyArray<{ kind: "card"; cardId: CardId; price: number; sold: boolean }>;
@@ -233,6 +247,10 @@ export type Command =
 	| { type: "discardPotion"; index: number }
 	| { type: "chooseCard"; indices: number[] }
 	| { type: "obtainPotionReward" }
+	| { type: "chooseDeckCards"; indices: number[] }
+	| { type: "restOption"; option: RestOption }
+	/** Singing Bowl: take +2 Max HP instead of the card reward. */
+	| { type: "singingBowl" }
 	| { type: "proceed" };
 
 // ── 动作（内部效果队列）──────────────────────────────────

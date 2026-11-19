@@ -51,6 +51,8 @@ export function CardPileViewer() {
 				<PileModal
 					title={piles[open].label}
 					cards={piles[open].cards}
+					// Frozen Eye: the draw pile is shown in draw order (top card first).
+					inOrder={open === "draw" && state.relics.some((r) => r.id === "FROZEN_EYE")}
 					onClose={() => setOpen(null)}
 				/>
 			)}
@@ -77,16 +79,8 @@ function PileButton({ label, onClick }: { label: string; onClick: () => void }) 
 	);
 }
 
-function PileModal({
-	title,
-	cards,
-	onClose,
-}: {
-	title: string;
-	cards: CardInstance[];
-	onClose: () => void;
-}) {
-	const sorted = [...cards].sort((a, b) => {
+function sortedByType(cards: CardInstance[]): CardInstance[] {
+	return [...cards].sort((a, b) => {
 		const da = getCard(a.id);
 		const db = getCard(b.id);
 		const typeOrder = { power: 0, skill: 1, attack: 2, status: 3, curse: 4 };
@@ -95,6 +89,20 @@ function PileModal({
 		if (ta !== tb) return ta - tb;
 		return (da?.name ?? a.id).localeCompare(db?.name ?? b.id);
 	});
+}
+
+function PileModal({
+	title,
+	cards,
+	inOrder,
+	onClose,
+}: {
+	title: string;
+	cards: CardInstance[];
+	inOrder: boolean;
+	onClose: () => void;
+}) {
+	const sorted = inOrder ? [...cards].reverse() : sortedByType(cards);
 
 	return (
 		<div

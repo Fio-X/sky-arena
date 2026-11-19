@@ -6,6 +6,7 @@ import { CardSelectScreen } from "./ui/combat/CardSelectScreen";
 import { CombatScreen } from "./ui/combat/CombatScreen";
 import { RewardScreen } from "./ui/combat/RewardScreen";
 import { BossRewardScreen } from "./ui/common/BossRewardScreen";
+import { DeckSelectScreen } from "./ui/common/DeckSelectScreen";
 import { EventScreen } from "./ui/common/EventScreen";
 import { Hud } from "./ui/common/Hud";
 import { NeowScreen } from "./ui/common/NeowScreen";
@@ -55,6 +56,8 @@ function Screen({ phase }: { phase: string }) {
 			return <EventScreen />;
 		case "bossReward":
 			return <BossRewardScreen />;
+		case "deckSelect":
+			return <DeckSelectScreen />;
 		case "gameOver":
 			return <GameOverScreen />;
 		default:

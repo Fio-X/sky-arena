@@ -1,7 +1,7 @@
 import type { CardDef, PotionDef, RelicDef } from "../content/loader";
 import { getAllCards, getAllPotions, getAllRelics } from "../content/loader";
 import { random } from "../rng/stsRandom";
-import { obtainCard, obtainRelic } from "./obtain";
+import { hasRelic, obtainCard, obtainRelic } from "./obtain";
 import type { GameState, RngState, ShopData, StepResult } from "./types";
 
 // ── Price tables (STS base values) ──────────────────────
@@ -51,6 +51,45 @@ function pickRandom<T>(rng: RngState, pool: T[]): { item: T; rng: RngState } | n
 	return { item: pool[r.value]!, rng: r.state };
 }
 
+// ── Pools ───────────────────────────────────────────────
+
+function shopCardPools(character: GameState["character"]): {
+	cls: CardDef[];
+	colorless: CardDef[];
+} {
+	const colorMap = { IRONCLAD: "red", SILENT: "green", DEFECT: "blue", WATCHER: "purple" } as const;
+	const charColor = colorMap[character] ?? "red";
+	const cls = getAllCards().filter(
+		(c) =>
+			c.color === charColor && !c.unobtainable && c.rarity !== "basic" && c.rarity !== "special",
+	);
+	const colorless = getAllCards().filter(
+		(c) =>
+			c.color === "colorless" &&
+			!c.unobtainable &&
+			c.rarity !== "basic" &&
+			c.rarity !== "special" &&
+			c.rarity !== "curse",
+	);
+	return { cls, colorless };
+}
+
+function shopRelicPool(ownedRelics: Set<string>): RelicDef[] {
+	return getAllRelics().filter(
+		(r) =>
+			!r.unobtainable &&
+			!ownedRelics.has(r.id as string) &&
+			r.tier !== "boss" &&
+			r.tier !== "event" &&
+			r.tier !== "starter" &&
+			r.tier !== "special",
+	);
+}
+
+function shopPotionPool(): PotionDef[] {
+	return getAllPotions().filter((p) => p.class === "shared" || p.class === "red");
+}
+
 // ── Generate shop inventory ─────────────────────────────
 
 export function generateShop(state: GameState): { shop: ShopData; rng: RngState } {
@@ -66,15 +105,30 @@ export function generateShop(state: GameState): { shop: ShopData; rng: RngState 
 	const potions = generateShopPotions(rng);
 	rng = potions.rng;
 
+	let shop: ShopData = {
+		cards: cards.items,
+		relics: relics.items,
+		potions: potions.items,
+		purgePrice: 75,
+		purgeUsed: false,
+	};
+	// ShopScreen.init: The Courier ×0.8, then Membership Card ×0.5; Smiling Mask fixes purge at 50.
+	if (hasRelic(state, "THE_COURIER")) shop = applyDiscount(state, shop, 0.8);
+	if (hasRelic(state, "MEMBERSHIP_CARD")) shop = applyDiscount(state, shop, 0.5);
+	if (hasRelic(state, "SMILING_MASK")) shop = { ...shop, purgePrice: 50 };
+	return { shop, rng };
+}
+
+const roundPrice = (p: number, multiplier: number) => Math.floor(p * multiplier + 0.5);
+
+/** ShopScreen.applyDiscount(multiplier, affectPurge=true): MathUtils.round on every price. */
+function applyDiscount(state: GameState, shop: ShopData, multiplier: number): ShopData {
 	return {
-		shop: {
-			cards: cards.items,
-			relics: relics.items,
-			potions: potions.items,
-			purgePrice: 75,
-			purgeUsed: false,
-		},
-		rng,
+		...shop,
+		cards: shop.cards.map((c) => ({ ...c, price: roundPrice(c.price, multiplier) })),
+		relics: shop.relics.map((r) => ({ ...r, price: roundPrice(r.price, multiplier) })),
+		potions: shop.potions.map((p) => ({ ...p, price: roundPrice(p.price, multiplier) })),
+		purgePrice: hasRelic(state, "SMILING_MASK") ? 50 : roundPrice(shop.purgePrice, multiplier),
 	};
 }
 
@@ -82,20 +136,7 @@ function generateShopCards(
 	rng: RngState,
 	character: GameState["character"],
 ): { items: ShopData["cards"][number][]; rng: RngState } {
-	const colorMap = { IRONCLAD: "red", SILENT: "green", DEFECT: "blue", WATCHER: "purple" } as const;
-	const charColor = colorMap[character] ?? "red";
-	const classCards = getAllCards().filter(
-		(c) =>
-			c.color === charColor && !c.unobtainable && c.rarity !== "basic" && c.rarity !== "special",
-	);
-	const colorlessCards = getAllCards().filter(
-		(c) =>
-			c.color === "colorless" &&
-			!c.unobtainable &&
-			c.rarity !== "basic" &&
-			c.rarity !== "special" &&
-			c.rarity !== "curse",
-	);
+	const { cls: classCards, colorless: colorlessCards } = shopCardPools(character);
 
 	const items: ShopData["cards"][number][] = [];
 	const used = new Set<string>();
@@ -129,15 +170,7 @@ function generateShopRelics(
 	rng: RngState,
 	ownedRelics: Set<string>,
 ): { items: ShopData["relics"][number][]; rng: RngState } {
-	const relicPool = getAllRelics().filter(
-		(r) =>
-			!r.unobtainable &&
-			!ownedRelics.has(r.id as string) &&
-			r.tier !== "boss" &&
-			r.tier !== "event" &&
-			r.tier !== "starter" &&
-			r.tier !== "special",
-	);
+	const relicPool = shopRelicPool(ownedRelics);
 
 	const items: ShopData["relics"][number][] = [];
 	const used = new Set<string>();
@@ -172,7 +205,7 @@ function generateShopPotions(rng: RngState): {
 	items: ShopData["potions"][number][];
 	rng: RngState;
 } {
-	const potionPool = getAllPotions().filter((p) => p.class === "shared" || p.class === "red");
+	const potionPool = shopPotionPool();
 	const items: ShopData["potions"][number][] = [];
 	const used = new Set<string>();
 
@@ -204,50 +237,151 @@ export function stepChooseShopItem(
 	const item = allItems[index];
 	if (!item || item.sold) return { state, events };
 	if (state.gold < item.price) return { state, events };
-
-	let s = { ...state, gold: state.gold - item.price };
-	let newShop: ShopData;
-
-	switch (item.kind) {
-		case "card": {
-			s = obtainCard(s, item.cardId);
-			newShop = {
-				...shop,
-				cards: shop.cards.map((c) =>
-					c.cardId === item.cardId && !c.sold ? { ...c, sold: true } : c,
-				),
-			};
-			break;
-		}
-		case "relic": {
-			s = obtainRelic(s, item.relicId);
-			newShop = {
-				...shop,
-				relics: shop.relics.map((r) =>
-					r.relicId === item.relicId && !r.sold ? { ...r, sold: true } : r,
-				),
-			};
-			break;
-		}
-		case "potion": {
-			const emptySlot = s.potions.indexOf(null);
-			if (emptySlot < 0) return { state, events };
-			const newPotions = [...s.potions];
-			newPotions[emptySlot] = item.potionId;
-			s = { ...s, potions: newPotions };
-			newShop = {
-				...shop,
-				potions: shop.potions.map((p) =>
-					p.potionId === item.potionId && !p.sold ? { ...p, sold: true } : p,
-				),
-			};
-			break;
-		}
+	// Sozu: StorePotion.purchasePotion refuses.
+	if (item.kind === "potion" && (state.potions.indexOf(null) < 0 || hasRelic(state, "SOZU"))) {
+		return { state, events };
 	}
 
 	events.push({ type: "goldChanged", delta: -item.price });
-	s = { ...s, phase: { type: "shop", shop: newShop } };
+	const bought = item.kind === "relic" ? (item.relicId as string) : null;
+	const restocked = afterPurchase(state, shop, index, bought);
+	// The shop phase is set before obtaining, so a pickup choice (Orrery…) returns to it.
+	let s: GameState = {
+		...spendGold(state, item.price),
+		rng: { ...state.rng, merchantRng: restocked.rng },
+		phase: { type: "shop", shop: restocked.shop },
+	};
+
+	switch (item.kind) {
+		case "card":
+			s = obtainCard(s, item.cardId);
+			break;
+		case "relic":
+			s = obtainRelic(s, item.relicId);
+			break;
+		case "potion": {
+			const newPotions = [...s.potions];
+			newPotions[s.potions.indexOf(null)] = item.potionId;
+			s = { ...s, potions: newPotions };
+			break;
+		}
+	}
 	return { state: s, events };
+}
+
+/** Spending gold at the shop: Maw Bank stops working (onSpendGold → counter −2). */
+function spendGold(state: GameState, amount: number): GameState {
+	return {
+		...state,
+		gold: state.gold - amount,
+		relics: state.relics.map((r) => (r.id === "MAW_BANK" ? { ...r, counter: -2 } : r)),
+	};
+}
+
+/**
+ * StoreRelic/StoreCard/StorePotion purchase: a bought Courier or Membership Card
+ * discounts the shop at once, Smiling Mask fixes the purge cost; with The Courier
+ * the slot restocks, otherwise it is marked sold.
+ */
+function afterPurchase(
+	state: GameState,
+	shop: ShopData,
+	index: number,
+	boughtRelic: string | null,
+): { shop: ShopData; rng: RngState } {
+	const owns = (id: string) => hasRelic(state, id) || boughtRelic === id;
+	let s = shop;
+	if (boughtRelic === "THE_COURIER") s = applyDiscount(state, s, 0.8);
+	if (boughtRelic === "MEMBERSHIP_CARD") s = applyDiscount(state, s, 0.5);
+	if (boughtRelic === "SMILING_MASK") s = { ...s, purgePrice: 50 };
+	if (!owns("THE_COURIER")) return { shop: markSold(s, index), rng: state.rng.merchantRng };
+	const multiplier = (owns("THE_COURIER") ? 0.8 : 1) * (owns("MEMBERSHIP_CARD") ? 0.5 : 1);
+	return restockSlot(state, s, index, multiplier, boughtRelic);
+}
+
+function markSold(shop: ShopData, index: number): ShopData {
+	const nc = shop.cards.length;
+	const nr = shop.relics.length;
+	const sold = <T extends { sold: boolean }>(arr: readonly T[], i: number) =>
+		arr.map((x, j) => (j === i ? { ...x, sold: true } : x));
+	if (index < nc) return { ...shop, cards: sold(shop.cards, index) };
+	if (index < nc + nr) return { ...shop, relics: sold(shop.relics, index - nc) };
+	return { ...shop, potions: sold(shop.potions, index - nc - nr) };
+}
+
+/**
+ * The Courier restock (assumption: drawn with merchantRng like the rest of this
+ * shop): a class card of the same type, a colorless card of the same rarity, a
+ * relic of a rolled shop tier (48/34/18), or a random potion; not already shown.
+ */
+function restockSlot(
+	state: GameState,
+	shop: ShopData,
+	index: number,
+	multiplier: number,
+	boughtRelic: string | null,
+): { shop: ShopData; rng: RngState } {
+	const nc = shop.cards.length;
+	const nr = shop.relics.length;
+	const rng = state.rng.merchantRng;
+	const fallback = { shop: markSold(shop, index), rng };
+	if (index < nc) {
+		const r = restockCard(state, shop, index, rng);
+		if (!r) return fallback;
+		const cards = shop.cards.map((c, i) =>
+			i === index ? { ...c, cardId: r.def.id, price: roundPrice(r.price, multiplier) } : c,
+		);
+		return { shop: { ...shop, cards }, rng: r.rng };
+	}
+	if (index < nc + nr) {
+		const r = restockRelic(state, shop, boughtRelic, rng);
+		if (!r) return fallback;
+		const relics = shop.relics.map((x, i) =>
+			i === index - nc ? { ...x, relicId: r.def.id, price: roundPrice(r.price, multiplier) } : x,
+		);
+		return { shop: { ...shop, relics }, rng: r.rng };
+	}
+	const pool = shopPotionPool().filter((p) => !shop.potions.some((x) => x.potionId === p.id));
+	const pick = pickRandom(rng, pool);
+	if (!pick) return fallback;
+	const pr = rollPrice(pick.rng, potionBasePrice(pick.item.rarity));
+	const potions = shop.potions.map((x, i) =>
+		i === index - nc - nr
+			? { ...x, potionId: pick.item.id, price: roundPrice(pr.price, multiplier) }
+			: x,
+	);
+	return { shop: { ...shop, potions }, rng: pr.rng };
+}
+
+function restockCard(state: GameState, shop: ShopData, index: number, rng: RngState) {
+	const old = getAllCards().find((c) => c.id === shop.cards[index]?.cardId);
+	if (!old) return null;
+	const pools = shopCardPools(state.character);
+	const shown = new Set(shop.cards.map((c) => c.cardId as string));
+	const pool =
+		old.color === "colorless"
+			? pools.colorless.filter((c) => c.rarity === old.rarity)
+			: pools.cls.filter((c) => c.type === old.type);
+	const pick = pickRandom(
+		rng,
+		pool.filter((c) => !shown.has(c.id as string)),
+	);
+	if (!pick) return null;
+	const pr = rollPrice(pick.rng, cardBasePrice(pick.item.rarity));
+	return { def: pick.item, price: pr.price, rng: pr.rng };
+}
+
+function restockRelic(state: GameState, shop: ShopData, boughtRelic: string | null, rng: RngState) {
+	const owned = new Set(state.relics.map((r) => r.id as string));
+	if (boughtRelic) owned.add(boughtRelic);
+	for (const r of shop.relics) owned.add(r.relicId as string);
+	const tierRoll = random(rng, 99);
+	const tier = tierRoll.value < 48 ? "common" : tierRoll.value < 82 ? "uncommon" : "rare";
+	const pool = shopRelicPool(owned).filter((r) => r.tier === tier);
+	const pick = pickRandom(tierRoll.state, pool);
+	if (!pick) return null;
+	const pr = rollPrice(pick.rng, relicBasePrice(pick.item.tier));
+	return { def: pick.item, price: pr.price, rng: pr.rng };
 }
 
 // ── Purge card from deck ────────────────────────────────
@@ -267,9 +401,8 @@ export function stepShopPurge(
 	events.push({ type: "goldChanged", delta: -shop.purgePrice });
 	return {
 		state: {
-			...state,
+			...spendGold(state, shop.purgePrice),
 			deck: newDeck,
-			gold: state.gold - shop.purgePrice,
 			phase: { type: "shop", shop: newShop },
 		},
 		events,

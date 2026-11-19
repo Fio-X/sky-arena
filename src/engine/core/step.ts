@@ -4,20 +4,38 @@ import { getEncounterMonsters } from "../combat/encounters";
 import { initCombat } from "../combat/init";
 import { resolveCardEffect } from "../content/cardEffects";
 import { getCard } from "../content/loader";
+import { relicVal } from "../content/relicHelpers";
+import {
+	addRelicCombatRewards,
+	dreamCatcherReward,
+	openTreasureChest,
+	rollTinyChest,
+	stepChooseDeckCards,
+	stepRestOption,
+	stepSingingBowl,
+} from "../content/relicsRun2";
 import { drainActions } from "./actionExecutor";
 import { addToBot } from "./actionQueue";
 import { afterRewardPhase, rollGoldReward, stepChooseBossRelic } from "./bossReward";
 import { stepChooseCard } from "./cardSelect";
-import { obtainRandomRelic, pickEvent, stepChooseEventOption } from "./event";
+import { pickEvent, stepChooseEventOption } from "./event";
 import { fireHook, fireHookOnAllActors, fireRunHook, foldHook, vetoHook } from "./hooks";
 import { stepChooseNeowBlessing } from "./neow";
-import { obtainCard } from "./obtain";
+import { hasRelic, obtainCard } from "./obtain";
 import { gainGold } from "./playerActions";
 import { rollPotionDrop, stepDiscardPotion, stepObtainPotionReward, stepUsePotion } from "./potion";
 import { replayIfAmplify, replayIfBurst, replayIfDoubleTap, replayIfEchoForm } from "./replay";
 import { generateShop, stepChooseShopItem, stepShopPurge } from "./shop";
 import { stepEndTurn } from "./turn";
-import type { ActorRef, CardInstance, Command, GameEvent, GameState, StepResult } from "./types";
+import type {
+	ActorRef,
+	CardInstance,
+	Command,
+	GameEvent,
+	GameState,
+	MapNode,
+	StepResult,
+} from "./types";
 
 export function step(state: GameState, command: Command): StepResult {
 	const events: GameEvent[] = [];
@@ -65,6 +83,12 @@ export function step(state: GameState, command: Command): StepResult {
 			return checkCombatEnd(result);
 		case "proceed":
 			return stepProceed(state, events);
+		case "chooseDeckCards":
+			return stepChooseDeckCards(state, command.indices, events);
+		case "restOption":
+			return stepRestOption(state, command.option, events);
+		case "singingBowl":
+			return stepSingingBowl(state, events);
 		default:
 			return { state, events };
 	}
@@ -201,13 +225,21 @@ function stepChooseMapNode(
 	};
 
 	let s: GameState = { ...state, map: newMap, floor: state.floor + 1 };
+	if (!isEdgeReachable(state, x, y)) s = spendWingBoots(s);
 	s = fireRunHook(s, "onEnterRoom", node.type);
 
-	switch (node.type) {
+	let roomType = node.type;
+	if (roomType === "event") {
+		const tiny = rollTinyChest(s);
+		s = tiny.state;
+		if (tiny.treasure) roomType = "treasure";
+	}
+
+	switch (roomType) {
 		case "monster":
 		case "elite": {
-			const encId = pickEncounter(s, node.type);
-			const next = { ...s, encounterIndex: advanceEncounterIndex(s, node.type) };
+			const encId = pickEncounter(s, roomType);
+			const next = { ...s, encounterIndex: advanceEncounterIndex(s, roomType) };
 			s = initCombat(next, getEncounterMonsters(encId), encId);
 			s = fireHook(s, { type: "player" }, "atBattleStart");
 			events.push({ type: "combatStarted" });
@@ -232,11 +264,12 @@ function stepChooseMapNode(
 			};
 			break;
 		}
-		case "treasure": {
-			const withRelic = obtainRandomRelic(s);
-			s = { ...withRelic, phase: { type: "reward", cardRewards: [], potionReward: null, gold: 0 } };
+		case "treasure":
+			s = openTreasureChest({
+				...s,
+				phase: { type: "reward", cardRewards: [], potionReward: null, gold: 0 },
+			});
 			break;
-		}
 		case "event": {
 			const eventResult = pickEvent(s.rng.eventRng, s.act);
 			s = {
@@ -251,12 +284,40 @@ function stepChooseMapNode(
 	return { state: s, events };
 }
 
-function isNodeReachable(state: GameState, x: number, y: number): boolean {
+/** A node the player may travel to next (map UI uses this too). */
+export function isNodeReachable(state: GameState, x: number, y: number): boolean {
+	return isEdgeReachable(state, x, y) || canFlyTo(state, x, y);
+}
+
+function isEdgeReachable(state: GameState, x: number, y: number): boolean {
 	const current = state.map.currentNode;
 	if (!current) return y === 0;
 	if (y !== current.y + 1) return false;
 	const currentNode = state.map.nodes[current.y]?.[current.x];
 	return currentNode?.edges.some((e) => e.x === x && e.y === y) ?? false;
+}
+
+/** Wing Boots: while charges remain, any map node of the next row (not off-path grid cells). */
+function canFlyTo(state: GameState, x: number, y: number): boolean {
+	const current = state.map.currentNode;
+	if (!current || y !== current.y + 1) return false;
+	const boots = state.relics.find((r) => r.id === "WING_BOOTS");
+	if (!boots || boots.counter <= 0) return false;
+	const node = state.map.nodes[y]?.[x];
+	if (!node) return false;
+	const onPath = (row: readonly MapNode[] | undefined) =>
+		row?.some((n) => n.edges.some((e) => e.x === x && e.y === y)) ?? false;
+	return node.edges.length > 0 || onPath(state.map.nodes[current.y]);
+}
+
+/** A flight spends one Wing Boots charge; at 0 the relic is used up (counter −2). */
+function spendWingBoots(state: GameState): GameState {
+	const relics = state.relics.map((r) => {
+		if (r.id !== "WING_BOOTS") return r;
+		const counter = r.counter - 1;
+		return { ...r, counter: counter <= 0 ? -2 : counter };
+	});
+	return { ...state, relics };
 }
 
 function pickEncounter(state: GameState, roomType: "monster" | "elite"): string {
@@ -301,16 +362,21 @@ function stepSkipCardReward(state: GameState, events: GameEvent[]): StepResult {
 }
 
 function stepRest(state: GameState, events: GameEvent[]): StepResult {
-	if (state.phase.type !== "rest") return { state, events };
-	const healAmount = Math.floor(state.maxHp * 0.3);
+	// Coffee Dripper: the Rest option is disabled.
+	if (state.phase.type !== "rest" || hasRelic(state, "COFFEE_DRIPPER")) return { state, events };
+	// Regal Pillow: +15 on top of 30% max HP.
+	const pillow = hasRelic(state, "REGAL_PILLOW") ? relicVal("REGAL_PILLOW", 0, 15) : 0;
+	const healAmount = Math.floor(state.maxHp * 0.3) + pillow;
 	const newHp = Math.min(state.maxHp, state.currentHp + healAmount);
 	const healed = newHp - state.currentHp;
 	events.push({ type: "healed", target: { type: "player" }, amount: healed });
-	return { state: { ...state, currentHp: newHp, combat: null, phase: { type: "map" } }, events };
+	const rested: GameState = { ...state, currentHp: newHp, combat: null, phase: { type: "map" } };
+	return { state: dreamCatcherReward(rested), events };
 }
 
 function stepSmith(state: GameState, cardIndex: number, events: GameEvent[]): StepResult {
-	if (state.phase.type !== "rest") return { state, events };
+	// Fusion Hammer: the Smith option is disabled.
+	if (state.phase.type !== "rest" || hasRelic(state, "FUSION_HAMMER")) return { state, events };
 	const card = state.deck[cardIndex];
 	if (!card || card.upgraded) return { state, events };
 
@@ -366,7 +432,8 @@ function checkCombatEnd(result: StepResult): StepResult {
 
 		const goldResult = rollGoldReward(s);
 		const reward = generateCardReward({ ...s, rng: { ...s.rng, miscRng: goldResult.rng } });
-		const potionResult = rollPotionDrop(s.rng.potionRng, s.potionSlots, s.potions);
+		const potionChance = hasRelic(s, "WHITE_BEAST_STATUE") ? 100 : 40;
+		const potionResult = rollPotionDrop(s.rng.potionRng, s.potionSlots, s.potions, potionChance);
 		const newRng = {
 			...s.rng,
 			miscRng: goldResult.rng,
@@ -375,18 +442,17 @@ function checkCombatEnd(result: StepResult): StepResult {
 		};
 		const withGold = gainGold({ ...s, rng: newRng }, goldResult.gold, events);
 		events.push({ type: "cardRewardOffered", cards: reward.cards });
-		return {
-			state: {
-				...withGold,
-				phase: {
-					type: "reward",
-					cardRewards: reward.cards,
-					potionReward: potionResult.potion,
-					gold: goldResult.gold,
-				},
+		// Prayer Wheel (second card reward), Black Star (extra elite relic).
+		const withExtras = addRelicCombatRewards({
+			...withGold,
+			phase: {
+				type: "reward",
+				cardRewards: reward.cards,
+				potionReward: potionResult.potion,
+				gold: goldResult.gold,
 			},
-			events,
-		};
+		});
+		return { state: withExtras, events };
 	}
 
 	return result;

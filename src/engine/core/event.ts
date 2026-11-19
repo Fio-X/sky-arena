@@ -1,6 +1,6 @@
 import { getAllPotions, getAllRelics, getCard } from "../content/loader";
 import { random } from "../rng/stsRandom";
-import { obtainCard, obtainRelic } from "./obtain";
+import { hasRelic, obtainCard, obtainRelic } from "./obtain";
 import { gainGold } from "./playerActions";
 import type { CardId, GameEvent, GameState, RngState, StepResult } from "./types";
 
@@ -95,12 +95,12 @@ export function stepChooseEventOption(
 	const option = def.options[optionIndex];
 	if (!option) return { state, events: events_ };
 
-	let s = state;
+	// Next phase first, so a relic pickup choice (obtainRelic) runs before it.
+	let s: GameState = { ...state, phase: { type: "map" } };
 	for (const outcome of option.outcomes) {
 		s = applyOutcome(s, outcome, events_);
 	}
 
-	s = { ...s, phase: { type: "map" } };
 	return { state: s, events: events_ };
 }
 
@@ -224,9 +224,9 @@ export function obtainRandomRelic(state: GameState): GameState {
 	return obtainRelic({ ...state, rng: { ...state.rng, relicRng: rng } }, relic.id);
 }
 
-function obtainRandomPotion(state: GameState): GameState {
+export function obtainRandomPotion(state: GameState): GameState {
 	const emptySlot = state.potions.indexOf(null);
-	if (emptySlot < 0) return state;
+	if (emptySlot < 0 || hasRelic(state, "SOZU")) return state;
 
 	const potionPool = getAllPotions().filter((p) => p.class === "shared" || p.class === "red");
 	if (potionPool.length === 0) return state;

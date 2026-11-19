@@ -4,6 +4,7 @@ import { random } from "../rng/stsRandom";
 import { drainActions } from "./actionExecutor";
 import { addToBot } from "./actionQueue";
 import { fireRunHook } from "./hooks";
+import { hasRelic } from "./obtain";
 import type { GameEvent, GameState, PotionId, RngState, StepResult } from "./types";
 
 // ── Potion pool for Ironclad ─────────────────────────────
@@ -31,12 +32,13 @@ export function initPotionPool(
 }
 
 // ── Roll potion drop ─────────────────────────────────────
-// 40% chance to drop a potion after combat (STS base rate)
+// 40% chance to drop a potion after combat (STS base rate); White Beast Statue: 100.
 
 export function rollPotionDrop(
 	rng: RngState,
 	_potionSlots: number,
 	potions: (PotionId | null)[],
+	chance = 40,
 ): { potion: PotionId | null; rng: RngState } {
 	ensurePool();
 	const hasEmptySlot = potions.some((p) => p === null);
@@ -46,7 +48,7 @@ export function rollPotionDrop(
 
 	const dropRoll = random(rng, 99);
 	rng = dropRoll.state;
-	if (dropRoll.value >= 40) return { potion: null, rng };
+	if (dropRoll.value >= chance) return { potion: null, rng };
 
 	const potionRoll = random(rng, IRONCLAD_POTION_POOL.length - 1);
 	rng = potionRoll.state;
@@ -58,7 +60,7 @@ export function rollPotionDrop(
 
 export function obtainPotion(state: GameState, potionId: PotionId, events: GameEvent[]): GameState {
 	const idx = state.potions.indexOf(null);
-	if (idx < 0) return state;
+	if (idx < 0 || hasRelic(state, "SOZU")) return state;
 	const newPotions = [...state.potions];
 	newPotions[idx] = potionId;
 	events.push({ type: "potionObtained", potionId, slot: idx });
@@ -115,7 +117,8 @@ export function stepDiscardPotion(state: GameState, slot: number, events: GameEv
 // ── Pick up potion reward ────────────────────────────────
 
 export function stepObtainPotionReward(state: GameState, events: GameEvent[]): StepResult {
-	if (state.phase.type !== "reward" || !state.phase.potionReward) {
+	// Sozu: the reward stays on screen but cannot be taken.
+	if (state.phase.type !== "reward" || !state.phase.potionReward || hasRelic(state, "SOZU")) {
 		return { state, events };
 	}
 	const s = obtainPotion(state, state.phase.potionReward, events);

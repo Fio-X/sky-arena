@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { getCard, getPotion } from "../../engine/content/loader";
-import { tCard, tCardText, tPotion, tUi } from "../../i18n";
+import { getLocale, tCard, tCardText, tPotion, tUi } from "../../i18n";
 import { useGameStore } from "../../store/gameStore";
 import { cardTypeLabel, formatCardTextSimple, rarityLabel } from "../cardTextUtils";
 
@@ -246,6 +246,13 @@ export function RewardScreen() {
 							})}
 						</div>
 					</>
+				)}
+
+				{/* Singing Bowl: +2 Max HP instead of a card */}
+				{cardRewards.length > 0 && state.relics.some((r) => r.id === "SINGING_BOWL") && (
+					<button type="button" onClick={() => dispatch({ type: "singingBowl" })}>
+						{getLocale() === "zh" ? "颂钵：+2 最大生命" : "Singing Bowl: +2 Max HP"}
+					</button>
 				)}
 
 				{/* Skip / Continue */}

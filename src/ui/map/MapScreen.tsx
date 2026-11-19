@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { isNodeReachable } from "../../engine/core/step";
 import type { MapNode, RoomType } from "../../engine/core/types";
 import { tUiFmt } from "../../i18n";
 import { useGameStore } from "../../store/gameStore";
@@ -433,12 +434,8 @@ export function MapScreen() {
 	const gridW = COLS * COL_GAP;
 	const gridH = (maxY + 1) * ROW_GAP;
 
-	function isReachable(x: number, y: number): boolean {
-		if (!currentNode) return y === 0;
-		if (y !== currentNode.y + 1) return false;
-		const cn = nodes[currentNode.y]?.[currentNode.x];
-		return cn?.edges.some((e) => e.x === x && e.y === y) ?? false;
-	}
+	// Engine rule, so Wing Boots flights show as reachable too.
+	const isReachable = (x: number, y: number) => !!state && isNodeReachable(state, x, y);
 
 	function isOnPath(node: MapNode): boolean {
 		if (node.edges.length > 0) return true;
