@@ -5,14 +5,14 @@
  */
 import { takesTurns } from "../combat/death";
 import { buildIntent, resolveMonsterMove, rollMonsterMove } from "../combat/monsterTurn";
-import { clearBlockAtEndOfTurn, tickTurnBasedPowers } from "../combat/powers";
+import { clearMonsterBlock, clearPlayerBlock, tickTurnBasedPowers } from "../combat/powers";
 import { getCard } from "../content/loader";
 import { preventPlayerDeath, recordEndTurnHand } from "../content/relicsCombatRules";
 import { drainActions } from "./actionExecutor";
 import { addToBot } from "./actionQueue";
 import { anyHook, fireHook, fireHookOnAllActors, foldHook } from "./hooks";
 import { triggerOrbPassives } from "./orbSystem";
-import type { ActorRef, CardInstance, GameEvent, GameState, StepResult } from "./types";
+import type { CardInstance, GameEvent, GameState, StepResult } from "./types";
 
 const TURN_BASED_POWER_IDS = new Set([
 	"vulnerable",
@@ -104,12 +104,7 @@ export function stepEndTurnContinue(
 
 	events.push({ type: "turnEnded", turn: combat.turn });
 
-	const playerRef: ActorRef = { type: "player" };
-	const blockRetain = foldHook(s, playerRef, "modifyBlockRetention", 0);
-	s = blockRetain.state;
-	if (s.combat) {
-		s = clearBlockAtEndOfTurn(s, Math.min(blockRetain.value, s.combat.player.block));
-	}
+	s = clearMonsterBlock(s);
 
 	s = fireHookOnAllActors(s, (st, actor) => fireHook(st, actor, "atEndOfTurn", true));
 
@@ -149,6 +144,8 @@ export function stepEndTurnContinue(
 		s = { ...s, combat: addToBot(s.combat, { type: "changeStance", stance: "neutral" }) };
 		({ state: s } = drainActions(s, events));
 	}
+	// The player's block lasted through the monsters' turn; it goes now.
+	s = clearPlayerBlock(s);
 	s = fireHookOnAllActors(s, (st, actor) => fireHook(st, actor, "atStartOfTurn"));
 
 	const draw = foldHook(s, { type: "player" }, "modifyDrawPerTurn", 5);

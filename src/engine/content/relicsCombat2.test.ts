@@ -166,15 +166,19 @@ describe("Combat relics: orbs / end of turn", () => {
 	beforeAll(loadAllData);
 	const frost = { type: "frost" as const, passive: 2, evoke: 5 };
 
+	// Block gained at end of turn lasts through the monsters' turn and is cleared at
+	// the start of the next player turn, so measure it as damage absorbed (Chomp = 11).
+	const hpLostToChomp = (s: GameState) => s.currentHp - takeChomp(s).currentHp;
+
 	it("Cloak Clasp: Block per card in hand at end of turn", () => {
-		expect(player(endTurn(enter(["CLOAK_CLASP"]))).block).toBe(5);
-		expect(player(endTurn(enter([]))).block).toBe(0);
+		expect(hpLostToChomp(enter(["CLOAK_CLASP"], { enc: "JAW_WORM" }))).toBe(11 - 5);
+		expect(hpLostToChomp(enter([], { enc: "JAW_WORM" }))).toBe(11);
 	});
 
 	it("Gold-Plated Cables: the rightmost orb's passive triggers again", () => {
 		const block = (relics: string[]) => {
-			const s = enter(relics);
-			return player(endTurn(withCombat(s, { player: { ...player(s), orbs: [frost] } }))).block;
+			const s = enter(relics, { enc: "JAW_WORM" });
+			return 11 - hpLostToChomp(withCombat(s, { player: { ...player(s), orbs: [frost] } }));
 		};
 		expect(block([])).toBe(2);
 		expect(block(["GOLD_PLATED_CABLES"])).toBe(4);

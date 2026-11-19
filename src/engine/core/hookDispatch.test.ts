@@ -10,6 +10,7 @@ import { generateMap } from "../map/generate";
 import {
 	card,
 	endTurn,
+	forceMove,
 	loadAllData,
 	monsterAt,
 	patchMonster,
@@ -174,5 +175,24 @@ describe("turn-boundary hooks (core/turn.ts)", () => {
 		s = step(s, { type: "chooseMapNode", x: first.x, y: 0 }).state;
 		expect(seen).toEqual([first.type]);
 		expect(s.floor).toBe(floor + 1);
+	});
+});
+
+describe("block timing (core/turn.ts)", () => {
+	const defends = () => Array.from({ length: 5 }, (_, i) => card("DEFEND_RED", i + 1));
+
+	it("player block lasts through the monsters' turn, then clears at turn start", () => {
+		let s = forceMove(startFight("JAW_WORM", 1n, defends()), 0, "JAW_WORM_CHOMP");
+		s = playCard(s, "DEFEND_RED");
+		const hp = s.currentHp;
+		s = endTurn(s);
+		expect(hp - s.currentHp).toBe(11 - 5);
+		expect(s.combat?.player.block).toBe(0);
+	});
+
+	it("monster block clears before the monsters act; Jaw Worm's Bellow block survives your turn", () => {
+		let s = forceMove(startFight("JAW_WORM", 1n, defends()), 0, "JAW_WORM_BELLOW");
+		s = endTurn(s);
+		expect(monsterAt(s, 0).block).toBeGreaterThan(0);
 	});
 });

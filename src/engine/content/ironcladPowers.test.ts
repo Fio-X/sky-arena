@@ -40,7 +40,11 @@ describe("Ironclad power hooks", () => {
 			hand: [],
 			player: {
 				block: 0,
-				...withPower("metallicize", 4),
+				// Barricade keeps the block past the next turn start, where it is normally cleared.
+				powers: [
+					{ id: "metallicize" as never, amount: 4, justApplied: false },
+					{ id: "barricade" as never, amount: 1, justApplied: false },
+				],
 				stance: "neutral",
 				orbs: [],
 				orbSlots: 3,

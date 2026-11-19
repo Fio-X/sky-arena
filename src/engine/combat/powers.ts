@@ -154,15 +154,15 @@ function setPowers(state: GameState, actor: ActorRef, powers: PowerInstance[]): 
  * End of the player's turn: the player keeps `playerRetained` block; each monster
  * keeps what its modifyBlockRetention allows (Barricade on Spheric Guardian keeps all).
  */
-export function clearBlockAtEndOfTurn(state: GameState, playerRetained: number): GameState {
-	const c0 = state.combat;
-	if (!c0) return state;
-	let s: GameState = {
-		...state,
-		combat: { ...c0, player: { ...c0.player, block: playerRetained } },
-	};
-	const monsters = s.combat?.monsters ?? [];
-	for (const m of monsters) {
+/**
+ * MonsterGroup.applyPreTurnLogic: every monster loses its block before any
+ * monster acts (Barricade-style retention via modifyBlockRetention). The
+ * player's block is not touched here: it lasts through the monsters' turn
+ * and is cleared at the start of the player's next turn (clearPlayerBlock).
+ */
+export function clearMonsterBlock(state: GameState): GameState {
+	let s = state;
+	for (const m of state.combat?.monsters ?? []) {
 		if (!m.alive || m.block === 0) continue;
 		const retain = foldHook(s, { type: "monster", index: m.index }, "modifyBlockRetention", 0);
 		s = retain.state;
@@ -173,4 +173,13 @@ export function clearBlockAtEndOfTurn(state: GameState, playerRetained: number):
 		s = { ...s, combat: { ...c, monsters: next } };
 	}
 	return s;
+}
+
+/** Start of the player's turn: lose block, keeping what Barricade / Blur / Calipers retain. */
+export function clearPlayerBlock(state: GameState): GameState {
+	const retain = foldHook(state, { type: "player" }, "modifyBlockRetention", 0);
+	const c = retain.state.combat;
+	if (!c) return retain.state;
+	const block = Math.min(retain.value, c.player.block);
+	return { ...retain.state, combat: { ...c, player: { ...c.player, block } } };
 }

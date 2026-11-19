@@ -189,7 +189,7 @@ describe("integration: seed=42 full Act 1 loop", () => {
 		];
 		const s = run(createGame(42n), cmds);
 		expect(s.phase.type).toBe("reward");
-		expect(s.currentHp).toBe(74);
+		expect(s.currentHp).toBe(80); // 74 before the block fix: Defend did not block
 		expect(s.gold).toBe(214);
 	});
 
@@ -477,7 +477,9 @@ describe("integration: seed=42 full Act 1 auto-play", () => {
 		expect(types.has("rest")).toBe(true);
 		expect(types.has("treasure")).toBe(true);
 		expect(types.has("boss")).toBe(true);
-		expect(s.currentHp).toBe(0);
-		expect(s.phase.type).toBe("gameOver");
+		// Recorded after the block fix (2026-11-20): block now lasts through the
+		// monsters' turn, so this auto-player beats the Act 1 boss.
+		expect(s.currentHp).toBe(16);
+		expect(s.phase.type).toBe("bossReward");
 	});
 });
