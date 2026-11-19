@@ -1,5 +1,6 @@
 import { drainActions } from "../core/actionExecutor";
 import { addToBot } from "../core/actionQueue";
+import { foldHook } from "../core/hooks";
 import type { CombatState, GameState, MonsterId, MonsterState, RngState } from "../core/types";
 import { random, stsShuffle } from "../rng/stsRandom";
 import { applyEncounterSetup } from "./encounterSetup";
@@ -124,7 +125,11 @@ function shuffleAndDraw(state: GameState): GameState {
 		rng: { ...state.rng, shuffleRng: shuffled.rng },
 	};
 
-	s = { ...s, combat: addToBot(s.combat as CombatState, { type: "drawCards", count: 5 }) };
+	// gameHandSize: 5, adjusted by modifyDrawPerTurn (Snecko Eye +2 from turn 1).
+	const draw = foldHook(s, { type: "player" }, "modifyDrawPerTurn", 5);
+	s = draw.state;
+	const count = Math.max(0, draw.value);
+	s = { ...s, combat: addToBot(s.combat as CombatState, { type: "drawCards", count }) };
 	const drained = drainActions(s, []);
 	return drained.state;
 }

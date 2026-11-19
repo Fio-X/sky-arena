@@ -298,7 +298,10 @@ export function stepEndTurnContinue(
 	}
 	s = fireHookOnAllActors(s, (st, actor) => fireHook(st, actor, "atStartOfTurn"));
 
-	s = { ...s, combat: addToBot(s.combat as typeof c, { type: "drawCards", count: 5 }) };
+	const draw = foldHook(s, { type: "player" }, "modifyDrawPerTurn", 5);
+	s = draw.state;
+	const count = Math.max(0, draw.value);
+	s = { ...s, combat: addToBot(s.combat as typeof c, { type: "drawCards", count }) };
 	({ state: s } = drainActions(s, events));
 
 	s = fireHookOnAllActors(s, (st, actor) => fireHook(st, actor, "atStartOfTurnPostDraw"));

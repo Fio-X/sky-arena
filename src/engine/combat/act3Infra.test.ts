@@ -22,6 +22,7 @@ import type { GameState, MonsterMoveId } from "../core/types";
 import { createAllStreams } from "../rng/stsRandom";
 import { allMonstersGone, registerDeathInterceptor } from "./death";
 import { ACT3_ENCOUNTER_POOL, getEncounterMonsters } from "./encounters";
+import { initCombat } from "./init";
 import { resolveMonsterMove } from "./monsterTurn";
 
 beforeAll(loadAllData);
@@ -282,5 +283,17 @@ describe("Artifact and prebattle aliases", () => {
 		const ao = monsterAt(startFight("AWAKENED_ONE"), 2);
 		expect(powerAmount(ao, "REGENERATE")).toBe(10);
 		expect(powerAmount(ao, "REGEN")).toBeUndefined();
+	});
+});
+
+describe("per-turn draw (modifyDrawPerTurn)", () => {
+	it("Snecko Eye draws 7 on turn 1 and on later turns", () => {
+		const base = startFight("CULTIST", 1n, strikes(20));
+		const withEye = initCombat(
+			{ ...base, combat: null, relics: [{ id: "SNECKO_EYE" as never, counter: 0 }] },
+			getEncounterMonsters("CULTIST"),
+		);
+		expect(withEye.combat?.hand.length).toBe(7);
+		expect(endTurn(withEye).combat?.hand.length).toBe(7);
 	});
 });
