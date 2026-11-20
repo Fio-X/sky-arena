@@ -20,7 +20,6 @@ import potionsJson from "../data-reference/potions.json";
 import powersJson from "../data-reference/powers.json";
 import relicsJson from "../data-reference/relics.json";
 
-import { generateEncounterLists } from "./engine/combat/encounters";
 import "./engine/content";
 import {
 	loadCards,
@@ -30,11 +29,10 @@ import {
 	loadRelics,
 } from "./engine/content/loader";
 import { loadEvents } from "./engine/core/event";
+import { createRun } from "./engine/core/newRun";
 import { initPotionPool } from "./engine/core/potion";
 import { step } from "./engine/core/step";
-import type { CardId, Command, GameState, RelicId } from "./engine/core/types";
-import { generateMap } from "./engine/map/generate";
-import { createAllStreams } from "./engine/rng/stsRandom";
+import type { Command, GameState } from "./engine/core/types";
 
 function loadContent() {
 	loadCards(cardsJson as never);
@@ -48,67 +46,8 @@ function loadContent() {
 	loadEvents(eventsJson as never);
 }
 
-function makeStarterDeck(): GameState["deck"] {
-	let uid = 1;
-	const cards: GameState["deck"] = [];
-	for (let i = 0; i < 5; i++) {
-		cards.push({
-			id: "STRIKE_RED" as CardId,
-			uniqueId: uid++,
-			upgraded: false,
-			costOverride: null,
-			costForTurn: 1,
-			freeToPlay: false,
-			misc: 0,
-		});
-	}
-	for (let i = 0; i < 4; i++) {
-		cards.push({
-			id: "DEFEND_RED" as CardId,
-			uniqueId: uid++,
-			upgraded: false,
-			costOverride: null,
-			costForTurn: 1,
-			freeToPlay: false,
-			misc: 0,
-		});
-	}
-	cards.push({
-		id: "BASH" as CardId,
-		uniqueId: uid++,
-		upgraded: false,
-		costOverride: null,
-		costForTurn: 2,
-		freeToPlay: false,
-		misc: 0,
-	});
-	return cards;
-}
-
 function createInitialState(seed: bigint): GameState {
-	const rng = createAllStreams(seed);
-	const encResult = generateEncounterLists(rng.monsterRng);
-	const map = generateMap(seed, 1);
-	return {
-		seed,
-		character: "IRONCLAD",
-		ascension: 0,
-		act: 1,
-		floor: 0,
-		gold: 99,
-		maxHp: 80,
-		currentHp: 80,
-		potionSlots: 3,
-		potions: [null, null, null],
-		deck: makeStarterDeck(),
-		relics: [{ id: "BURNING_BLOOD" as RelicId, counter: 0 }],
-		map,
-		combat: null,
-		encounterIndex: { weak: 0, strong: 0, elite: 0 },
-		encounterLists: encResult.lists,
-		rng: { ...rng, monsterRng: encResult.rng },
-		phase: { type: "neow" },
-	};
+	return createRun(seed, "IRONCLAD");
 }
 
 function parseArgs(argv: string[]) {

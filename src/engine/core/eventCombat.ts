@@ -42,9 +42,11 @@ export function eventCombatVictory(state: GameState, events: GameEvent[]): GameS
 	}
 	for (const id of rewards.relicIds ?? []) s = obtainRelic({ ...s, phase: { type: "map" } }, id);
 	let cards: GameState["deck"][number]["id"][] = [];
+	let upgraded: boolean[] = [];
 	if (rewards.cardReward) {
 		const reward = generateCardReward(s);
 		cards = reward.cards;
+		upgraded = reward.upgraded;
 		s = { ...s, rng: { ...s.rng, cardRng: reward.rng } };
 		events.push({ type: "cardRewardOffered", cards });
 	}
@@ -60,6 +62,7 @@ export function eventCombatVictory(state: GameState, events: GameEvent[]): GameS
 		phase: {
 			type: "reward",
 			cardRewards: cards,
+			cardRewardsUpgraded: upgraded,
 			potionReward: potion,
 			gold: rewards.gold ?? 0,
 			next,

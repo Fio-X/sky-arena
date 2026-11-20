@@ -240,6 +240,7 @@ export function cardRewardPhase(
 		phase: {
 			type: "reward",
 			cardRewards: reward.cards,
+			cardRewardsUpgraded: reward.upgraded,
 			potionReward: extra.potion ?? null,
 			gold: extra.gold ?? 0,
 			next,

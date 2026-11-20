@@ -7,9 +7,9 @@
  */
 import { ACT_ENCOUNTER_POOLS, generateEncounterLists } from "../combat/encounters";
 import { generateAct4Map, generateMap } from "../map/generate";
-import { randomBoolean } from "../rng/stsRandom";
+import { random, randomBoolean } from "../rng/stsRandom";
 import { hasAllKeys, hasKey } from "./keys";
-import type { GameState, RngState } from "./types";
+import type { GameState, MapNode, MapState, RngState } from "./types";
 
 /** Acts 2–3 are playable once their encounter pool exists; Act 4 needs all three keys. */
 export function hasNextAct(state: GameState): boolean {
@@ -32,11 +32,15 @@ function nextActEncounters(state: GameState, act: number) {
 
 export function startNextAct(state: GameState): GameState {
 	const act = state.act + 1;
-	const encounters = nextActEncounters(state, act);
-	const map =
+	let encounters = nextActEncounters(state, act);
+	let map =
 		act === 4
 			? generateAct4Map()
 			: generateMap(state.seed, act, state.ascension, !hasKey(state, "emerald"));
+	if (act === 3 && state.ascension >= 20) {
+		encounters = withSecondBoss(encounters);
+		map = withSecondBossNode(map);
+	}
 	const missing = state.maxHp - state.currentHp;
 	const heal = state.ascension >= 5 ? Math.round(missing * 0.75) : missing;
 
@@ -56,6 +60,26 @@ export function startNextAct(state: GameState): GameState {
 		},
 		phase: { type: "map" },
 	};
+}
+
+/** A20: a second, different Act 3 boss (monsterRng, after the first). */
+function withSecondBoss(e: { lists: GameState["encounterLists"]; rng: RngState }) {
+	const others = ACT_ENCOUNTER_POOLS[3]?.bosses.filter((b) => b !== e.lists.boss) ?? [];
+	if (others.length === 0) return e;
+	const r = random(e.rng, others.length - 1);
+	return { lists: { ...e.lists, boss2: others[r.value] }, rng: r.state };
+}
+
+/** The second boss sits one row above the first, linked from it. */
+function withSecondBossNode(map: MapState): MapState {
+	const y = map.nodes.length;
+	const row: MapNode[] = Array.from({ length: 7 }, (_, x) => ({ x, y, type: "boss", edges: [] }));
+	const nodes = map.nodes.map((r) =>
+		r.map((n) =>
+			n.type === "boss" && n.x === 3 && n.y === y - 1 ? { ...n, edges: [{ x: 3, y }] } : n,
+		),
+	);
+	return { ...map, nodes: [...nodes, row] };
 }
 
 /** Random.setCounter(250 / 500 / 750): calls randomBoolean until the counter is reached. */

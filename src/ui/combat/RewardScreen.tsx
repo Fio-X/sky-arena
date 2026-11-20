@@ -154,7 +154,8 @@ export function RewardScreen() {
 						>
 							{cardRewards.map((cardId, i) => {
 								const def = getCard(cardId);
-								const name = tCard(cardId, def?.name ?? cardId);
+								const plus = state.phase.type === "reward" && state.phase.cardRewardsUpgraded?.[i];
+								const name = `${tCard(cardId, def?.name ?? cardId)}${plus ? "+" : ""}`;
 								const rawText = tCardText(cardId, def?.text ?? "");
 								const rarityColor =
 									def?.rarity === "rare"

@@ -112,7 +112,9 @@ export function generateShop(state: GameState): { shop: ShopData; rng: RngState 
 		purgePrice: 75,
 		purgeUsed: false,
 	};
-	// ShopScreen.init: The Courier ×0.8, then Membership Card ×0.5; Smiling Mask fixes purge at 50.
+	// ShopScreen.init: A16 ×1.1 (not the purge), The Courier ×0.8, then Membership Card ×0.5;
+	// Smiling Mask fixes purge at 50.
+	if (state.ascension >= 16) shop = applyDiscount(state, shop, 1.1, false);
 	if (hasRelic(state, "THE_COURIER")) shop = applyDiscount(state, shop, 0.8);
 	if (hasRelic(state, "MEMBERSHIP_CARD")) shop = applyDiscount(state, shop, 0.5);
 	if (hasRelic(state, "SMILING_MASK")) shop = { ...shop, purgePrice: 50 };
@@ -121,8 +123,16 @@ export function generateShop(state: GameState): { shop: ShopData; rng: RngState 
 
 const roundPrice = (p: number, multiplier: number) => Math.floor(p * multiplier + 0.5);
 
-/** ShopScreen.applyDiscount(multiplier, affectPurge=true): MathUtils.round on every price. */
-function applyDiscount(state: GameState, shop: ShopData, multiplier: number): ShopData {
+/** ShopScreen.applyDiscount(multiplier, affectPurge): MathUtils.round on every price. */
+function applyDiscount(
+	state: GameState,
+	shop: ShopData,
+	multiplier: number,
+	affectPurge = true,
+): ShopData {
+	if (!affectPurge) {
+		return { ...applyDiscount(state, shop, multiplier), purgePrice: shop.purgePrice };
+	}
 	return {
 		...shop,
 		cards: shop.cards.map((c) => ({ ...c, price: roundPrice(c.price, multiplier) })),

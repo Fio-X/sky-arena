@@ -15,7 +15,9 @@ function rollBaseGold(state: GameState): { gold: number; rng: typeof state.rng.m
 	const node = state.map.currentNode;
 	const roomType = node ? state.map.nodes[node.y]?.[node.x]?.type : "monster";
 
-	if (roomType === "boss") return { gold: 100, rng: state.rng.miscRng };
+	// A13: bosses drop 75% gold (round(100 × 0.75)).
+	if (roomType === "boss")
+		return { gold: state.ascension >= 13 ? 75 : 100, rng: state.rng.miscRng };
 	let min: number;
 	let max: number;
 	if (roomType === "elite") {
@@ -29,6 +31,13 @@ function rollBaseGold(state: GameState): { gold: number; rng: typeof state.rng.m
 	return { gold: min + result.value, rng: result.state };
 }
 
+/** A20 Act 3: after the first boss the map continues to the second one. */
+function hasBossAhead(state: GameState): boolean {
+	const at = state.map.currentNode;
+	const node = at ? state.map.nodes[at.y]?.[at.x] : undefined;
+	return (node?.edges.length ?? 0) > 0;
+}
+
 export function getCurrentRoomType(state: GameState): string {
 	const node = state.map.currentNode;
 	return node ? (state.map.nodes[node.y]?.[node.x]?.type ?? "monster") : "monster";
@@ -36,7 +45,7 @@ export function getCurrentRoomType(state: GameState): string {
 
 export function afterRewardPhase(state: GameState): GamePhase {
 	if (state.phase.type === "reward" && state.phase.next) return state.phase.next;
-	if (getCurrentRoomType(state) === "boss") {
+	if (getCurrentRoomType(state) === "boss" && !hasBossAhead(state)) {
 		const choices = generateBossRelicChoices(state);
 		return { type: "bossReward", relics: choices.relics };
 	}

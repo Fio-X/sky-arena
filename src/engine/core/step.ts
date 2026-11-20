@@ -295,7 +295,9 @@ function stepChooseMapNode(
 			break;
 		}
 		case "boss": {
-			const bossId = s.encounterLists.boss;
+			// A20 Act 3: the second boss node fights boss2.
+			const second = !!s.encounterLists.boss2 && previousBossCount(s) > 0;
+			const bossId = second ? (s.encounterLists.boss2 ?? "") : s.encounterLists.boss;
 			s = initCombat(s, getEncounterMonsters(bossId), bossId);
 			s = fireHook(s, { type: "player" }, "atBattleStart");
 			events.push({ type: "combatStarted" });
@@ -327,6 +329,12 @@ function stepChooseMapNode(
 	}
 
 	return { state: s, events };
+}
+
+/** Boss rooms already visited in this act (the current one excluded). */
+function previousBossCount(state: GameState): number {
+	const visited = state.map.visitedNodes.slice(0, -1);
+	return visited.filter((v) => state.map.nodes[v.y]?.[v.x]?.type === "boss").length;
 }
 
 /** A node the player may travel to next (map UI uses this too). */
@@ -394,8 +402,9 @@ function stepChooseCardReward(state: GameState, index: number, events: GameEvent
 
 	events.push({ type: "cardRewardChosen", card });
 	const nextPhase = afterRewardPhase(state);
+	const upgraded = state.phase.cardRewardsUpgraded?.[index] ?? false;
 	return {
-		state: { ...obtainCard({ ...state, combat: null }, card), phase: nextPhase },
+		state: { ...obtainCard({ ...state, combat: null }, card, upgraded), phase: nextPhase },
 		events,
 	};
 }
@@ -499,6 +508,7 @@ function checkCombatEnd(result: StepResult): StepResult {
 			phase: {
 				type: "reward",
 				cardRewards: reward.cards,
+				cardRewardsUpgraded: reward.upgraded,
 				potionReward: potionResult.potion,
 				gold: goldResult.gold,
 				emeraldKey: inEmeraldElite(s),

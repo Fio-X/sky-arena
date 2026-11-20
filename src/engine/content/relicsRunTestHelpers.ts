@@ -62,8 +62,8 @@ export function run(s: GameState, ...commands: Command[]): GameState {
 export const enter = (s: GameState, y: number, x = 0) => run(s, { type: "chooseMapNode", x, y });
 
 /** Enter the fight at row y and win it with one Strike. */
-export function winFight(s: GameState, y: number): GameState {
-	const fight = patchMonster(enter(s, y), 0, { currentHp: 1 });
+export function winFight(s: GameState, y: number, x = 0): GameState {
+	const fight = patchMonster(enter(s, y, x), 0, { currentHp: 1 });
 	return playCard(fight, "STRIKE_RED");
 }
 

@@ -196,6 +196,7 @@ export interface EncounterLists {
 	strong: string[];
 	elites: string[];
 	boss: string;
+	boss2?: string;
 }
 
 /**

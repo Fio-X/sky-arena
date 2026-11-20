@@ -33,6 +33,8 @@ export interface GameState {
 		strong: string[];
 		elites: string[];
 		boss: string;
+		/** A20, Act 3: the second boss, fought right after the first. */
+		boss2?: string;
 	};
 
 	// rng streams
@@ -53,6 +55,8 @@ export type GamePhase =
 	| {
 			type: "reward";
 			cardRewards: CardId[];
+			/** Same order as cardRewards: the card comes upgraded (Act 2+ reward upgrade roll). */
+			cardRewardsUpgraded?: readonly boolean[];
 			potionReward: PotionId | null;
 			gold: number;
 			/** Where to go after this reward (Prayer Wheel, Orrery, Dream Catcher, Tiny House). */

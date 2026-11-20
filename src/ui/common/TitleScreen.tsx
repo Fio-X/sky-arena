@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
-import { tUi } from "../../i18n";
+import { getLocale, tUi } from "../../i18n";
 import { useGameStore } from "../../store/gameStore";
 import { LanguageToggle } from "./LanguageToggle";
 
@@ -94,9 +94,12 @@ const particleBaseStyle: React.CSSProperties = {
 	animation: "title-float 12s ease-in-out infinite alternate",
 };
 
+const ASCENSION_LEVELS = Array.from({ length: 21 }, (_, i) => i);
+
 export function TitleScreen() {
 	const startGame = useGameStore((s) => s.startGame);
 	const [seedInput, setSeedInput] = useState("42");
+	const [ascension, setAscension] = useState(0);
 
 	const seed = (() => {
 		const n = Number.parseInt(seedInput, 10);
@@ -259,6 +262,26 @@ export function TitleScreen() {
 					>
 						{tUi("random")}
 					</button>
+					<span style={{ color: "var(--text-dim)", fontSize: "0.8rem", fontWeight: 600 }}>
+						{getLocale() === "zh" ? "进阶" : "Ascension"}
+					</span>
+					<select
+						value={ascension}
+						onChange={(e) => setAscension(Number(e.target.value))}
+						style={{
+							padding: "0.375rem 0.5rem",
+							background: "var(--bg-card)",
+							border: "1px solid var(--border)",
+							borderRadius: 6,
+							color: "var(--text)",
+						}}
+					>
+						{ASCENSION_LEVELS.map((level) => (
+							<option key={level} value={level}>
+								{level}
+							</option>
+						))}
+					</select>
 				</motion.div>
 
 				{/* Character cards */}
@@ -276,7 +299,7 @@ export function TitleScreen() {
 							char={char}
 							index={i}
 							disabled={seed === null}
-							onClick={() => seed !== null && startGame(seed, char.key)}
+							onClick={() => seed !== null && startGame(seed, char.key, ascension)}
 						/>
 					))}
 				</div>
