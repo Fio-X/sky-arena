@@ -254,10 +254,8 @@ registerRelicHooks("RED_SKULL", () => ({
 registerRelicHooks("THE_BOOT", () => ({
 	relicId: "THE_BOOT",
 	hooks: {
-		atDamageFinalGive: (_ctx, damage, card) => {
-			if (!card || !isAttack(card)) return damage;
-			return damage > 0 && damage < 5 ? 5 : damage;
-		},
+		// After block (AbstractMonster.damage → onAttackToChangeDamage): 1–4 unblocked → 5.
+		onAttackToChangeDamage: (_ctx, damage) => (damage > 0 && damage < 5 ? 5 : damage),
 	},
 }));
 

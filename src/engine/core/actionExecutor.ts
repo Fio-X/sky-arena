@@ -136,7 +136,8 @@ function executeDamage(
 			: calculateDamage(s, action.source, action.target, action.baseDamage, action.card ?? null);
 		s = calc.state;
 		const blockBefore = relicRules.targetBlock(s, action.target);
-		const applied = applyDamage(s, action.target, calc.damage);
+		const attacker = action.nonAttack ? undefined : action.source;
+		const applied = applyDamage(s, action.target, calc.damage, attacker);
 		s = relicRules.handDrill(applied.state, action, blockBefore);
 
 		events.push({

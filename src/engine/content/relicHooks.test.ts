@@ -111,15 +111,12 @@ describe("Relic hooks", () => {
 		expect(result.state.currentHp).toBe(66);
 	});
 
-	it("THE_BOOT atDamageFinalGive boosts low damage to 5", () => {
+	it("THE_BOOT onAttackToChangeDamage: 1–4 unblocked → 5 (after block; see cardDamageModifiers.test.ts)", () => {
 		const combat = makeCombat({ hand: [makeStrike()], energy: 3 });
 		const state = { ...makeState(combat), relics: [relic("THE_BOOT")] };
-		const strike = makeStrike();
-		const result = foldHook(state, { type: "player" }, "atDamageFinalGive", 3, strike);
-		expect(result.value).toBe(5);
-		// Damage above 5 is unaffected
-		const result2 = foldHook(state, { type: "player" }, "atDamageFinalGive", 10, strike);
-		expect(result2.value).toBe(10);
+		const fold = (n: number) =>
+			foldHook(state, { type: "player" }, "onAttackToChangeDamage", n).value;
+		expect([fold(0), fold(3), fold(10)]).toEqual([0, 5, 10]);
 	});
 
 	it("ANCHOR grants 10 block at combat start", () => {

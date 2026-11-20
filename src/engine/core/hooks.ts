@@ -56,6 +56,8 @@ export interface HookTable {
 	onScry: (ctx: HookCtx, count: number) => GameState;
 
 	// Damage pipeline (fold — returns number or FoldResult)
+	/** AbstractRelic.onAttackToChangeDamage: the player's unblocked attack damage (The Boot). */
+	onAttackToChangeDamage: (ctx: HookCtx, damage: number) => number | FoldResult;
 	/** AbstractRelic.atDamageModify: player relics, before any power (Strike Dummy). */
 	atDamageModify: (ctx: HookCtx, damage: number, card: CardInstance) => number | FoldResult;
 	atDamageGive: (ctx: HookCtx, damage: number, card: CardInstance | null) => number | FoldResult;
@@ -385,6 +387,7 @@ type DropFirst<T extends unknown[]> = T extends [unknown, ...infer R] ? R : neve
 type DropFirstTwo<T extends unknown[]> = T extends [unknown, unknown, ...infer R] ? R : never;
 
 type FoldHookKeys =
+	| "onAttackToChangeDamage"
 	| "atDamageModify"
 	| "atDamageGive"
 	| "atDamageFinalGive"

@@ -162,6 +162,18 @@ describe("Strike Dummy: +3 on cards tagged Strike, before Weak", () => {
 	});
 });
 
+describe("The Boot: 1–4 unblocked attack damage becomes 5", () => {
+	it("counts after block; fully blocked hits stay 0", () => {
+		const s = fight(["THE_BOOT"]);
+		const blockedTo2 = playCard(patchMonster(s, 0, { block: 4 }), "STRIKE_RED");
+		expect(500 - monsterAt(blockedTo2, 0).currentHp).toBe(5);
+		const allBlocked = playCard(patchMonster(s, 0, { block: 10 }), "STRIKE_RED");
+		expect(monsterAt(allBlocked, 0).currentHp).toBe(500);
+		expect(hit(withPlayerPowers(s, { weak: 2 }), "STRIKE_RED").lost).toBe(5); // 4.5 → 4 → 5
+		expect(hit(s, "STRIKE_RED").lost).toBe(6);
+	});
+});
+
 describe("Phantasmal Killer: next turn, attacks deal double damage", () => {
 	it("this turn normal, next turn doubled (every hit), the turn after normal", () => {
 		let s = playCard(fight(), "PHANTASMAL_KILLER");

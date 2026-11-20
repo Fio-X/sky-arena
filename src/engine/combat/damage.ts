@@ -99,12 +99,15 @@ function capHpLoss(
 
 /**
  * Apply damage to a target, accounting for block.
- * Returns the new state and actual HP lost.
+ * Returns the new state and actual HP lost. `attacker` is given for attack
+ * (DamageType.NORMAL) damage only: the player's onAttackToChangeDamage
+ * (The Boot) then changes the unblocked amount before the monster's own caps.
  */
 export function applyDamage(
 	state: GameState,
 	target: ActorRef,
 	damage: number,
+	attacker?: ActorRef,
 ): { state: GameState; hpLost: number; blocked: number } {
 	if (!state.combat) return { state, hpLost: 0, blocked: 0 };
 
@@ -144,6 +147,15 @@ export function applyDamage(
 
 	const blocked = Math.min(monster.block, damage);
 	let hpLost = damage - blocked;
+	let before = state;
+	if (attacker?.type === "player") {
+		({ value: hpLost, state: before } = foldHook(
+			state,
+			attacker,
+			"onAttackToChangeDamage",
+			hpLost,
+		));
+	}
 
 	let mPowers = monster.powers;
 	if (hpLost > 0) {
@@ -157,7 +169,7 @@ export function applyDamage(
 		}
 	}
 
-	const capped = capHpLoss(state, target, hpLost, mPowers);
+	const capped = capHpLoss(before, target, hpLost, mPowers);
 	hpLost = capped.hpLost;
 	const base = capped.state;
 	const baseCombat = base.combat ?? state.combat;

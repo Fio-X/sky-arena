@@ -134,7 +134,7 @@ registerCardEffect("WALLOP", (_s, card, t) => {
 			execute: (st: GameState): GameState => {
 				if (!st.combat) return st;
 				const { damage, state: s1 } = calculateDamage(st, P, M(t), v.damage, card);
-				const { state: s2, hpLost } = applyDamage(s1, M(t), damage);
+				const { state: s2, hpLost } = applyDamage(s1, M(t), damage, P);
 				if (hpLost <= 0) return s2;
 				// Gain block equal to unblocked damage
 				const player = s2.combat!.player;
