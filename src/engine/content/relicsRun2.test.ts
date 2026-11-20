@@ -65,6 +65,8 @@ describe("rooms and map", () => {
 		}
 		s = enter(s, 3);
 		expect(s.phase.type).toBe("reward");
+		// The chest relic is offered next to the Sapphire Key; take the relic.
+		s = run(s, { type: "takeChestRelic" });
 		expect(s.relics).toHaveLength(2);
 		expect(counter(s, "TINY_CHEST")).toBe(0);
 	});
@@ -90,7 +92,9 @@ const playCard1 = (s: GameState) => playCard(patchMonster(s, 0, { currentHp: 1 }
 
 describe("treasure chests", () => {
 	it("Cursed Key adds a curse; Matryoshka adds a second relic", () => {
-		const s = enter(base(["treasure"], ["CURSED_KEY", "MATRYOSHKA"]), 0);
+		const s = run(enter(base(["treasure"], ["CURSED_KEY", "MATRYOSHKA"]), 0), {
+			type: "takeChestRelic",
+		});
 		expect(s.deck.some((c) => getCard(c.id)?.type === "curse")).toBe(true);
 		expect(s.relics).toHaveLength(4);
 		expect(counter(s, "MATRYOSHKA")).toBe(1);
@@ -100,7 +104,8 @@ describe("treasure chests", () => {
 		let s = enter(base(["treasure", "treasure"], ["NLOTHS_HUNGRY_FACE"]), 0);
 		expect(s.relics).toHaveLength(1);
 		expect(counter(s, "NLOTHS_HUNGRY_FACE")).toBe(-2);
-		s = enter(run(s, { type: "proceed" }), 1);
+		expect(s.phase.type === "reward" && s.phase.sapphireKey).toBeFalsy();
+		s = run(enter(run(s, { type: "proceed" }), 1), { type: "takeChestRelic" });
 		expect(s.relics).toHaveLength(2);
 	});
 });

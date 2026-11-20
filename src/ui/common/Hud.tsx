@@ -54,6 +54,13 @@ export function Hud() {
 
 			<CardPileViewer />
 
+			{state.keys && (
+				<span title="Keys" style={{ flexShrink: 0, letterSpacing: "0.1em" }}>
+					{state.keys.ruby ? "🔴" : ""}
+					{state.keys.emerald ? "🟩" : ""}
+					{state.keys.sapphire ? "🔷" : ""}
+				</span>
+			)}
 			{state.relics.length > 0 && (
 				<span style={{ display: "flex", gap: "0.25rem", flexShrink: 0 }}>
 					{state.relics.map((r) => {

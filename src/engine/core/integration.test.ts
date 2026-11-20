@@ -355,6 +355,8 @@ describe("integration: seed=42 full Act 1 loop", () => {
 		expect(s.map.nodes[8]?.[0]?.type).toBe("treasure");
 		s = step(s, { type: "chooseMapNode", x: treasureNode.x, y: treasureNode.y }).state;
 		expect(s.phase.type).toBe("reward");
+		expect(s.relics.length).toBe(relicsBefore);
+		s = step(s, { type: "takeChestRelic" }).state;
 		expect(s.relics.length).toBe(relicsBefore + 1);
 	});
 

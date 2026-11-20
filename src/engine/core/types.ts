@@ -16,6 +16,8 @@ export interface GameState {
 	readonly deck: CardInstance[];
 	readonly relics: RelicInstance[];
 	readonly map: MapState;
+	/** Missing = no keys yet. */
+	readonly keys?: KeyState;
 
 	// combat (null when not in combat)
 	readonly combat: CombatState | null;
@@ -50,6 +52,11 @@ export type GamePhase =
 			gold: number;
 			/** Where to go after this reward (Prayer Wheel, Orrery, Dream Catcher, Tiny House). */
 			next?: GamePhase;
+			/** Burning elite beaten: the Emerald Key can be taken. */
+			emeraldKey?: boolean;
+			/** Chest: the Sapphire Key, linked to `chestRelic` (taking one removes the other). */
+			sapphireKey?: boolean;
+			chestRelic?: RelicId;
 	  }
 	| { type: "bossReward"; relics: RelicId[] }
 	| { type: "cardSelect"; task: CardSelectTask; drawAfter?: number; options?: CardInstance[] }
@@ -60,7 +67,14 @@ export type GamePhase =
 export type DeckSelectTask = "astrolabe" | "emptyCage" | "dollysMirror" | "peacePipe";
 
 /** Extra rest-site options from relics: Girya (lift), Peace Pipe (toke), Shovel (dig). */
-export type RestOption = "lift" | "toke" | "dig";
+export type RestOption = "lift" | "toke" | "dig" | "recall";
+
+/** The three keys that open Act 4 (Ruby: rest site Recall; Emerald: burning elite; Sapphire: chest). */
+export interface KeyState {
+	readonly ruby: boolean;
+	readonly emerald: boolean;
+	readonly sapphire: boolean;
+}
 
 export interface ShopData {
 	readonly cards: ReadonlyArray<{ kind: "card"; cardId: CardId; price: number; sold: boolean }>;
@@ -230,6 +244,8 @@ export interface MapNode {
 	readonly y: number;
 	readonly type: RoomType;
 	readonly edges: Array<{ x: number; y: number }>;
+	/** The burning elite of this act: buffed, and it drops the Emerald Key. */
+	readonly emerald?: boolean;
 }
 
 export type RoomType = "monster" | "elite" | "rest" | "shop" | "treasure" | "event" | "boss";
@@ -258,6 +274,10 @@ export type Command =
 	| { type: "restOption"; option: RestOption }
 	/** Singing Bowl: take +2 Max HP instead of the card reward. */
 	| { type: "singingBowl" }
+	/** Emerald Key (burning elite) or Sapphire Key (instead of the chest relic) from a reward screen. */
+	| { type: "takeKey"; key: "emerald" | "sapphire" }
+	/** Take the chest relic that the Sapphire Key is linked to. */
+	| { type: "takeChestRelic" }
 	| { type: "proceed" };
 
 // ── 动作（内部效果队列）──────────────────────────────────

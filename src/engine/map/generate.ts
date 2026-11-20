@@ -10,7 +10,17 @@ import { createJavaRandom, javaShuffle, nextInt } from "../rng/javaRandom";
  *
  * Per-act seed offsets: Act 1 = seed+1, Act 2 = seed+200, Act 3 = seed+600
  */
-export function generateMap(seed: bigint, act: number, ascension = 0): MapState {
+/**
+ * `emeraldAvailable`: the player has no Emerald Key yet, so one elite node is
+ * marked burning (setEmeraldElite: mapRng.random(0, elites - 1) right after the
+ * rooms are assigned, elites in row-major order).
+ */
+export function generateMap(
+	seed: bigint,
+	act: number,
+	ascension = 0,
+	emeraldAvailable = true,
+): MapState {
 	const actOffset = act === 1 ? 1n : act === 2 ? 200n : 600n;
 	const mapSeed = seed + actOffset;
 	let rng = createJavaRandom(mapSeed);
@@ -20,8 +30,9 @@ export function generateMap(seed: bigint, act: number, ascension = 0): MapState 
 
 	const nodes = buildNodeGrid(paths);
 
-	assignRoomTypes(nodes, rng, ascension);
+	const roomRng = assignRoomTypes(nodes, rng, ascension);
 	addBossRow(nodes);
+	if (emeraldAvailable) markEmeraldElite(nodes, roomRng);
 
 	return { nodes, currentNode: null, visitedNodes: [] };
 }
@@ -72,6 +83,32 @@ function buildNodeGrid(paths: Array<{ x: number; y: number }[]>): MapNode[][] {
 	return nodes;
 }
 
+function markEmeraldElite(nodes: MapNode[][], rng: ReturnType<typeof createJavaRandom>): void {
+	const elites = nodes.flat().filter((n) => n.type === "elite" && isOnPath(nodes, n.x, n.y));
+	if (elites.length === 0) return;
+	const chosen = elites[nextInt(rng, elites.length).value];
+	const row = chosen ? nodes[chosen.y] : undefined;
+	if (chosen && row) row[chosen.x] = { ...chosen, emerald: true };
+}
+
+/** TheEnding: a fixed line of rest site → shop → elite (Shield and Spear) → boss (Corrupt Heart). */
+export function generateAct4Map(): MapState {
+	const types: RoomType[] = ["rest", "shop", "elite", "boss"];
+	const nodes = types.map((type, y) =>
+		Array.from({ length: 7 }, (_, x): MapNode => {
+			const real = x === 3;
+			const last = y === types.length - 1;
+			return {
+				x,
+				y,
+				type: real ? type : "monster",
+				edges: real && !last ? [{ x: 3, y: y + 1 }] : [],
+			};
+		}),
+	);
+	return { nodes, currentNode: null, visitedNodes: [] };
+}
+
 function addBossRow(nodes: MapNode[][]): void {
 	const bossNode: MapNode = { x: 3, y: 15, type: "boss", edges: [] };
 	const bossRow: MapNode[] = Array.from({ length: 7 }, (_, x) =>
@@ -89,7 +126,7 @@ function assignRoomTypes(
 	nodes: MapNode[][],
 	rng: ReturnType<typeof createJavaRandom>,
 	ascension: number,
-): void {
+): ReturnType<typeof createJavaRandom> {
 	// Fixed rows
 	setRowType(nodes, 0, "monster");
 	setRowType(nodes, 8, "treasure");
@@ -127,7 +164,7 @@ function assignRoomTypes(
 	];
 
 	// Shuffle
-	javaShuffle(typePool, rng);
+	const afterShuffle = javaShuffle(typePool, rng);
 
 	// Assign with veto rules
 	let poolIdx = 0;
@@ -151,6 +188,7 @@ function assignRoomTypes(
 			poolIdx++;
 		}
 	}
+	return afterShuffle;
 }
 
 function setRowType(nodes: MapNode[][], y: number, type: RoomType): void {

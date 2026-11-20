@@ -118,6 +118,11 @@ export function RestScreen() {
 			label: zh ? "⛏️ 挖掘（获得遗物）" : "⛏️ Dig (obtain a relic)",
 			color: "#00d2d3",
 		},
+		{
+			option: "recall",
+			label: zh ? "🔴 回忆（获得红宝石钥匙）" : "🔴 Recall (obtain the Ruby Key)",
+			color: "#e74c3c",
+		},
 	];
 	const upgradable = state.deck
 		.map((c, i) => ({ card: c, index: i }))

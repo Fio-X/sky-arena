@@ -18,10 +18,16 @@ import {
 import { drainActions } from "./actionExecutor";
 import { addToBot } from "./actionQueue";
 import { drainAutoplay } from "./autoplay";
-import { afterRewardPhase, rollGoldReward, stepChooseBossRelic } from "./bossReward";
+import {
+	afterRewardPhase,
+	getCurrentRoomType,
+	rollGoldReward,
+	stepChooseBossRelic,
+} from "./bossReward";
 import { stepChooseCard } from "./cardSelect";
 import { pickEvent, stepChooseEventOption } from "./event";
 import { fireHook, fireHookOnAllActors, fireRunHook, foldHook, vetoHook } from "./hooks";
+import { applyEmeraldEliteBuff, inEmeraldElite, stepTakeChestRelic, stepTakeKey } from "./keys";
 import { stepChooseNeowBlessing } from "./neow";
 import { hasRelic, obtainCard } from "./obtain";
 import { gainGold } from "./playerActions";
@@ -98,6 +104,10 @@ export function step(state: GameState, command: Command): StepResult {
 			return stepRestOption(state, command.option, events);
 		case "singingBowl":
 			return stepSingingBowl(state, events);
+		case "takeKey":
+			return stepTakeKey(state, command.key, events);
+		case "takeChestRelic":
+			return stepTakeChestRelic(state, events);
 		default:
 			return { state, events };
 	}
@@ -269,6 +279,7 @@ function stepChooseMapNode(
 			const encId = pickEncounter(s, roomType);
 			const next = { ...s, encounterIndex: advanceEncounterIndex(s, roomType) };
 			s = initCombat(next, getEncounterMonsters(encId), encId);
+			s = applyEmeraldEliteBuff(s, events);
 			s = fireHook(s, { type: "player" }, "atBattleStart");
 			events.push({ type: "combatStarted" });
 			break;
@@ -450,6 +461,10 @@ function checkCombatEnd(result: StepResult): StepResult {
 		events.push({ type: "combatEnded", victory: true });
 
 		const s = fireHook(state, { type: "player" }, "onVictory");
+		// The Corrupt Heart is the end of the run: no rewards.
+		if (s.act === 4 && getCurrentRoomType(s) === "boss") {
+			return { state: { ...s, phase: { type: "gameOver", victory: true } }, events };
+		}
 
 		if (s.currentHp !== state.currentHp) {
 			events.push({
@@ -479,6 +494,7 @@ function checkCombatEnd(result: StepResult): StepResult {
 				cardRewards: reward.cards,
 				potionReward: potionResult.potion,
 				gold: goldResult.gold,
+				emeraldKey: inEmeraldElite(s),
 			},
 		});
 		return { state: withExtras, events };

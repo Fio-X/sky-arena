@@ -3,6 +3,7 @@ import { getCard, getPotion } from "../../engine/content/loader";
 import { getLocale, tCard, tCardText, tPotion, tUi } from "../../i18n";
 import { useGameStore } from "../../store/gameStore";
 import { cardTypeLabel, formatCardTextSimple, rarityLabel } from "../cardTextUtils";
+import { KeyRewards } from "./KeyRewards";
 
 const overlay = {
 	position: "fixed" as const,
@@ -136,6 +137,8 @@ export function RewardScreen() {
 						)}
 					</motion.button>
 				)}
+
+				<KeyRewards />
 
 				{/* Card rewards */}
 				{cardRewards.length > 0 && (

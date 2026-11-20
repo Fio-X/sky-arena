@@ -255,8 +255,10 @@ function MapNodeButton({
 	const { cx, cy } = nodeCenter(node.x, node.y, maxY);
 	const isBoss = node.type === "boss";
 	const size = isBoss ? BOSS_SIZE : NODE_SIZE;
-	const color = ROOM_COLORS[node.type];
-	const glow = ROOM_GLOW[node.type];
+	// Burning elite (Emerald Key): green flame instead of the elite color.
+	const burning = node.emerald && node.type === "elite";
+	const color = burning ? "#2ecc71" : ROOM_COLORS[node.type];
+	const glow = burning ? "rgba(46,204,113,0.6)" : ROOM_GLOW[node.type];
 
 	const bounceAnim = reachable && !isCurrent ? { y: [0, -3, 0] } : {};
 	const bounceTrans =

@@ -6,6 +6,7 @@
 import { cardRewardCount, generateCardReward } from "../combat/cardReward";
 import { afterRewardPhase, getCurrentRoomType } from "../core/bossReward";
 import { obtainRandomRelic } from "../core/event";
+import { hasKey, obtainKey } from "../core/keys";
 import { hasRelic, obtainCard, obtainRelic } from "../core/obtain";
 import type {
 	CardId,
@@ -206,7 +207,12 @@ export function openTreasureChest(state: GameState): GameState {
 		s = setRelicCounter(s, "NLOTHS_HUNGRY_FACE", -2);
 		rewards.shift();
 	}
-	for (const id of rewards) s = obtainRelic(s, id);
+	// Sapphire Key: the chest's own relic is offered instead of taken (one or the other).
+	const linked = !hasKey(s, "sapphire") && own.id && rewards.includes(own.id) ? own.id : null;
+	for (const id of rewards) if (id !== linked) s = obtainRelic(s, id);
+	if (linked && s.phase.type === "reward") {
+		s = { ...s, phase: { ...s.phase, sapphireKey: true, chestRelic: linked } };
+	}
 	return s;
 }
 
@@ -285,6 +291,8 @@ export function restOptionAvailable(state: GameState, option: RestOption): boole
 			return hasRelic(state, "PEACE_PIPE") && purgeableIndices(state).length > 0;
 		case "dig":
 			return hasRelic(state, "SHOVEL");
+		case "recall":
+			return !hasKey(state, "ruby");
 	}
 }
 
@@ -310,6 +318,8 @@ export function stepRestOption(
 			const reward: GamePhase = { type: "reward", cardRewards: [], potionReward: null, gold: 0 };
 			return { state: obtainRandomRelic({ ...state, phase: reward }), events };
 		}
+		case "recall":
+			return { state: { ...obtainKey(state, "ruby"), phase: map }, events };
 	}
 }
 
