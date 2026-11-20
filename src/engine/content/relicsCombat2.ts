@@ -102,18 +102,14 @@ relic("ORANGE_PELLETS", {
 	},
 });
 
-// Attacks that cost 0 deal 4 more. Damage actions carry no card, so the relic
-// marks the attack being played (counter 1) from onUseCard to onAfterCardPlayed.
+// Attacks that cost 0 deal 4 more. atDamageModify: before Strength and Weak.
 relic("WRIST_BLADE", {
-	onUseCard: (ctx, card) => {
+	atDamageModify: (_ctx, damage, card) => {
 		const def = getCard(card.id);
 		const zero =
 			def?.type === "attack" && def.cost !== -1 && (card.freeToPlay || card.costForTurn === 0);
-		return setRelicCounter(ctx.state, "WRIST_BLADE", zero ? 1 : 0);
+		return zero ? damage + 4 : damage;
 	},
-	onAfterCardPlayed: (ctx) => setRelicCounter(ctx.state, "WRIST_BLADE", 0),
-	atDamageGive: (ctx, damage) =>
-		relicCounter(ctx.state, "WRIST_BLADE") === 1 ? damage + 4 : damage,
 });
 
 // ═════════════════════════════════════════════════════════

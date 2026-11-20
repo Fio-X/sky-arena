@@ -384,7 +384,7 @@ registerCardEffect("WORSHIP", (_s, card, _t) => {
 	];
 });
 
-// Wreath of Flame: Next attack deals +5(+8) damage.
+// Wreath of Flame: Next attack deals +5(+8) damage (VigorPower, as Akabeko).
 registerCardEffect("WREATH_OF_FLAME", (_s, card, _t) => {
 	const v = vals(card);
 	return [
@@ -392,7 +392,7 @@ registerCardEffect("WREATH_OF_FLAME", (_s, card, _t) => {
 			type: "applyPower",
 			source: P,
 			target: P,
-			powerId: "WREATH_OF_FLAME" as never,
+			powerId: "VIGOR" as never,
 			amount: v.magic,
 		},
 	];

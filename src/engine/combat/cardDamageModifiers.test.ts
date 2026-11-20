@@ -10,12 +10,14 @@ import {
 	forceMove,
 	loadAllData,
 	monsterAt,
+	moveCard,
 	patchMonster,
 	playCard,
 	powerAmount,
 	runState,
 } from "../core/fightTestHelpers";
 import { fireHook } from "../core/hooks";
+import { step } from "../core/step";
 import type { CardInstance, GameState, PowerId, RelicId } from "../core/types";
 import { getEncounterMonsters } from "./encounters";
 import { initCombat } from "./init";
@@ -198,5 +200,66 @@ describe("Phantasmal Killer: next turn, attacks deal double damage", () => {
 		expect(hit(s, "STRIKE_RED").lost).toBe(12);
 		s = endTurn(s);
 		expect(hit(s, "STRIKE_RED").lost).toBe(6);
+	});
+});
+
+describe("Wreath of Flame: Vigor for the next Attack", () => {
+	it("Wreath of Flame 5 → next Strike 11, the one after 6", () => {
+		const deck = ["WREATH_OF_FLAME", "STRIKE_RED", "STRIKE_RED", "DEFEND_RED", "DEFEND_RED"].map(
+			(id, i) => card(id, i + 1),
+		);
+		let s = playCard(fight([], "JAW_WORM", deck), "WREATH_OF_FLAME");
+		expect(powerAmount(s.combat?.player ?? { powers: [] }, "VIGOR")).toBe(5);
+		const first = hit(s, "STRIKE_RED");
+		expect(first.lost).toBe(11);
+		s = first.after;
+		expect(hit(s, "STRIKE_RED").lost).toBe(6);
+	});
+});
+
+describe("Wrist Blade: +4 on 0-cost Attacks, before Weak", () => {
+	it("0-cost Strike 10; with Weak (6 + 4) × 0.75 → 7; a 1-cost Strike 6", () => {
+		const deck = [{ ...card("STRIKE_RED", 1), costForTurn: 0 }, ...DECK.slice(1)];
+		const s = fight(["WRIST_BLADE"], "JAW_WORM", deck);
+		const zero = (st: GameState) => {
+			const c = st.combat;
+			const idx = c?.hand.findIndex((x) => x.uniqueId === 1) ?? -1;
+			const before = monsterAt(st, 0).currentHp;
+			const after =
+				idx >= 0 ? step(st, { type: "playCard", handIndex: idx, targetIndex: 0 }).state : st;
+			return before - monsterAt(after, 0).currentHp;
+		};
+		const inHand = moveCard(s, 1, "hand");
+		expect(zero(inHand)).toBe(10);
+		expect(zero(withPlayerPowers(inHand, { weak: 2 }))).toBe(7);
+		expect(hit(moveCard(s, 2, "hand"), "STRIKE_RED").lost).toBe(6);
+	});
+});
+
+describe("Perfected Strike: counts Strikes in hand, draw and discard piles (and itself)", () => {
+	const deck = ["PERFECTED_STRIKE", "STRIKE_RED", "STRIKE_RED", "STRIKE_RED", "STRIKE_RED"]
+		.concat(Array(5).fill("DEFEND_RED"))
+		.map((id, i) => card(id, i + 1));
+
+	it("itself + 4 Strikes → 6 + 2 × 5 = 16; a Strike made in combat counts, an exhausted one does not", () => {
+		const s = fight([], "JAW_WORM", deck);
+		expect(hit(s, "PERFECTED_STRIKE").lost).toBe(16);
+		const c = s.combat;
+		if (!c) throw new Error("no combat");
+		const extra = { ...s, combat: { ...c, hand: [...c.hand, card("TWIN_STRIKE", 50)] } };
+		expect(hit(extra, "PERFECTED_STRIKE").lost).toBe(18);
+		const moved = moveCard(s, 2, "hand");
+		const mc = moved.combat;
+		if (!mc) throw new Error("no combat");
+		const gone = mc.hand.find((x) => x.uniqueId === 2);
+		const exhausted = {
+			...moved,
+			combat: {
+				...mc,
+				hand: mc.hand.filter((x) => x.uniqueId !== 2),
+				exhaustPile: gone ? [...mc.exhaustPile, gone] : mc.exhaustPile,
+			},
+		};
+		expect(hit(exhausted, "PERFECTED_STRIKE").lost).toBe(14);
 	});
 });

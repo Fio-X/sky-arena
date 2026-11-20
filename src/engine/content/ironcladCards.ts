@@ -82,12 +82,16 @@ registerCardEffect("HEAVY_BLADE", (s, card, t) => {
 	return [{ type: "damage", source: P, target: M(t), baseDamage: totalDamage, hits: 1 }];
 });
 
+// PerfectedStrike.countCards: Strike-tagged cards in hand, draw and discard piles.
+// The card is still in hand when its damage is calculated (useCard removes it
+// afterwards), so it counts itself; here it has already left the hand.
 registerCardEffect("PERFECTED_STRIKE", (s, card, t) => {
 	const v = vals(card);
-	const strikeCount = s.deck.filter((c) => {
-		const def = getCard(c.id);
-		return def?.flags.includes("strike") || def?.flags.includes("tag:strike");
-	}).length;
+	const c = s.combat;
+	const piles = c ? [...c.hand, ...c.drawPile, ...c.discardPile] : [];
+	const strikeCount =
+		piles.filter((x) => getCard(x.id)?.flags.includes("tag:strike")).length +
+		(piles.some((x) => x.uniqueId === card.uniqueId) ? 0 : 1);
 	return [
 		{
 			type: "damage",
