@@ -31,7 +31,7 @@ import { fireHook, fireHookOnAllActors, fireRunHook, foldHook, vetoHook } from "
 import { applyEmeraldEliteBuff, inEmeraldElite, stepTakeChestRelic, stepTakeKey } from "./keys";
 import { stepChooseNeowBlessing } from "./neow";
 import { hasRelic, obtainCard } from "./obtain";
-import { gainGold } from "./playerActions";
+import { executePlayerHeal, gainGold } from "./playerActions";
 import { rollPotionDrop, stepDiscardPotion, stepObtainPotionReward, stepUsePotion } from "./potion";
 import {
 	replayIfAmplify,
@@ -84,7 +84,7 @@ export function step(state: GameState, command: Command): StepResult {
 		case "leaveShop":
 			return stepProceed(state, events);
 		case "chooseEventOption":
-			return stepChooseEventOption(state, command.index, events);
+			return outOfCombatDeath(stepChooseEventOption(state, command.index, events));
 		case "usePotion":
 			result = stepUsePotion(state, command.index, command.targetIndex, events);
 			return checkCombatEnd(drainAutoplay(result, stepPlayCard));
@@ -113,6 +113,12 @@ export function step(state: GameState, command: Command): StepResult {
 			return { state, events };
 	}
 	return checkCombatEnd(result);
+}
+
+/** Event HP loss to 0 (any event path): Fairy / Lizard Tail, or the run ends. */
+function outOfCombatDeath(result: StepResult): StepResult {
+	if (result.state.combat) return result;
+	return { state: relicRules.endRunIfDead(result.state, result.events), events: result.events };
 }
 
 /** A hook asked to end the player's turn early (Time Eater's Time Warp at 12 cards). */
@@ -422,10 +428,8 @@ function stepRest(state: GameState, events: GameEvent[]): StepResult {
 	// Regal Pillow: +15 on top of 30% max HP.
 	const pillow = hasRelic(state, "REGAL_PILLOW") ? relicVal("REGAL_PILLOW", 0, 15) : 0;
 	const healAmount = Math.floor(state.maxHp * 0.3) + pillow;
-	const newHp = Math.min(state.maxHp, state.currentHp + healAmount);
-	const healed = newHp - state.currentHp;
-	events.push({ type: "healed", target: { type: "player" }, amount: healed });
-	const rested: GameState = { ...state, currentHp: newHp, combat: null, phase: { type: "map" } };
+	const healed = executePlayerHeal({ ...state, combat: null }, healAmount, events).state;
+	const rested: GameState = { ...healed, phase: { type: "map" } };
 	return { state: dreamCatcherReward(rested), events };
 }
 

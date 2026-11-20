@@ -2,7 +2,7 @@ import { getAllPotions, getAllRelics, getCard } from "../content/loader";
 import { random } from "../rng/stsRandom";
 import { type EventChoice, getEventHandler } from "./eventRegistry";
 import { hasRelic, obtainCard, obtainRelic } from "./obtain";
-import { gainGold } from "./playerActions";
+import { executePlayerHeal, gainGold } from "./playerActions";
 import type { CardId, GameEvent, GameState, RngState, StepResult } from "./types";
 
 // ── Event definition (loaded from JSON) ─────────────────
@@ -120,13 +120,8 @@ function applyOutcome(state: GameState, outcome: EventOutcome, events: GameEvent
 	const amount = resolveAmount(outcome.amount, state);
 
 	switch (outcome.effect) {
-		case "healHp": {
-			const healed = Math.min(amount, state.maxHp - state.currentHp);
-			if (healed > 0) {
-				events.push({ type: "healed", target: { type: "player" }, amount: healed });
-			}
-			return { ...state, currentHp: Math.min(state.maxHp, state.currentHp + amount) };
-		}
+		case "healHp":
+			return executePlayerHeal(state, amount, events).state;
 		case "loseHp": {
 			const newHp = Math.max(0, state.currentHp - amount);
 			events.push({ type: "hpLost", target: { type: "player" }, amount });

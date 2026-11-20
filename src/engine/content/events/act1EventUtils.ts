@@ -3,6 +3,7 @@ import type { EventChoice } from "../../core/eventRegistry";
 import { obtainCard, obtainRelic } from "../../core/obtain";
 import { executePlayerHeal } from "../../core/playerActions";
 import type { CardId, DeckSelectTask, GameEvent, GamePhase, GameState } from "../../core/types";
+import { endRunIfDead } from "../relicsCombatRules";
 import { deckSelectPhase, eligibleIndices, rollRandomRelic } from "../relicsRun2";
 
 export const a15 = (state: GameState): boolean => state.ascension >= 15;
@@ -37,14 +38,13 @@ export function heal(state: GameState, amount: number, events: GameEvent[]): Gam
 }
 
 /**
- * Event damage / HP loss (player.damage outside combat). At 0 HP the run ends
- * (Lizard Tail / Fairy in a Bottle are not checked outside combat).
+ * Event damage / HP loss (player.damage outside combat). At 0 HP Fairy in a
+ * Bottle / Lizard Tail may save the player; otherwise the run ends.
  */
 export function loseHp(state: GameState, amount: number, events: GameEvent[]): GameState {
 	const newHp = Math.max(0, state.currentHp - amount);
 	events.push({ type: "hpLost", target: { type: "player" }, amount: state.currentHp - newHp });
-	const s = { ...state, currentHp: newHp };
-	return newHp > 0 ? s : { ...s, phase: { type: "gameOver", victory: false } };
+	return endRunIfDead({ ...state, currentHp: newHp }, events);
 }
 
 export function loseGold(state: GameState, amount: number, events: GameEvent[]): GameState {

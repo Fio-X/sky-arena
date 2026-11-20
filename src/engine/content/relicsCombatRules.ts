@@ -32,7 +32,7 @@ export function relicCounter(state: GameState, id: string): number {
  * onHeal (Magic Flower, Mark of the Bloom) as AbstractPlayer.heal does.
  */
 export function preventPlayerDeath(state: GameState, events: GameEvent[]): GameState {
-	if (state.currentHp > 0 || !state.combat) return state;
+	if (state.currentHp > 0) return state; // in combat or not (event damage), as AbstractPlayer.damage
 	// Mark of the Bloom: neither Fairy in a Bottle nor Lizard Tail can save you.
 	if (hasRelic(state, "MARK_OF_THE_BLOOM")) return state;
 	const fairy = state.potions.indexOf("FAIRY_POTION" as PotionId);
@@ -46,6 +46,16 @@ export function preventPlayerDeath(state: GameState, events: GameEvent[]): GameS
 		relics: state.relics.map((r) => (r.id === "LIZARD_TAIL" ? { ...r, counter: USED_UP } : r)),
 	};
 	return executePlayerHeal(used, Math.max(1, Math.floor(state.maxHp / 2)), events).state;
+}
+
+/**
+ * AbstractPlayer.damage outside combat: at 0 HP Fairy in a Bottle / Lizard Tail
+ * may still save the player; otherwise the run is over (death screen).
+ */
+export function endRunIfDead(state: GameState, events: GameEvent[]): GameState {
+	if (state.currentHp > 0 || state.phase.type === "gameOver") return state;
+	const saved = preventPlayerDeath(state, events);
+	return saved.currentHp > 0 ? saved : { ...saved, phase: { type: "gameOver", victory: false } };
 }
 
 /**

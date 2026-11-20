@@ -2,7 +2,9 @@ import type { CardId, CardInstance, GameState, PowerId } from "../core/types";
 import { random } from "../rng/stsRandom";
 import { getCard, getCardsByColor, getRelic } from "./loader";
 
+/** Relic heals (AbstractPlayer.heal): Mark of the Bloom stops them, in combat or not. */
 export function heal(state: GameState, amount: number): GameState {
+	if (state.relics.some((r) => r.id === "MARK_OF_THE_BLOOM")) return state;
 	const healed = Math.min(amount, state.maxHp - state.currentHp);
 	return healed > 0 ? { ...state, currentHp: state.currentHp + healed } : state;
 }

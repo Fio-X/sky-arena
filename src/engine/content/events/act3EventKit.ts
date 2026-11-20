@@ -19,6 +19,7 @@ import type {
 import { createJavaRandom, javaShuffle } from "../../rng/javaRandom";
 import { randomLong } from "../../rng/stsRandom";
 import { getCard } from "../loader";
+import { endRunIfDead } from "../relicsCombatRules";
 
 export type Effect = (s: GameState, events: GameEvent[]) => GameState;
 
@@ -60,7 +61,7 @@ export function loseGold(s: GameState, amount: number, events: GameEvent[]): Gam
 
 /** HP_LOSS (or event damage, which nothing reduces outside combat). */
 export function loseHp(s: GameState, amount: number, events: GameEvent[]): GameState {
-	return executePlayerLoseHp(s, amount, events).state;
+	return endRunIfDead(executePlayerLoseHp(s, amount, events).state, events);
 }
 
 /** AbstractPlayer.heal outside combat: Mark of the Bloom stops every heal. */

@@ -53,9 +53,11 @@ export function executeLoseMaxHp(
 
 /** Player heal: onHeal folds the amount (Red Skull, Magic Flower, Mark of the Bloom). */
 export function executePlayerHeal(state: GameState, amount: number, events: GameEvent[]): Result {
+	// Outside combat only Mark of the Bloom applies (Magic Flower is combat-only).
+	const blocked = state.relics.some((r) => r.id === "MARK_OF_THE_BLOOM");
 	const folded = state.combat
 		? foldHook(state, PLAYER, "onHeal", amount)
-		: { value: amount, state };
+		: { value: blocked ? 0 : amount, state };
 	const s = folded.state;
 	const healed = Math.max(0, Math.min(Math.floor(folded.value), s.maxHp - s.currentHp));
 	events.push({ type: "healed", target: PLAYER, amount: healed });

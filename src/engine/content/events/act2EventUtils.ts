@@ -3,6 +3,7 @@ import { leaveEvent } from "../../core/eventRegistry";
 import { hasRelic, obtainRelic } from "../../core/obtain";
 import type { CardInstance, GameEvent, GameState, RelicId } from "../../core/types";
 import { getCard } from "../loader";
+import { endRunIfDead } from "../relicsCombatRules";
 import { rollRandomRelic } from "../relicsRun2";
 
 export const screenOf = (s: GameState): number =>
@@ -27,15 +28,15 @@ export function loseGold(s: GameState, amount: number, events: GameEvent[]): Gam
 
 /**
  * AbstractPlayer.damage from an event (no owner, no block): Tungsten Rod takes
- * 1 off (onLoseHpLast); at 0 HP the run is over. Lizard Tail / Fairy in a
- * Bottle are not checked outside combat.
+ * 1 off (onLoseHpLast); at 0 HP Fairy in a Bottle / Lizard Tail may save the
+ * player, otherwise the run is over.
  */
 export function eventDamage(s: GameState, amount: number, events: GameEvent[]): GameState {
 	const reduced = amount > 0 && hasRelic(s, "TUNGSTEN_ROD") ? amount - 1 : amount;
 	const lost = Math.max(0, Math.min(reduced, s.currentHp));
 	if (lost > 0) events.push({ type: "hpLost", target: { type: "player" }, amount: lost });
 	const after = { ...s, currentHp: s.currentHp - lost };
-	return after.currentHp > 0 ? after : { ...after, phase: { type: "gameOver", victory: false } };
+	return endRunIfDead(after, events);
 }
 
 /** Leave to the map, unless the event just killed the player. */

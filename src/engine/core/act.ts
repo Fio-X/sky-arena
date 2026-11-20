@@ -42,7 +42,8 @@ export function startNextAct(state: GameState): GameState {
 		map = withSecondBossNode(map);
 	}
 	const missing = state.maxHp - state.currentHp;
-	const heal = state.ascension >= 5 ? Math.round(missing * 0.75) : missing;
+	const bloom = state.relics.some((r) => r.id === "MARK_OF_THE_BLOOM"); // player.heal
+	const heal = bloom ? 0 : state.ascension >= 5 ? Math.round(missing * 0.75) : missing;
 
 	return {
 		...state,
