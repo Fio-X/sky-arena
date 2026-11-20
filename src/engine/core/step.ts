@@ -181,7 +181,8 @@ function stepPlayCard(
 		if (!s.combat) break;
 		s = { ...s, combat: addToBot(s.combat, action) };
 	}
-	s = fireHook(s, playerRef, "onUseCard", card); // after queuing, before resolving (Rage)
+	// UseCardAction: every actor's powers (monsters too: Sharp Hide), after queuing, before resolving (Rage)
+	s = fireHookOnAllActors(s, (st, actor) => fireHook(st, actor, "onUseCard", card));
 
 	({ state: s } = drainActions(s, events));
 

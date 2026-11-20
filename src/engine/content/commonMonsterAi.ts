@@ -57,8 +57,13 @@ registerMonsterAi("RED_SLAVER", (ctx): MonsterAiResult => {
 
 	const { value: roll, state: rng } = random(ctx.aiRng, 99);
 
-	// usedEntangle stuck false in lightspeed → 25% ENTANGLE every turn
-	if (roll >= 75) return { moveId: RS_ENTANGLE, aiRng: rng };
+	// usedEntangle: the real game sets it when Entangle is used (lightspeed never
+	// does), so Entangle comes at most once per combat. Afterwards roll >= 50 → Stab
+	// unless the last two were Stab (lightspeed's threshold; the wiki says 55%).
+	const usedEntangle = h.includes(RS_ENTANGLE);
+	if (roll >= 75 && !usedEntangle) return { moveId: RS_ENTANGLE, aiRng: rng };
+	const lastTwoStab = h.length >= 2 && h[h.length - 1] === RS_STAB && h[h.length - 2] === RS_STAB;
+	if (roll >= 50 && usedEntangle && !lastTwoStab) return { moveId: RS_STAB, aiRng: rng };
 
 	// A17: Scrape never twice in a row (same OR-flattening as Blue Slaver in lightspeed).
 	if (ctx.state.ascension >= 17) {

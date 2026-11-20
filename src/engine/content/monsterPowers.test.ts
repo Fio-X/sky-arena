@@ -334,28 +334,7 @@ describe("Artifact", () => {
 
 // ── Sharp Hide ──────────────────────────────────────────
 
-describe("Sharp Hide", () => {
-	it("deals damage to player when monster is hit", () => {
-		const combat = monsterWith([pw("SHARP_HIDE", 3)]);
-		let s = makeState(combat);
-		s = { ...s, currentHp: 50 };
-		const result = dealDamageToMonster(s, 5);
-		s = result.state;
-		expect(s.currentHp).toBe(47);
-	});
-
-	it("deals damage for each hit in multi-hit", () => {
-		const combat = monsterWith([pw("SHARP_HIDE", 3)]);
-		let s = makeState(combat);
-		s = { ...s, currentHp: 50 };
-		if (!s.combat) throw new Error("no combat");
-		const action: Action = { type: "damage", source: PLAYER, target: M0, baseDamage: 2, hits: 3 };
-		const s2 = { ...s, combat: addToBot(s.combat, action) };
-		const events: GameEvent[] = [];
-		const result = drainActions(s2, events);
-		expect(result.state.currentHp).toBe(41); // 50 - 3*3 = 41
-	});
-});
+// Sharp Hide: see combat/act1BossFixes.test.ts (once per Attack card, blockable).
 
 // ── Mode Shift ──────────────────────────────────────────
 

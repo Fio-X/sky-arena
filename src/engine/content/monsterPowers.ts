@@ -1,3 +1,4 @@
+import { addToBot } from "../core/actionQueue";
 import type { HookSource } from "../core/hooks";
 import { registerPowerHooks } from "../core/hooks";
 import type { ActorRef, GameState, PowerId, PowerInstance } from "../core/types";
@@ -223,18 +224,27 @@ registerPowerHooks(
 // before the debuff is applied. No hook needed here.
 
 // ── Sharp Hide (The Guardian) ───────────────────────────
-// When hit: deal X damage to attacker.
+// SharpHidePower.onUseCard: each Attack card the player plays (whatever it
+// targets) queues X THORNS damage to the player after the card — block applies.
 
 registerPowerHooks(
 	"SHARP_HIDE",
 	(p: PowerInstance): HookSource => ({
 		powerId: "SHARP_HIDE",
 		hooks: {
-			onAttacked: (ctx, damage, source) => {
-				if (damage <= 0) return ctx.state;
-				if (source.type !== "player") return ctx.state;
-				const newHp = Math.max(0, ctx.state.currentHp - p.amount);
-				return { ...ctx.state, currentHp: newHp };
+			onUseCard: (ctx, card) => {
+				if (ctx.owner.type !== "monster" || getCard(card.id)?.type !== "attack") return ctx.state;
+				return {
+					...ctx.state,
+					combat: addToBot(ctx.combat, {
+						type: "damage",
+						source: ctx.owner,
+						target: { type: "player" },
+						baseDamage: p.amount,
+						hits: 1,
+						nonAttack: true,
+					}),
+				};
 			},
 		},
 	}),

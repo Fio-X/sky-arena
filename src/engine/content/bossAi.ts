@@ -1,6 +1,6 @@
 import { registerMoveHandler } from "../combat/moveEffects";
 import { canonicalPowerId } from "../core/hooks";
-import type { Action, GameState, MonsterMoveId } from "../core/types";
+import type { Action, CardId, CardInstance, GameState, MonsterMoveId } from "../core/types";
 import { random } from "../rng/stsRandom";
 import { getMonster } from "./loader";
 import type { MonsterAiResult } from "./monsterAi";
@@ -116,6 +116,40 @@ const HG_LOOP: MonsterMoveId[] = [
 	HG_SEAR,
 	HG_INFERNO,
 ];
+
+// Inferno (BurnIncreaseAction): after the hits, upgrade every Burn the player has
+// and add 3 Burn+ to the discard pile. From then on Sear's Burns come upgraded.
+registerMoveHandler(HG_INFERNO as string, (_ctx, actions): Action[] => [
+	...actions,
+	{ type: "custom", execute: upgradeAllBurns },
+	...Array.from(
+		{ length: 3 },
+		(): Action => ({ type: "addCardToDiscardPile", cardId: "BURN" as CardId, upgraded: true }),
+	),
+]);
+
+registerMoveHandler(HG_SEAR as string, (ctx, actions): Action[] => {
+	if (!ctx.monster.moveHistory.includes(HG_INFERNO)) return [...actions];
+	return actions.map((a) =>
+		a.type === "addCardToDiscardPile" && a.cardId === "BURN" ? { ...a, upgraded: true } : a,
+	);
+});
+
+function upgradeAllBurns(s: GameState): GameState {
+	const c = s.combat;
+	if (!c) return s;
+	const up = (pile: readonly CardInstance[]) =>
+		pile.map((x) => (x.id === "BURN" && !x.upgraded ? { ...x, upgraded: true } : x));
+	return {
+		...s,
+		combat: {
+			...c,
+			hand: up(c.hand),
+			drawPile: up(c.drawPile),
+			discardPile: up(c.discardPile),
+		},
+	};
+}
 
 registerMonsterAi("HEXAGHOST", (ctx): MonsterAiResult => {
 	const { state: rng } = random(ctx.aiRng, 99);
