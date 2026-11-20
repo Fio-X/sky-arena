@@ -22,6 +22,15 @@ const TITLES: Record<DeckSelectTask, { zh: string; en: string }> = {
 	upgrade: { zh: "选择 {n} 张牌升级", en: "Choose {n} card(s) to upgrade" },
 	transform: { zh: "选择 {n} 张牌变化", en: "Choose {n} card(s) to transform" },
 	duplicate: { zh: "选择 {n} 张牌复制", en: "Choose {n} card(s) to duplicate" },
+	bonfire: { zh: "篝火之灵：选择 1 张牌献祭", en: "Bonfire Spirits: choose a card to offer" },
+	noteForYourself: {
+		zh: "给自己的留言：选择 1 张牌留给下次",
+		en: "Note For Yourself: choose a card to leave behind",
+	},
+	removeAndUpgrade: {
+		zh: "选择 1 张牌移除（之后随机升级 1 张）",
+		en: "Choose a card to remove (then a random card is upgraded)",
+	},
 };
 
 /** Pick cards from the master deck for a relic (deckSelect phase). */

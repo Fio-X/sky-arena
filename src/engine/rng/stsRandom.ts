@@ -69,6 +69,13 @@ export function random(state: RngState, range: number): { value: number; state: 
 	return { value, state: { ...newState, counter: newCounter } };
 }
 
+/** Random.randomLong: one raw 64-bit draw (seeds java.util.Random for Collections.shuffle). */
+export function randomLong(state: RngState): { value: bigint; state: RngState } {
+	const newCounter = state.counter + 1;
+	const { value, state: newState } = nextLong({ ...state, counter: newCounter });
+	return { value, state: { ...newState, counter: newCounter } };
+}
+
 export function randomBoolean(state: RngState): { value: boolean; state: RngState } {
 	const newCounter = state.counter + 1;
 	const { value: raw, state: newState } = nextLong({ ...state, counter: newCounter });

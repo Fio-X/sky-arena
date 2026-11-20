@@ -365,6 +365,14 @@ export function stepChooseDeckCards(
 	return { state: applyDeckSelection(s, task, cards), events };
 }
 
+type DeckSelectEffect = (state: GameState, cards: readonly CardInstance[]) => GameState;
+const deckSelectEffects = new Map<DeckSelectTask, DeckSelectEffect>();
+
+/** An event's own deck-pick effect (Bonfire Spirits, Note For Yourself, Designer). */
+export function registerDeckSelectEffect(task: DeckSelectTask, effect: DeckSelectEffect): void {
+	deckSelectEffects.set(task, effect);
+}
+
 function removeFromDeck(state: GameState, cards: readonly CardInstance[]): GameState {
 	const uids = new Set(cards.map((c) => c.uniqueId));
 	return { ...state, deck: state.deck.filter((c) => !uids.has(c.uniqueId)) };
@@ -390,6 +398,10 @@ function applyDeckSelection(
 			return cards.reduce((s, c) => upgradeDeckCard(s, c.uniqueId), state);
 		case "transform":
 			return transformCards(removeFromDeck(state, cards), cards);
+		case "bonfire":
+		case "noteForYourself":
+		case "removeAndUpgrade":
+			return deckSelectEffects.get(task)?.(state, cards) ?? state;
 	}
 }
 

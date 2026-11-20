@@ -3,6 +3,7 @@ import eventsJson from "../../../data-reference/events.json";
 import potionsJson from "../../../data-reference/potions.json";
 import { generateEncounterLists } from "../combat/encounters";
 import { getCard, getMonster, loadPotions } from "../content/loader";
+import { eligibleIndices } from "../content/relicsRun2";
 import { generateMap } from "../map/generate";
 import { createAllStreams } from "../rng/stsRandom";
 import { loadEvents } from "./event";
@@ -126,6 +127,13 @@ function settle(s: GameState): GameState {
 				return [{ type: "chooseBossRelic", index: 0 }];
 			case "event":
 				return [0, 1, 2, 3].map((index) => ({ type: "chooseEventOption", index }) as Command);
+			case "deckSelect":
+				return [
+					{
+						type: "chooseDeckCards",
+						indices: eligibleIndices(s, s.phase.task).slice(0, s.phase.count),
+					},
+				];
 			case "shop":
 				return [{ type: "leaveShop" }];
 			case "rest":

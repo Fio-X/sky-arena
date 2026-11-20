@@ -8,7 +8,7 @@ import { getEncounterMonsters } from "../combat/encounters";
 import { initCombat } from "../combat/init";
 import { obtainRandomRelicOfTier } from "./event";
 import { fireHook } from "./hooks";
-import { hasRelic } from "./obtain";
+import { hasRelic, obtainRelic } from "./obtain";
 import { gainGold } from "./playerActions";
 import { rollPotionDrop } from "./potion";
 import type { EventCombatRewards, GameEvent, GamePhase, GameState } from "./types";
@@ -40,6 +40,7 @@ export function eventCombatVictory(state: GameState, events: GameEvent[]): GameS
 	for (const tier of rewards.relics ?? []) {
 		s = obtainRandomRelicOfTier({ ...s, phase: { type: "map" } }, tier);
 	}
+	for (const id of rewards.relicIds ?? []) s = obtainRelic({ ...s, phase: { type: "map" } }, id);
 	let cards: GameState["deck"][number]["id"][] = [];
 	if (rewards.cardReward) {
 		const reward = generateCardReward(s);

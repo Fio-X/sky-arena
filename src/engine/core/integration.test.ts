@@ -15,9 +15,10 @@ import {
 	loadPowers,
 	loadRelics,
 } from "../content/loader";
+import { eligibleIndices } from "../content/relicsRun2";
 import { generateMap } from "../map/generate";
 import { createAllStreams } from "../rng/stsRandom";
-import { loadEvents } from "./event";
+import { eventOptions, loadEvents } from "./event";
 import { initPotionPool } from "./potion";
 import { step } from "./step";
 import type { CardId, Command, GameState, RelicId } from "./types";
@@ -458,7 +459,23 @@ describe("integration: seed=42 full Act 1 auto-play", () => {
 					}
 					break;
 				case "event":
-					s = step(s, { type: "chooseEventOption", index: 0 }).state;
+					// First enabled choice on every screen; deck picks take the first eligible cards.
+					for (let k = 0; k < 20 && ["event", "deckSelect"].includes(s.phase.type); k++) {
+						const p = s.phase;
+						s =
+							p.type === "deckSelect"
+								? step(s, {
+										type: "chooseDeckCards",
+										indices: eligibleIndices(s, p.task).slice(0, p.count),
+									}).state
+								: step(s, {
+										type: "chooseEventOption",
+										index: Math.max(
+											0,
+											eventOptions(s).findIndex((o) => !o.disabled),
+										),
+									}).state;
+					}
 					break;
 				case "shop":
 					s = step(s, { type: "leaveShop" }).state;

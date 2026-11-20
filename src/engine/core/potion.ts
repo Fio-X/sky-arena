@@ -92,6 +92,17 @@ export function randomPotion(
 	}
 }
 
+/** PotionHelper.getRandomPotion: uniform over the character's potion pool (potionRng). */
+export function uniformRandomPotion(
+	rng: RngState,
+	character: string,
+): { potion: PotionId | null; rng: RngState } {
+	const pool = potionPool(character);
+	if (pool.length === 0) return { potion: null, rng };
+	const r = random(rng, pool.length - 1);
+	return { potion: pool[r.value]?.id ?? null, rng: r.state };
+}
+
 // ── Obtain potion ────────────────────────────────────────
 
 export function obtainPotion(state: GameState, potionId: PotionId, events: GameEvent[]): GameState {

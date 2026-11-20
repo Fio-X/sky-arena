@@ -78,7 +78,11 @@ export type DeckSelectTask =
 	| "remove"
 	| "upgrade"
 	| "transform"
-	| "duplicate";
+	| "duplicate"
+	// Event picks with their own effect (registerDeckSelectEffect)
+	| "bonfire"
+	| "noteForYourself"
+	| "removeAndUpgrade";
 
 /** Extra rest-site options from relics: Girya (lift), Peace Pipe (toke), Shovel (dig). */
 export type RestOption = "lift" | "toke" | "dig" | "recall";
@@ -100,6 +104,8 @@ export interface EventCombatRewards {
 	readonly gold?: number;
 	/** Relic rewards by tier ("random" = 50/33/17 roll); given as relics on the reward screen. */
 	readonly relics?: ReadonlyArray<"random" | "common" | "uncommon" | "rare">;
+	/** Specific relics (Mushrooms: Odd Mushroom), taken after the tier relics. */
+	readonly relicIds?: readonly RelicId[];
 	readonly cardReward?: boolean;
 	/** Normal potion drop roll. */
 	readonly potion?: boolean;
