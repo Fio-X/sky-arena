@@ -75,15 +75,16 @@ const DK_REGROW = mv("DARKLING_REGROW");
 const DK_REINCARNATE = mv("DARKLING_REINCARNATE");
 
 /**
- * NIP damage is rolled at construction (monsterHpRng, right after HP).
- * Spec conflict "moves.DARKLING_NIP.damage (asc2 range)": resolution keeps
- * lightspeed as primary — roll random(9,13) at asc>=2 AND add +2 when Nip hits.
+ * NIP damage is rolled at construction (monsterHpRng, right after HP):
+ * random(7,11), A2+: random(9,13). Spec conflict "moves.DARKLING_NIP.damage
+ * (asc2 range)": lightspeed also adds +2 at A2 (11-15); the original
+ * Darkling.java uses the rolled value as is (wiki: 9-13), so no +2 here.
  */
 registerMiscRoll("DARKLING", (asc, rng) => {
 	const r = asc >= 2 ? randRange(rng, 9, 13) : randRange(rng, 7, 11);
 	return { miscInfo: r.value, rng: r.rng };
 });
-registerMoveDamage("DARKLING_NIP", (m, asc) => m.miscInfo + (asc >= 2 ? 2 : 0));
+registerMoveDamage("DARKLING_NIP", (m) => m.miscInfo);
 
 function darklingGetMove(roll: number, rng: RngState, m: MonsterState): MonsterAiResult {
 	const h = m.moveHistory;

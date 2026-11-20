@@ -93,7 +93,7 @@
           "lightspeed": "constructor rolls random(9,13) at asc>=2 AND the move adds +2 at asc>=2 -> effective 11-15",
           "wiki": "N between 9-13 at asc2 (7-11 base)",
           "spireArchive": "damage null",
-          "resolution": "unresolved without game JAR; lightspeed recorded as primary (rng call random(9,13) at asc2 matters for seed parity), wiki implies the +2 should not stack on the 9-13 roll"
+          "resolution": "engine follows the original Darkling.java + wiki (ascension audit 2026-11-20): roll random(9,13) at asc2 (keeps lightspeed's RNG call) and Nip deals exactly the rolled value - no +2"
         },
         {
           "field": "spireArchive move id",
@@ -601,7 +601,7 @@
           "hits": null,
           "block": null,
           "effects": [{ "power": "AddCard:BURN:discard", "amount": 3, "target": "player" }],
-          "asc": { "3": { "effects": [{ "power": "AddCard:BURN:discard", "amount": 5, "target": "player" }] } }
+          "asc": { "18": { "effects": [{ "power": "AddCard:BURN:discard", "amount": 5, "target": "player" }] } }
         }
       },
       "ai": {
@@ -620,7 +620,7 @@
           "field": "moves.NEMESIS_DEBUFF burn count ascension threshold",
           "lightspeed": "asc >= 3 -> 5 Burns",
           "wiki": "3 Burns, 5 at Ascension 18+",
-          "resolution": "lightspeed recorded as primary per instructions, but wiki is likely game-correct (A18 is the elite 'harder mechanics' tier; card counts do not affect the RNG stream so lightspeed's seed tests would not catch an asc3/asc18 mixup)"
+          "resolution": "A18 recorded (ascension audit 2026-11-20): wiki and the original Nemesis.java (burnAmt = asc >= 18 ? 5 : 3) agree; card counts do not affect the RNG stream so lightspeed's seed tests would not catch an asc3/asc18 mixup"
         }
       ],
       "sources": ["MonsterSpecific.cpp:1563-1585,2513-2566", "Monster.cpp:55-57", "wiki:Nemesis", "wiki:Enemies.lua", "spire-archive"]
@@ -730,7 +730,7 @@
       "name": "Awakened One",
       "category": "boss",
       "acts": [3],
-      "hp": { "base": [300, 300], "asc": [300, 320], "ascLevel": 9 },
+      "hp": { "base": [300, 300], "asc": [320, 320], "ascLevel": 9 },
       "prebattle": [
         { "power": "STRENGTH", "amount": 0, "asc": { "4": { "amount": 2 } } },
         { "power": "CURIOSITY", "amount": 1, "asc": { "19": { "amount": 2 } } },
@@ -804,7 +804,7 @@
           "lightspeed": "monsterHpRange asc row is {300,320}: at asc9+ initHp calls hpRng.random(300,320) - a RANDOM roll consuming one monsterHpRng call",
           "wiki": "AscHP 320 (flat)",
           "spireArchive": "320-320",
-          "resolution": "lightspeed recorded as primary (RNG-call parity is seed-tested); note REBIRTH then OVERWRITES maxHp to a flat 320 (asc9+) / 300, so phase 2 max HP is always the flat value regardless of the phase 1 roll"
+          "resolution": "flat 320 recorded (ascension audit 2026-11-20): wiki, spire-archive and the original AwakenedOne.java (setHp(320) at asc9+) agree; random(320,320) still consumes one monsterHpRng call, so RNG parity is unchanged. Note REBIRTH then OVERWRITES maxHp to a flat 320 (asc9+) / 300, so phase 2 max HP is always the flat value regardless of the phase 1 roll"
         },
         {
           "field": "prebattle.CURIOSITY trigger",

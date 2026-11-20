@@ -62,7 +62,7 @@ function quietOthers(s: GameState, keep: number): GameState {
 // ── Darkling ────────────────────────────────────────────────
 
 describe("Darkling", () => {
-	it("Nip damage is rolled per Darkling at construction (7-11; asc2: 9-13 +2)", () => {
+	it("Nip damage is rolled per Darkling at construction (7-11; asc2: 9-13, no +2)", () => {
 		for (let seed = 1n; seed <= 20n; seed++) {
 			for (const m of startFight("THREE_DARKLINGS", seed).combat?.monsters ?? []) {
 				expect(m.miscInfo).toBeGreaterThanOrEqual(7);
@@ -74,7 +74,7 @@ describe("Darkling", () => {
 				expect(m.miscInfo).toBeGreaterThanOrEqual(9);
 				expect(m.miscInfo).toBeLessThanOrEqual(13);
 				const nip = forceMove(s2, m.index, "DARKLING_NIP");
-				expect(monsterAt(nip, m.index).intent.baseDamage).toBe(m.miscInfo + 2);
+				expect(monsterAt(nip, m.index).intent.baseDamage).toBe(m.miscInfo);
 			}
 		}
 	});
@@ -86,7 +86,7 @@ describe("Darkling", () => {
 		s = forceMove(s, 2, "DARKLING_HARDEN");
 		const hp = s.currentHp;
 		s = endTurn(s);
-		expect(hp - s.currentHp).toBe(monsterAt(s, 0).miscInfo + 2);
+		expect(hp - s.currentHp).toBe(monsterAt(s, 0).miscInfo);
 		expect(monsterAt(s, 1).block).toBe(12);
 		expect(powerAmount(monsterAt(s, 1), "STRENGTH")).toBe(2);
 	});

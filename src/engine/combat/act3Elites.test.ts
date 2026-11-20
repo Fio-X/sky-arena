@@ -198,10 +198,11 @@ describe("Nemesis", () => {
 		expect(hp - s.currentHp).toBe(45);
 	});
 
-	it("Tri Burn: 3 Burns into the discard pile (data: 5 from A3)", () => {
+	it("Tri Burn: 3 Burns into the discard pile (5 from A18)", () => {
 		for (const [asc, n] of [
 			[0, 3],
-			[3, 5],
+			[17, 3],
+			[18, 5],
 		] as const) {
 			let s = tough(startFight("NEMESIS", 1n, defends(10), asc));
 			s = forceMove(s, 0, "NEMESIS_DEBUFF");
