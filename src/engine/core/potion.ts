@@ -45,16 +45,10 @@ function potionPool(character: string): PoolEntry[] {
 
 export function rollPotionDrop(
 	rng: RngState,
-	potions: (PotionId | null)[],
 	chance: number,
 	character: string,
 ): { potion: PotionId | null; rng: RngState } {
-	const pool = potionPool(character);
-	const hasEmptySlot = potions.some((p) => p === null);
-	if (!hasEmptySlot || pool.length === 0) {
-		return { potion: null, rng };
-	}
-
+	if (potionPool(character).length === 0) return { potion: null, rng };
 	const dropRoll = random(rng, 99);
 	if (dropRoll.value >= chance) return { potion: null, rng: dropRoll.state };
 	// AbstractDungeon.returnRandomPotion(): rarity roll, then reject until it matches.
@@ -64,13 +58,17 @@ export function rollPotionDrop(
 /**
  * AbstractRoom.addPotionToRewards: 40% plus blizzardPotionMod (−10 after a
  * drop, +10 after a miss, kept for the whole run); White Beast Statue makes it
- * 100%. With every slot full no reward is rolled (and the modifier stays).
+ * 100%; with 4 or more rewards already listed it is 0. Rolled even when every
+ * potion slot is full (the reward is shown but cannot be taken).
  */
-export function rollPotionReward(state: GameState): { potion: PotionId | null; state: GameState } {
-	if (!state.potions.includes(null)) return { potion: null, state };
+export function rollPotionReward(
+	state: GameState,
+	rewardsBefore = 0,
+): { potion: PotionId | null; state: GameState } {
 	const mod = state.potionChanceMod ?? 0;
-	const chance = hasRelic(state, "WHITE_BEAST_STATUE") ? 100 : 40 + mod;
-	const r = rollPotionDrop(state.rng.potionRng, state.potions, chance, state.character);
+	const base = hasRelic(state, "WHITE_BEAST_STATUE") ? 100 : 40 + mod;
+	const chance = rewardsBefore >= 4 ? 0 : base;
+	const r = rollPotionDrop(state.rng.potionRng, chance, state.character);
 	return {
 		potion: r.potion,
 		state: {
@@ -216,8 +214,14 @@ export function stepDiscardPotion(state: GameState, slot: number, events: GameEv
 // ── Pick up potion reward ────────────────────────────────
 
 export function stepObtainPotionReward(state: GameState, events: GameEvent[]): StepResult {
-	// Sozu: the reward stays on screen but cannot be taken.
-	if (state.phase.type !== "reward" || !state.phase.potionReward || hasRelic(state, "SOZU")) {
+	// Sozu, or every slot full: the reward stays on screen but cannot be taken
+	// (discard a potion first).
+	if (
+		state.phase.type !== "reward" ||
+		!state.phase.potionReward ||
+		hasRelic(state, "SOZU") ||
+		!state.potions.includes(null)
+	) {
 		return { state, events };
 	}
 	const s = obtainPotion(state, state.phase.potionReward, events);

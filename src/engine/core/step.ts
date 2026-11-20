@@ -502,7 +502,13 @@ function checkCombatEnd(result: StepResult): StepResult {
 
 		const goldResult = rollGoldReward(s);
 		const reward = generateCardReward({ ...s, rng: { ...s.rng, miscRng: goldResult.rng } });
-		const potionResult = rollPotionReward(s);
+		// Rewards listed before the potion: gold, the elite's relic (+ Black Star), the Emerald Key.
+		const elite = getCurrentRoomType(s) === "elite";
+		const rewardsBefore =
+			(goldResult.gold > 0 ? 1 : 0) +
+			(elite ? 1 + (hasRelic(s, "BLACK_STAR") ? 1 : 0) : 0) +
+			(inEmeraldElite(s) ? 1 : 0);
+		const potionResult = rollPotionReward(s, rewardsBefore);
 		const newRng = {
 			...s.rng,
 			miscRng: goldResult.rng,

@@ -4,7 +4,7 @@
  */
 import { beforeAll, describe, expect, it } from "vitest";
 import { getPotion } from "../content/loader";
-import { base, loadRunData, winFight } from "../content/relicsRunTestHelpers";
+import { base, loadRunData, run, winFight } from "../content/relicsRunTestHelpers";
 import { createRun } from "./newRun";
 import { rollPotionDrop } from "./potion";
 import type { GameState, PotionId } from "./types";
@@ -39,16 +39,34 @@ describe("drop chance", () => {
 		expect(s.potionChanceMod).toBe(-50);
 	});
 
-	it("all slots full: no roll, the modifier and potion RNG are unchanged", () => {
+	it("all slots full: still rolled (the modifier moves); the reward waits for a free slot", () => {
 		const full: GameState = {
-			...base(),
+			...base(["monster"], ["WHITE_BEAST_STATUE"]),
 			potions: ["FIRE_POTION", "FIRE_POTION", "FIRE_POTION"] as PotionId[],
-			potionChanceMod: 20,
 		};
-		const s = winFight(full, 0);
+		let s = winFight(full, 0);
+		const potion = reward(s);
+		expect(potion).not.toBeNull();
+		expect(s.potionChanceMod).toBe(-10);
+		expect(s.rng.potionRng).not.toEqual(full.rng.potionRng);
+		s = run(s, { type: "obtainPotionReward" });
+		expect(reward(s)).toBe(potion);
+		s = run(s, { type: "discardPotion", index: 0 }, { type: "obtainPotionReward" });
 		expect(reward(s)).toBeNull();
-		expect(s.potionChanceMod).toBe(20);
-		expect(s.rng.potionRng).toEqual(full.rng.potionRng);
+		expect(s.potions).toContain(potion);
+	});
+
+	it("4 rewards already listed (burning elite + Black Star): chance 0 even with White Beast Statue", () => {
+		const elite = (relics: string[]): GameState => {
+			const b = base(["elite"], ["WHITE_BEAST_STATUE", ...relics]);
+			const node = b.map.nodes[0]?.[0];
+			if (!node) throw new Error("no node");
+			return { ...b, map: { ...b.map, nodes: [[{ ...node, emerald: true }]] } };
+		};
+		expect(reward(winFight(elite([]), 0))).not.toBeNull(); // gold + relic + key = 3
+		const four = winFight(elite(["BLACK_STAR"]), 0);
+		expect(reward(four)).toBeNull();
+		expect(four.potionChanceMod).toBe(10);
 	});
 });
 
@@ -58,7 +76,7 @@ describe("rarity", () => {
 		let rng = createRun(9n, "IRONCLAD").rng.potionRng;
 		const n = 4000;
 		for (let i = 0; i < n; i++) {
-			const r = rollPotionDrop(rng, [null], 100, "IRONCLAD");
+			const r = rollPotionDrop(rng, 100, "IRONCLAD");
 			rng = r.rng;
 			const rarity = getPotion(r.potion ?? "")?.rarity ?? "?";
 			count[rarity] = (count[rarity] ?? 0) + 1;

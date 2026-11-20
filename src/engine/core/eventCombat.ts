@@ -52,7 +52,9 @@ export function eventCombatVictory(state: GameState, events: GameEvent[]): GameS
 	}
 	let potion = null;
 	if (rewards.potion) {
-		const drop = rollPotionReward(s);
+		const listed =
+			(rewards.gold ? 1 : 0) + (rewards.relics?.length ?? 0) + (rewards.relicIds?.length ?? 0);
+		const drop = rollPotionReward(s, listed);
 		potion = drop.potion;
 		s = drop.state;
 	}

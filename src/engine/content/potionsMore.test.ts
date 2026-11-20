@@ -316,7 +316,7 @@ describe("run-level potions", () => {
 			const found = new Set<string>();
 			let rng = runState(5n).rng.potionRng;
 			for (let i = 0; i < 400; i++) {
-				const r = rollPotionDrop(rng, [null], 100, character);
+				const r = rollPotionDrop(rng, 100, character);
 				rng = r.rng;
 				if (r.potion) found.add(r.potion);
 			}
