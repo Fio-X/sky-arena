@@ -55,6 +55,7 @@ import "./ironcladRareCards";
 import "./playerPowers";
 import "./potionEffects";
 import "./potionEffectsMore";
+import "./events/index";
 import "./relicHooks";
 import "./relicHooksAdvanced";
 import "./silentCards";
