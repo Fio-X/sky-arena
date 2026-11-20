@@ -107,6 +107,7 @@ export function resolveMonsterMove(
 				sourceIndex: monster.index,
 				spawnId: spawn.spawnId as MonsterId,
 				count: spawn.count,
+				hp: monster.currentHp,
 			});
 		}
 	}

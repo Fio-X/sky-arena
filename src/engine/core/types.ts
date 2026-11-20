@@ -383,6 +383,8 @@ export type Action =
 			sourceIndex: number;
 			spawnId: MonsterId;
 			count: number;
+			/** HP of each spawn: the source's HP when the move resolved (Slime Boss emits two splits). */
+			hp?: number;
 	  }
 	| { type: "escape"; monsterIndex: number }
 	/** SuicideAction: HP → 0 and die() without the damage path (no Regrow/rebirth). */

@@ -34,6 +34,11 @@ registerMonsterAi("BLUE_SLAVER", (ctx): MonsterAiResult => {
 	const lastTwoRake = h.length >= 2 && h[h.length - 1] === BS_RAKE && h[h.length - 2] === BS_RAKE;
 
 	if (roll >= 40 && !lastTwoStab) return { moveId: BS_STAB, aiRng: rng };
+	// A17: Rake never twice in a row (the original branches on asc; lightspeed's
+	// flattened OR makes this dead code).
+	if (ctx.state.ascension >= 17) {
+		return { moveId: h[h.length - 1] === BS_RAKE ? BS_STAB : BS_RAKE, aiRng: rng };
+	}
 	if (!lastTwoRake) return { moveId: BS_RAKE, aiRng: rng };
 	return { moveId: BS_STAB, aiRng: rng };
 });
@@ -55,6 +60,10 @@ registerMonsterAi("RED_SLAVER", (ctx): MonsterAiResult => {
 	// usedEntangle stuck false in lightspeed → 25% ENTANGLE every turn
 	if (roll >= 75) return { moveId: RS_ENTANGLE, aiRng: rng };
 
+	// A17: Scrape never twice in a row (same OR-flattening as Blue Slaver in lightspeed).
+	if (ctx.state.ascension >= 17) {
+		return { moveId: h[h.length - 1] === RS_SCRAPE ? RS_STAB : RS_SCRAPE, aiRng: rng };
+	}
 	const lastTwoScrape =
 		h.length >= 2 && h[h.length - 1] === RS_SCRAPE && h[h.length - 2] === RS_SCRAPE;
 	if (!lastTwoScrape) return { moveId: RS_SCRAPE, aiRng: rng };

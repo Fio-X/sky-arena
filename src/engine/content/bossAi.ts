@@ -1,5 +1,8 @@
-import type { MonsterMoveId } from "../core/types";
+import { registerMoveHandler } from "../combat/moveEffects";
+import { canonicalPowerId } from "../core/hooks";
+import type { Action, GameState, MonsterMoveId } from "../core/types";
 import { random } from "../rng/stsRandom";
+import { getMonster } from "./loader";
 import type { MonsterAiResult } from "./monsterAi";
 import { registerMonsterAi } from "./monsterAi";
 
@@ -7,6 +10,7 @@ import { registerMonsterAi } from "./monsterAi";
 const SB_GOOP = "SLIME_BOSS_GOOP_SPRAY" as MonsterMoveId;
 const SB_PREP = "SLIME_BOSS_PREPARING" as MonsterMoveId;
 const SB_SLAM = "SLIME_BOSS_SLAM" as MonsterMoveId;
+const SB_SPLIT = "SLIME_BOSS_SPLIT" as MonsterMoveId;
 
 registerMonsterAi("SLIME_BOSS", (ctx): MonsterAiResult => {
 	const monster = ctx.state.combat?.monsters[ctx.monsterIndex];
@@ -14,6 +18,8 @@ registerMonsterAi("SLIME_BOSS", (ctx): MonsterAiResult => {
 	const h = monster.moveHistory;
 
 	if (h.length === 0) return { moveId: SB_GOOP, aiRng: ctx.aiRng };
+	// Reached half HP: split on its next turn (as Acid/Spike Slime L do).
+	if (monster.splitPending) return { moveId: SB_SPLIT, aiRng: ctx.aiRng };
 
 	const last = h[h.length - 1];
 	if (last === SB_GOOP) return { moveId: SB_PREP, aiRng: ctx.aiRng };
@@ -48,6 +54,49 @@ registerMonsterAi("THE_GUARDIAN", (ctx): MonsterAiResult => {
 		[TG_TWIN as string]: TG_WHIRL,
 	};
 	return { moveId: next[last as string] ?? TG_CHARGE, aiRng: ctx.aiRng };
+});
+
+/** Mode Shift threshold at combat start: data prebattle (30, A9 35, A19 40). */
+function modeShiftBase(ascension: number): number {
+	type Entry = { power: string; amount: number; asc?: Record<string, number> };
+	const pre = (getMonster("THE_GUARDIAN")?.prebattle ?? []) as Entry[];
+	const entry = pre.find((e) => e.power === "MODE_SHIFT");
+	let amount = entry?.amount ?? 30;
+	for (const [threshold, value] of Object.entries(entry?.asc ?? {})) {
+		if (ascension >= Number(threshold)) amount = value;
+	}
+	return amount;
+}
+
+function removeOwnPower(state: GameState, index: number, powerId: string): GameState {
+	const c = state.combat;
+	const m = c?.monsters[index];
+	if (!c || !m) return state;
+	const monsters = [...c.monsters];
+	monsters[index] = { ...m, powers: m.powers.filter((p) => p.id.toUpperCase() !== powerId) };
+	return { ...state, combat: { ...c, monsters } };
+}
+
+/**
+ * TWIN_SLAM: changeState("Offensive Mode") re-applies Mode Shift with the
+ * threshold raised by 10 per shift so far (dmgThreshold += 10 on every
+ * Defensive Mode), then Sharp Hide is removed.
+ */
+registerMoveHandler(TG_TWIN as string, (ctx, actions): Action[] => {
+	const shifts = ctx.monster.moveHistory.filter((m) => m === TG_DEFEND).length;
+	const threshold = modeShiftBase(ctx.state.ascension) + 10 * shifts;
+	const index = ctx.monster.index;
+	return [
+		...actions,
+		{
+			type: "applyPower",
+			source: ctx.self,
+			target: ctx.self,
+			powerId: canonicalPowerId("MODE_SHIFT"),
+			amount: threshold,
+		},
+		{ type: "custom", execute: (s) => removeOwnPower(s, index, "SHARP_HIDE") },
+	];
 });
 
 // ── Hexaghost ────────────────────────────────────────────

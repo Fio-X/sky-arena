@@ -142,15 +142,16 @@ registerMonsterAi("ACID_SLIME_L", (ctx): MonsterAiResult => {
 	const h = monster.moveHistory;
 
 	if (ctx.state.ascension >= 17) {
-		// Bug: lightspeed checks MEDIUM spit ID → SPIT unconstrained at asc17
+		// AcidSlime_L checks its own Corrosive Spit (lightspeed tests the M slime's id
+		// by mistake, leaving Spit unconstrained; see the data conflicts).
 		return threeWayAi(h, roll, rng, [
 			{
 				threshold: 40,
 				move: AL_SPIT,
-				block: "never",
-				blockChance: 0,
-				altA: AL_SPIT,
-				altB: AL_SPIT,
+				block: "lastTwo",
+				blockChance: 0.6,
+				altA: AL_TACKLE,
+				altB: AL_LICK,
 			},
 			{
 				threshold: 70,

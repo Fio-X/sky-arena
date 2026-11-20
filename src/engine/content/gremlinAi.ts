@@ -72,8 +72,13 @@ registerMonsterAi("GREMLIN_NOB", (ctx): MonsterAiResult => {
 	const { value: roll, state: rng } = random(ctx.aiRng, 99);
 
 	if (ctx.state.ascension >= 18) {
-		// Lightspeed bug: always RUSH after BELLOW
-		return { moveId: GN_RUSH, aiRng: rng };
+		// Skull Bash whenever it is not among the last two moves: BELLOW, then
+		// [SKULL_BASH, RUSH, RUSH] repeating (lightspeed's version degenerates to RUSH only).
+		const last = h[h.length - 1];
+		const before = h[h.length - 2];
+		if (last !== GN_SKULL && before !== GN_SKULL) return { moveId: GN_SKULL, aiRng: rng };
+		const lastTwoRush = last === GN_RUSH && before === GN_RUSH;
+		return { moveId: lastTwoRush ? GN_SKULL : GN_RUSH, aiRng: rng };
 	}
 
 	const lastTwoRush = h.length >= 2 && h[h.length - 1] === GN_RUSH && h[h.length - 2] === GN_RUSH;

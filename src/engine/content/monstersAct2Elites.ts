@@ -121,6 +121,10 @@ registerMonsterAi("ROMEO", (ctx): MonsterAiResult => {
 	if (h.length === 0) return { moveId: RM_MOCK, aiRng: ctx.aiRng };
 
 	const last = h[h.length - 1];
+	// A17: Cross Slash twice per cycle (MOCK, then [AGONIZING, CROSS, CROSS]; wiki).
+	if (last === RM_CROSS && ctx.state.ascension >= 17 && h[h.length - 2] !== RM_CROSS) {
+		return { moveId: RM_CROSS, aiRng: ctx.aiRng };
+	}
 	if (last === RM_MOCK || last === RM_CROSS) return { moveId: RM_AGON, aiRng: ctx.aiRng };
 	return { moveId: RM_CROSS, aiRng: ctx.aiRng }; // after AGONIZING_SLASH
 });

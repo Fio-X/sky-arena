@@ -1,4 +1,4 @@
-import type { MonsterMoveId } from "../core/types";
+import type { MonsterMoveId, MonsterState } from "../core/types";
 import { random } from "../rng/stsRandom";
 import type { MonsterAiResult } from "./monsterAi";
 import { registerMonsterAi } from "./monsterAi";
@@ -8,6 +8,11 @@ const LG_SLEEP = "LAGAVULIN_SLEEP" as MonsterMoveId;
 const LG_ATTACK = "LAGAVULIN_ATTACK" as MonsterMoveId;
 const LG_SIPHON = "LAGAVULIN_SIPHON_SOUL" as MonsterMoveId;
 
+/** Monsters spawn with the canonical id "ASLEEP" (ADR-5): compare case-insensitively. */
+function isAsleep(m: MonsterState): boolean {
+	return m.powers.some((p) => p.id.toUpperCase() === "ASLEEP");
+}
+
 registerMonsterAi("LAGAVULIN", (ctx): MonsterAiResult => {
 	const { state: rng } = random(ctx.aiRng, 99);
 	const monster = ctx.state.combat?.monsters[ctx.monsterIndex];
@@ -16,17 +21,15 @@ registerMonsterAi("LAGAVULIN", (ctx): MonsterAiResult => {
 
 	// Init: SLEEP if asleep, else SIPHON_SOUL (Dead Adventurer event)
 	if (h.length === 0) {
-		const isAsleep = monster.powers.some((p) => p.id === ("asleep" as never));
-		return { moveId: isAsleep ? LG_SLEEP : LG_SIPHON, aiRng: rng };
+		return { moveId: isAsleep(monster) ? LG_SLEEP : LG_SIPHON, aiRng: rng };
 	}
 
 	const last = h[h.length - 1];
 
 	// After SLEEP: wake after 3 sleeps or when ASLEEP power removed
 	if (last === LG_SLEEP) {
-		const isAsleep = monster.powers.some((p) => p.id === ("asleep" as never));
 		const sleepCount = h.filter((m) => m === LG_SLEEP).length;
-		if (!isAsleep || sleepCount >= 3) return { moveId: LG_ATTACK, aiRng: rng };
+		if (!isAsleep(monster) || sleepCount >= 3) return { moveId: LG_ATTACK, aiRng: rng };
 		return { moveId: LG_SLEEP, aiRng: rng };
 	}
 

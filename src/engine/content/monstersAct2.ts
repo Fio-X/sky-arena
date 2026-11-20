@@ -294,10 +294,11 @@ registerMonsterAi("SNAKE_PLANT", (ctx): MonsterAiResult => {
 		if (roll < 65) {
 			return { moveId: lastTwoMoves(h, SNP_CHOMP) ? SNP_SPORES : SNP_CHOMP, aiRng: rng };
 		}
-		return {
-			moveId: !lastTwoMoves(h, SNP_SPORES) ? SNP_SPORES : SNP_CHOMP,
-			aiRng: rng,
-		};
+		// SnakePlant A17: Spores only if neither of the last two moves was Spores, so after
+		// the first Spores the pattern is CHOMP, CHOMP, SPORES (wiki). lightspeed's
+		// !lastTwoMoves(SPORES) would instead loosen the rule.
+		const sporesRecent = lastMove(h, SNP_SPORES) || h[h.length - 2] === SNP_SPORES;
+		return { moveId: sporesRecent ? SNP_CHOMP : SNP_SPORES, aiRng: rng };
 	}
 	// asc < 17
 	if (roll < 65) {

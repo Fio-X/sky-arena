@@ -37,7 +37,7 @@ export function executeSplit(
 	if (!source) return { state };
 
 	const monsters = [...combat.monsters];
-	const sourceHp = source.currentHp;
+	const sourceHp = action.hp ?? source.currentHp;
 	if (source.alive) {
 		monsters[action.sourceIndex] = { ...source, alive: false, currentHp: 0 };
 		events.push({ type: "monsterDied", index: action.sourceIndex });

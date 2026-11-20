@@ -181,21 +181,38 @@ registerPowerHooks(
 );
 
 // ── Asleep (Lagavulin) ──────────────────────────────────
-// Marker power. Removed when unblocked damage is received.
-// Also reduces Lagavulin STR/DEX debuffs while asleep (handled by AI).
+// Marker power read by the Lagavulin AI. Waking (Lagavulin.changeState "OPEN")
+// removes it and reduces Metallicize by 8. Two ways to wake:
+// - any HP loss while asleep (Lagavulin.damage): the queued SLEEP still runs
+//   (the original shows it as a 1-turn Stun), then ATTACK;
+// - naturally after its third SLEEP (idleCount >= 3); done at the end of that
+//   round, before Metallicize next triggers.
+
+const LAGAVULIN_SLEEP = "LAGAVULIN_SLEEP";
+
+function wakeLagavulin(state: GameState, idx: number): GameState {
+	const monster = state.combat?.monsters[idx];
+	if (!monster) return state;
+	const powers = removePowerFromList(monster.powers, "ASLEEP")
+		.map((p) => (p.id.toUpperCase() === "METALLICIZE" ? { ...p, amount: p.amount - 8 } : p))
+		.filter((p) => p.id.toUpperCase() !== "METALLICIZE" || p.amount > 0);
+	return setMonsterPowers(state, idx, powers);
+}
 
 registerPowerHooks(
 	"ASLEEP",
 	(_p: PowerInstance): HookSource => ({
 		powerId: "ASLEEP",
 		hooks: {
-			onAttacked: (ctx, damage, _source) => {
-				if (damage <= 0) return ctx.state;
+			wasHPLost: (ctx, amount) => {
+				if (amount <= 0 || ctx.owner.type !== "monster") return ctx.state;
+				return wakeLagavulin(ctx.state, ctx.owner.index);
+			},
+			atEndOfRound: (ctx) => {
 				if (ctx.owner.type !== "monster") return ctx.state;
-				const idx = ctx.owner.index;
-				const monster = ctx.state.combat?.monsters[idx];
-				if (!monster) return ctx.state;
-				return setMonsterPowers(ctx.state, idx, removePowerFromList(monster.powers, "ASLEEP"));
+				const monster = ctx.state.combat?.monsters[ctx.owner.index];
+				const sleeps = monster?.moveHistory.filter((m) => m === LAGAVULIN_SLEEP).length ?? 0;
+				return sleeps >= 3 ? wakeLagavulin(ctx.state, ctx.owner.index) : ctx.state;
 			},
 		},
 	}),
@@ -245,18 +262,10 @@ registerPowerHooks(
 				const monster = ctx.state.combat?.monsters[idx];
 				if (!monster) return ctx.state;
 				let s = setMonsterPowers(ctx.state, idx, removePowerFromList(monster.powers, "MODE_SHIFT"));
-				// Set block to clear accumulated block and add large block for defensive mode
-				// The actual mode transition happens via the AI checking for MODE_SHIFT absence
-				// Guardian gains 20 block when entering defensive mode (hardcoded in STS)
-				if (s.combat) {
-					const ms = [...s.combat.monsters];
-					const m = ms[idx];
-					if (m) {
-						ms[idx] = { ...m, block: m.block + 20 };
-						s = { ...s, combat: { ...s.combat, monsters: ms } };
-					}
-				}
-				return s;
+				// changeState("Defensive Mode"): gain 20 block and the current intent is
+				// replaced with DEFENSIVE_MODE at once. TWIN_SLAM restores Mode Shift (bossAi.ts).
+				s = addMonsterBlock(s, idx, 20);
+				return setMonsterMove(s, idx, "THE_GUARDIAN_DEFENSIVE_MODE");
 			},
 		},
 	}),

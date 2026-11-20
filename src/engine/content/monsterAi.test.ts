@@ -222,11 +222,18 @@ describe("Gremlin Nob AI", () => {
 		}
 	});
 
-	it("asc>=18: always RUSH (lightspeed bug)", () => {
-		const h = ["GREMLIN_NOB_BELLOW"] as MonsterMoveId[];
-		const m = makeMonster("GREMLIN_NOB", { moveHistory: h });
-		for (let s = 1n; s <= 20n; s++) {
-			expect(callAi("GREMLIN_NOB", m, { seed: s, ascension: 18 }).moveId).toBe("GREMLIN_NOB_RUSH");
+	it("asc>=18: Skull Bash after Bellow, then Rush, Rush, Skull Bash (original, not lightspeed)", () => {
+		const cases: Array<[string[], string]> = [
+			[["GREMLIN_NOB_BELLOW"], "GREMLIN_NOB_SKULL_BASH"],
+			[["GREMLIN_NOB_BELLOW", "GREMLIN_NOB_SKULL_BASH"], "GREMLIN_NOB_RUSH"],
+			[["GREMLIN_NOB_SKULL_BASH", "GREMLIN_NOB_RUSH"], "GREMLIN_NOB_RUSH"],
+			[["GREMLIN_NOB_RUSH", "GREMLIN_NOB_RUSH"], "GREMLIN_NOB_SKULL_BASH"],
+		];
+		for (const [h, expected] of cases) {
+			const m = makeMonster("GREMLIN_NOB", { moveHistory: h as MonsterMoveId[] });
+			for (let s = 1n; s <= 20n; s++) {
+				expect(callAi("GREMLIN_NOB", m, { seed: s, ascension: 18 }).moveId).toBe(expected);
+			}
 		}
 	});
 });
