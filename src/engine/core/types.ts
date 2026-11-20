@@ -345,6 +345,8 @@ export type Action =
 			baseDamage: number;
 			hits: number;
 			nonAttack?: boolean;
+			/** The card this attack comes from (card-based modifiers: Pen Nib, Strike Dummy…). */
+			card?: CardInstance;
 	  }
 	| { type: "block"; source: ActorRef; amount: number }
 	| { type: "heal"; target: ActorRef; amount: number }

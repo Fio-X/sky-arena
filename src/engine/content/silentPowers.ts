@@ -2,7 +2,6 @@ import { resolveMonsterDeath } from "../combat/death";
 import type { HookSource } from "../core/hooks";
 import { registerPowerHooks } from "../core/hooks";
 import type { ActorRef, CardInstance, GameState, PowerId, PowerInstance } from "../core/types";
-import { getCard } from "./loader";
 
 // ── helpers ──────────────────────────────────────────────
 
@@ -433,19 +432,33 @@ registerPowerHooks(
 );
 
 // ── Phantasmal Killer ──────────────────────────────────
-// Next turn, attacks deal double damage.
+// PhantasmalPower: at the start of each turn, gain Double Damage for that turn
+// and lose 1 Phantasmal. DoubleDamagePower: attacks deal double damage; it is
+// applied by the player (justApplied false), so it ends at the end of the round.
 
 registerPowerHooks(
-	"PHANTASMAL_KILLER",
+	"PHANTASMAL",
 	(_p: PowerInstance): HookSource => ({
-		powerId: "PHANTASMAL_KILLER",
+		powerId: "PHANTASMAL",
 		hooks: {
-			atDamageGive: (ctx, damage, card) => {
-				if (ctx.owner.type !== "player") return damage;
-				const def = card ? getCard(card.id) : null;
-				if (def?.type !== "attack") return damage;
-				return { value: damage * 2, state: removePowerFromPlayer(ctx.state, "PHANTASMAL_KILLER") };
+			atStartOfTurn: (ctx) => {
+				const ph = ctx.state.combat?.player.powers.find((p) => p.id === "PHANTASMAL");
+				if (!ph) return ctx.state;
+				const s = modifyPower(ctx.state, { type: "player" }, "DOUBLE_DAMAGE", 1);
+				return ph.amount > 1
+					? modifyPower(s, { type: "player" }, "PHANTASMAL", -1)
+					: removePowerFromPlayer(s, "PHANTASMAL");
 			},
+		},
+	}),
+);
+
+registerPowerHooks(
+	"DOUBLE_DAMAGE",
+	(_p: PowerInstance): HookSource => ({
+		powerId: "DOUBLE_DAMAGE",
+		hooks: {
+			atDamageGive: (_ctx, damage, card) => (card ? damage * 2 : damage),
 		},
 	}),
 );

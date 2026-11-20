@@ -38,8 +38,16 @@ export function resolveCardEffect(
 	targetIndex: number,
 ): Action[] {
 	const specific = registry.get(card.id);
-	if (specific) return specific(withChemicalX(state, card), card, targetIndex);
-	return genericCardEffect(state, card, targetIndex);
+	const actions = specific
+		? specific(withChemicalX(state, card), card, targetIndex)
+		: genericCardEffect(state, card, targetIndex);
+	return actions.map((a) => withSourceCard(a, card));
+}
+
+/** The player's damage actions remember their card, so card-based hooks see it on every hit. */
+function withSourceCard(action: Action, card: CardInstance): Action {
+	if (action.type !== "damage" || action.source.type !== "player" || action.card) return action;
+	return { ...action, card };
 }
 
 /**

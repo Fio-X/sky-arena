@@ -48,20 +48,11 @@ registerRelicHooks("CRACKED_CORE", () => ({
 // COMMON
 // ═════════════════════════════════════════════════════════
 
-// Akabeko — first attack each combat deals +8
+// Akabeko — start each combat with 8 Vigor (the first attack's every hit +8)
 registerRelicHooks("AKABEKO", () => ({
 	relicId: "AKABEKO",
 	hooks: {
-		atBattleStart: (ctx) => setRelicCounter(ctx.state, "AKABEKO", 1),
-		atDamageGive: (ctx, damage, card) => {
-			if (!card || !isAttack(card)) return damage;
-			const relic = ctx.state.relics.find((x) => x.id === "AKABEKO");
-			if (!relic || relic.counter === 0) return damage;
-			return {
-				value: damage + relicVal("AKABEKO", 0, 8),
-				state: setRelicCounter(ctx.state, "AKABEKO", 0),
-			};
-		},
+		atBattleStart: (ctx) => addPlayerPower(ctx.state, "VIGOR", relicVal("AKABEKO", 0, 8)),
 	},
 }));
 
@@ -214,24 +205,20 @@ registerRelicHooks("ORICHALCUM", () => ({
 	},
 }));
 
-// Pen Nib — every 10 attacks, double next attack damage
+// Pen Nib — every 10th Attack deals double damage. The counter (0–9) lasts across
+// combats; at 9 the next Attack is doubled (PenNibPower), then it wraps to 0.
 registerRelicHooks("PEN_NIB", () => ({
 	relicId: "PEN_NIB",
 	hooks: {
 		onAfterCardPlayed: (ctx, card) => {
 			if (!isAttack(card)) return ctx.state;
 			const relic = ctx.state.relics.find((x) => x.id === "PEN_NIB");
-			const count = (relic?.counter ?? 0) + 1;
-			return setRelicCounter(ctx.state, "PEN_NIB", count);
+			return setRelicCounter(ctx.state, "PEN_NIB", ((relic?.counter ?? 0) + 1) % 10);
 		},
 		atDamageGive: (ctx, damage, card) => {
 			if (!card || !isAttack(card)) return damage;
 			const relic = ctx.state.relics.find((x) => x.id === "PEN_NIB");
-			if (!relic || relic.counter < 10) return damage;
-			return {
-				value: damage * 2,
-				state: setRelicCounter(ctx.state, "PEN_NIB", 0),
-			};
+			return relic?.counter === 9 ? damage * 2 : damage;
 		},
 	},
 }));

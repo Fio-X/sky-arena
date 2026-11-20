@@ -14,6 +14,24 @@ registerPowerHooks(
 	}),
 );
 
+// VigorPower (Akabeko): every hit of the next Attack card +X;
+// removed once an Attack is played.
+registerPowerHooks(
+	"VIGOR",
+	(p: PowerInstance): HookSource => ({
+		powerId: "VIGOR",
+		hooks: {
+			atDamageGive: (_ctx, damage, card) => (card ? damage + p.amount : damage),
+			onAfterCardPlayed: (ctx, card) => {
+				const c = ctx.state.combat;
+				if (getCard(card.id)?.type !== "attack" || !c) return ctx.state;
+				const powers = c.player.powers.filter((x) => x.id !== "VIGOR");
+				return { ...ctx.state, combat: { ...c, player: { ...c.player, powers } } };
+			},
+		},
+	}),
+);
+
 registerPowerHooks(
 	"dexterity",
 	(p: PowerInstance): HookSource => ({
@@ -29,7 +47,13 @@ registerPowerHooks(
 	(_p: PowerInstance): HookSource => ({
 		powerId: "vulnerable",
 		hooks: {
-			atDamageFinalReceive: (_ctx, damage, _card) => Math.floor(damage * 1.5),
+			// VulnerablePower.atDamageReceive: ×1.5; Odd Mushroom on the player ×1.25;
+			// Paper Phrog on enemies ×1.75. No rounding here: the pipeline floors once at the end.
+			atDamageFinalReceive: (ctx, damage, _card) => {
+				const has = (id: string) => ctx.state.relics.some((r) => r.id === id);
+				if (ctx.owner.type === "player") return damage * (has("ODD_MUSHROOM") ? 1.25 : 1.5);
+				return damage * (has("PAPER_PHROG") ? 1.75 : 1.5);
+			},
 		},
 	}),
 );
@@ -39,7 +63,11 @@ registerPowerHooks(
 	(_p: PowerInstance): HookSource => ({
 		powerId: "weak",
 		hooks: {
-			atDamageGive: (_ctx, damage, _card) => Math.floor(damage * 0.75),
+			// WeakPower.atDamageGive: ×0.75; an enemy's Weak with Paper Krane ×0.6. Floored at the end.
+			atDamageGive: (ctx, damage, _card) => {
+				const krane = ctx.state.relics.some((r) => r.id === "PAPER_KRANE");
+				return damage * (ctx.owner.type === "monster" && krane ? 0.6 : 0.75);
+			},
 		},
 	}),
 );

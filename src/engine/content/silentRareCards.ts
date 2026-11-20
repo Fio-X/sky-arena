@@ -237,7 +237,7 @@ registerCardEffect("PHANTASMAL_KILLER", (_s, _card, _t) => {
 			type: "applyPower",
 			source: P,
 			target: P,
-			powerId: "PHANTASMAL_KILLER" as never,
+			powerId: "PHANTASMAL" as never,
 			amount: 1,
 		},
 	];

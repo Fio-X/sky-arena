@@ -133,7 +133,7 @@ function executeDamage(
 
 		const calc = action.nonAttack
 			? calculateNonAttackDamage(s, action.target, action.baseDamage)
-			: calculateDamage(s, action.source, action.target, action.baseDamage, null);
+			: calculateDamage(s, action.source, action.target, action.baseDamage, action.card ?? null);
 		s = calc.state;
 		const blockBefore = relicRules.targetBlock(s, action.target);
 		const applied = applyDamage(s, action.target, calc.damage);

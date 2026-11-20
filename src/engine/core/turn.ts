@@ -21,6 +21,7 @@ const TURN_BASED_POWER_IDS = new Set([
 	"intangible",
 	"INTANGIBLE",
 	"regen",
+	"DOUBLE_DAMAGE",
 ]);
 
 export function stepEndTurn(rawState: GameState, events: GameEvent[]): StepResult {

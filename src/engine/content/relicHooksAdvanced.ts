@@ -10,6 +10,7 @@ import {
 	drawCards,
 	heal,
 	isAttack,
+	isStrike,
 	relicVal,
 	setRelicCounter,
 } from "./relicHelpers";
@@ -114,19 +115,6 @@ registerRelicHooks("ORNAMENTAL_FAN", () => ({
 	},
 }));
 
-// Paper Phrog — vulnerable = 75% more instead of 50%
-registerRelicHooks("PAPER_PHROG", () => ({
-	relicId: "PAPER_PHROG",
-	hooks: {
-		atDamageFinalGive: (ctx, damage, card) => {
-			if (!card || !ctx.combat) return damage;
-			const target = ctx.combat.monsters[0];
-			if (!target?.powers.some((p) => p.id === "vulnerable")) return damage;
-			return Math.floor((damage / 1.5) * 1.75);
-		},
-	},
-}));
-
 // Self-Forming Clay — when you lose HP, gain 3 block next turn
 registerRelicHooks("SELF_FORMING_CLAY", () => ({
 	relicId: "SELF_FORMING_CLAY",
@@ -165,12 +153,9 @@ registerRelicHooks("SHURIKEN", () => ({
 registerRelicHooks("STRIKE_DUMMY", () => ({
 	relicId: "STRIKE_DUMMY",
 	hooks: {
-		atDamageGive: (_ctx, damage, card) => {
-			if (!card) return damage;
-			const id = card.id as string;
-			const isSt = id.startsWith("STRIKE_") || id === "PERFECTED_STRIKE" || id === "TWIN_STRIKE";
-			return isSt ? damage + relicVal("STRIKE_DUMMY", 0, 3) : damage;
-		},
+		// atDamageModify: before Strength and Weak, like the original
+		atDamageModify: (_ctx, damage, card) =>
+			isStrike(card) ? damage + relicVal("STRIKE_DUMMY", 0, 3) : damage,
 	},
 }));
 

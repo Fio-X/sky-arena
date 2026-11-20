@@ -64,9 +64,9 @@ export function isAttack(card: CardInstance): boolean {
 	return getCard(card.id)?.type === "attack";
 }
 
+/** AbstractCard.hasTag(CardTags.STRIKE): every card with "Strike" in its name. */
 export function isStrike(card: CardInstance): boolean {
-	const id = card.id as string;
-	return id.startsWith("STRIKE_") || id === "PERFECTED_STRIKE" || id === "TWIN_STRIKE";
+	return getCard(card.id)?.flags.includes("tag:strike") ?? false;
 }
 
 export function relicVal(id: string, index: number, fallback: number): number {
