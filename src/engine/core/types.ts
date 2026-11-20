@@ -18,6 +18,8 @@ export interface GameState {
 	readonly map: MapState;
 	/** Missing = no keys yet. */
 	readonly keys?: KeyState;
+	/** AbstractRoom.blizzardPotionMod: potion drop chance offset (missing = 0). */
+	readonly potionChanceMod?: number;
 	/** "?" room chances and the events not yet seen (created on the first "?" of an act). */
 	readonly eventPools?: EventPoolState;
 	/** Set while an event fight runs: its rewards replace the normal ones. */

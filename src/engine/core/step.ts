@@ -32,7 +32,12 @@ import { applyEmeraldEliteBuff, inEmeraldElite, stepTakeChestRelic, stepTakeKey 
 import { stepChooseNeowBlessing } from "./neow";
 import { hasRelic, obtainCard } from "./obtain";
 import { executePlayerHeal, gainGold } from "./playerActions";
-import { rollPotionDrop, stepDiscardPotion, stepObtainPotionReward, stepUsePotion } from "./potion";
+import {
+	rollPotionReward,
+	stepDiscardPotion,
+	stepObtainPotionReward,
+	stepUsePotion,
+} from "./potion";
 import {
 	replayIfAmplify,
 	replayIfBurst,
@@ -497,15 +502,18 @@ function checkCombatEnd(result: StepResult): StepResult {
 
 		const goldResult = rollGoldReward(s);
 		const reward = generateCardReward({ ...s, rng: { ...s.rng, miscRng: goldResult.rng } });
-		const potionChance = hasRelic(s, "WHITE_BEAST_STATUE") ? 100 : 40;
-		const potionResult = rollPotionDrop(s.rng.potionRng, s.potions, potionChance, s.character);
+		const potionResult = rollPotionReward(s);
 		const newRng = {
 			...s.rng,
 			miscRng: goldResult.rng,
 			cardRng: reward.rng,
-			potionRng: potionResult.rng,
+			potionRng: potionResult.state.rng.potionRng,
 		};
-		const withGold = gainGold({ ...s, rng: newRng }, goldResult.gold, events);
+		const withGold = gainGold(
+			{ ...s, rng: newRng, potionChanceMod: potionResult.state.potionChanceMod },
+			goldResult.gold,
+			events,
+		);
 		events.push({ type: "cardRewardOffered", cards: reward.cards });
 		// Prayer Wheel (second card reward), Black Star (extra elite relic).
 		const withExtras = addRelicCombatRewards({

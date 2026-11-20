@@ -8,9 +8,9 @@ import { getEncounterMonsters } from "../combat/encounters";
 import { initCombat } from "../combat/init";
 import { obtainRandomRelicOfTier } from "./event";
 import { fireHook } from "./hooks";
-import { hasRelic, obtainRelic } from "./obtain";
+import { obtainRelic } from "./obtain";
 import { gainGold } from "./playerActions";
-import { rollPotionDrop } from "./potion";
+import { rollPotionReward } from "./potion";
 import type { EventCombatRewards, GameEvent, GamePhase, GameState } from "./types";
 
 export function startEventCombat(
@@ -52,10 +52,9 @@ export function eventCombatVictory(state: GameState, events: GameEvent[]): GameS
 	}
 	let potion = null;
 	if (rewards.potion) {
-		const chance = hasRelic(s, "WHITE_BEAST_STATUE") ? 100 : 40;
-		const drop = rollPotionDrop(s.rng.potionRng, s.potions, chance, s.character);
+		const drop = rollPotionReward(s);
 		potion = drop.potion;
-		s = { ...s, rng: { ...s.rng, potionRng: drop.rng } };
+		s = drop.state;
 	}
 	return {
 		...s,

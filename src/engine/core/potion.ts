@@ -56,13 +56,29 @@ export function rollPotionDrop(
 	}
 
 	const dropRoll = random(rng, 99);
-	rng = dropRoll.state;
-	if (dropRoll.value >= chance) return { potion: null, rng };
+	if (dropRoll.value >= chance) return { potion: null, rng: dropRoll.state };
+	// AbstractDungeon.returnRandomPotion(): rarity roll, then reject until it matches.
+	return randomPotion(dropRoll.state, character, false);
+}
 
-	const potionRoll = random(rng, pool.length - 1);
-	rng = potionRoll.state;
-	const potion = pool[potionRoll.value]?.id ?? null;
-	return { potion, rng };
+/**
+ * AbstractRoom.addPotionToRewards: 40% plus blizzardPotionMod (−10 after a
+ * drop, +10 after a miss, kept for the whole run); White Beast Statue makes it
+ * 100%. With every slot full no reward is rolled (and the modifier stays).
+ */
+export function rollPotionReward(state: GameState): { potion: PotionId | null; state: GameState } {
+	if (!state.potions.includes(null)) return { potion: null, state };
+	const mod = state.potionChanceMod ?? 0;
+	const chance = hasRelic(state, "WHITE_BEAST_STATUE") ? 100 : 40 + mod;
+	const r = rollPotionDrop(state.rng.potionRng, state.potions, chance, state.character);
+	return {
+		potion: r.potion,
+		state: {
+			...state,
+			rng: { ...state.rng, potionRng: r.rng },
+			potionChanceMod: r.potion ? mod - 10 : mod + 10,
+		},
+	};
 }
 
 /**
