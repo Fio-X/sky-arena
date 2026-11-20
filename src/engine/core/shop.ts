@@ -115,6 +115,7 @@ export function generateShop(state: GameState): { shop: ShopData; rng: RngState 
 	// ShopScreen.init: A16 ×1.1 (not the purge), The Courier ×0.8, then Membership Card ×0.5;
 	// Smiling Mask fixes purge at 50.
 	if (state.ascension >= 16) shop = applyDiscount(state, shop, 1.1, false);
+	if (hasRelic(state, "DISCERNING_MONOCLE")) shop = applyDiscount(state, shop, 0.8);
 	if (hasRelic(state, "THE_COURIER")) shop = applyDiscount(state, shop, 0.8);
 	if (hasRelic(state, "MEMBERSHIP_CARD")) shop = applyDiscount(state, shop, 0.5);
 	if (hasRelic(state, "SMILING_MASK")) shop = { ...shop, purgePrice: 50 };

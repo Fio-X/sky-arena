@@ -1,6 +1,6 @@
 import { allMonstersGone } from "../combat/death";
 import { registerRelicHooks } from "../core/hooks";
-import type { CardInstance, PowerId, PowerInstance } from "../core/types";
+import type { CardInstance, GameState, PowerId, PowerInstance } from "../core/types";
 import { getCard } from "./loader";
 import {
 	addPlayerBlock,
@@ -14,6 +14,12 @@ import {
 	relicVal,
 	setRelicCounter,
 } from "./relicHelpers";
+
+function plusMaxEnergy(state: GameState): GameState {
+	const c = state.combat;
+	if (!c) return state;
+	return { ...state, combat: { ...c, maxEnergy: c.maxEnergy + 1, energy: c.energy + 1 } };
+}
 
 // ═════════════════════════════════════════════════════════
 // UNCOMMON
@@ -386,21 +392,24 @@ registerRelicHooks("RUNIC_PYRAMID", () => ({
 	},
 }));
 
-// Velvet Choker — can only play 6 cards per turn
+// Velvet Choker — can only play 6 cards per turn; +1 Energy
 registerRelicHooks("VELVET_CHOKER", () => ({
 	relicId: "VELVET_CHOKER",
 	hooks: {
+		atBattleStart: (ctx) => plusMaxEnergy(ctx.state),
 		canPlayCard: (ctx) => ctx.combat.cardsPlayedThisTurn < 6,
 	},
 }));
 
-// Philosopher's Stone — all enemies gain 1 strength at combat start
+// Philosopher's Stone — +1 Energy; all enemies gain 1 strength at combat start
 registerRelicHooks("PHILOSOPHERS_STONE", () => ({
 	relicId: "PHILOSOPHERS_STONE",
 	hooks: {
 		atBattleStart: (ctx) => {
-			if (!ctx.combat) return ctx.state;
-			const monsters = ctx.combat.monsters.map((m) => {
+			const s = plusMaxEnergy(ctx.state);
+			const c = s.combat;
+			if (!c) return s;
+			const monsters = c.monsters.map((m) => {
 				if (!m.alive) return m;
 				const str = m.powers.find((p) => p.id === "strength");
 				const powers: PowerInstance[] = str
@@ -408,45 +417,33 @@ registerRelicHooks("PHILOSOPHERS_STONE", () => ({
 					: [...m.powers, { id: "strength" as PowerId, amount: 1, justApplied: true }];
 				return { ...m, powers };
 			});
-			return { ...ctx.state, combat: { ...ctx.combat, monsters } };
+			return { ...s, combat: { ...c, monsters } };
 		},
 	},
 }));
 
-// Mark of Pain — draw 2 Wounds into hand at combat start
+// Mark of Pain — +1 Energy; draw 2 Wounds into hand at combat start
 registerRelicHooks("MARK_OF_PAIN", () => ({
 	relicId: "MARK_OF_PAIN",
 	hooks: {
 		atBattleStart: (ctx) => {
-			if (!ctx.combat) return ctx.state;
+			const s = plusMaxEnergy(ctx.state);
+			const c = s.combat;
+			if (!c) return s;
 			let uid = 1;
-			for (const card of [...ctx.combat.hand, ...ctx.combat.drawPile, ...ctx.combat.discardPile]) {
+			for (const card of [...c.hand, ...c.drawPile, ...c.discardPile]) {
 				if (card.uniqueId >= uid) uid = card.uniqueId + 1;
 			}
-			const wounds: CardInstance[] = [
-				{
-					id: "WOUND" as never,
-					uniqueId: uid,
-					upgraded: false,
-					costOverride: null,
-					costForTurn: -2,
-					freeToPlay: false,
-					misc: 0,
-				},
-				{
-					id: "WOUND" as never,
-					uniqueId: uid + 1,
-					upgraded: false,
-					costOverride: null,
-					costForTurn: -2,
-					freeToPlay: false,
-					misc: 0,
-				},
-			];
-			return {
-				...ctx.state,
-				combat: { ...ctx.combat, hand: [...ctx.combat.hand, ...wounds] },
-			};
+			const wound = (u: number): CardInstance => ({
+				id: "WOUND" as never,
+				uniqueId: u,
+				upgraded: false,
+				costOverride: null,
+				costForTurn: -2,
+				freeToPlay: false,
+				misc: 0,
+			});
+			return { ...s, combat: { ...c, hand: [...c.hand, wound(uid), wound(uid + 1)] } };
 		},
 	},
 }));
@@ -460,10 +457,11 @@ registerRelicHooks("SNECKO_EYE", () => ({
 	},
 }));
 
-// Ectoplasm — can't gain gold
+// Ectoplasm — +1 Energy; can't gain gold
 registerRelicHooks("ECTOPLASM", () => ({
 	relicId: "ECTOPLASM",
 	hooks: {
+		atBattleStart: (ctx) => plusMaxEnergy(ctx.state),
 		onGainGold: () => 0,
 	},
 }));

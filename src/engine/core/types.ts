@@ -88,7 +88,11 @@ export type DeckSelectTask =
 	// Event picks with their own effect (registerDeckSelectEffect)
 	| "bonfire"
 	| "noteForYourself"
-	| "removeAndUpgrade";
+	| "removeAndUpgrade"
+	// Bottled relics: pick a card of a type to start in hand each combat
+	| "bottledFlame"
+	| "bottledLightning"
+	| "bottledTornado";
 
 /** Extra rest-site options from relics: Girya (lift), Peace Pipe (toke), Shovel (dig). */
 export type RestOption = "lift" | "toke" | "dig" | "recall";

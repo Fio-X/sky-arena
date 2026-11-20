@@ -1,7 +1,7 @@
 import { getCard } from "../content/loader";
 import { fireHook } from "./hooks";
 import { stepPotionSelect } from "./potionSelect";
-import { stepEndTurnContinue } from "./turn";
+import { stepEndTurnContinue, stepEndTurnPostCodex } from "./turn";
 import type { CardInstance, CombatState, GameEvent, GameState, StepResult } from "./types";
 
 function nextUid(combat: CombatState): number {
@@ -270,9 +270,12 @@ export function stepChooseCard(
 		case "recycle":
 			result = handleRecycle(state, c, idx);
 			break;
-		case "codex":
+		case "codex": {
+			const codexResult = handleCodexOrDiscovery(state, c, idx, "codex");
+			return stepEndTurnPostCodex(codexResult ?? state, events);
+		}
 		case "discovery":
-			result = handleCodexOrDiscovery(state, c, idx, state.phase.task);
+			result = handleCodexOrDiscovery(state, c, idx, "discovery");
 			break;
 		case "survivor":
 		case "daggerThrow":

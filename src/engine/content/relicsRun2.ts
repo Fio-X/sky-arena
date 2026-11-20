@@ -160,7 +160,7 @@ export function rollRandomRelic(
 			!owned.has(r.id as string) &&
 			!["boss", "event", "starter", "special"].includes(r.tier),
 	);
-	if (pool.length === 0) return { id: null, state };
+	if (pool.length === 0) return { id: "CIRCLET" as RelicId, state };
 	let rng = state.rng.relicRng;
 	let tier: string | undefined = fixedTier;
 	if (!tier) {
@@ -326,10 +326,24 @@ export function stepRestOption(
 
 // ── Deck selection (Astrolabe, Empty Cage, Dolly's Mirror, Peace Pipe) ──
 
+const BOTTLED_TYPE: Partial<Record<DeckSelectTask, string>> = {
+	bottledFlame: "attack",
+	bottledLightning: "skill",
+	bottledTornado: "power",
+};
+
+const BOTTLED_RELIC: Partial<Record<DeckSelectTask, string>> = {
+	bottledFlame: "BOTTLED_FLAME",
+	bottledLightning: "BOTTLED_LIGHTNING",
+	bottledTornado: "BOTTLED_TORNADO",
+};
+
 /** Deck cards a deck selection may pick (the UI shows the same set). */
 export function eligibleIndices(state: GameState, task: DeckSelectTask): number[] {
 	if (task === "dollysMirror" || task === "duplicate") return state.deck.map((_, i) => i);
 	if (task === "upgrade") return state.deck.flatMap((c, i) => (canUpgrade(c) ? [i] : []));
+	const bt = BOTTLED_TYPE[task];
+	if (bt) return state.deck.flatMap((c, i) => (getCard(c.id)?.type === bt ? [i] : []));
 	return purgeableIndices(state);
 }
 
@@ -399,6 +413,13 @@ function applyDeckSelection(
 			return cards.reduce((s, c) => upgradeDeckCard(s, c.uniqueId), state);
 		case "transform":
 			return transformCards(removeFromDeck(state, cards), cards);
+		case "bottledFlame":
+		case "bottledLightning":
+		case "bottledTornado": {
+			const relicId = BOTTLED_RELIC[task];
+			const uid = cards[0]?.uniqueId ?? 0;
+			return relicId ? setRelicCounter(state, relicId, uid) : state;
+		}
 		case "bonfire":
 		case "noteForYourself":
 		case "removeAndUpgrade":

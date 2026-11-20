@@ -31,6 +31,18 @@ const TITLES: Record<DeckSelectTask, { zh: string; en: string }> = {
 		zh: "选择 1 张牌移除（之后随机升级 1 张）",
 		en: "Choose a card to remove (then a random card is upgraded)",
 	},
+	bottledFlame: {
+		zh: "瓶中火焰：选择 1 张攻击牌",
+		en: "Bottled Flame: choose an Attack card",
+	},
+	bottledLightning: {
+		zh: "瓶中闪电：选择 1 张技能牌",
+		en: "Bottled Lightning: choose a Skill card",
+	},
+	bottledTornado: {
+		zh: "瓶中龙卷风：选择 1 张能力牌",
+		en: "Bottled Tornado: choose a Power card",
+	},
 };
 
 /** Pick cards from the master deck for a relic (deckSelect phase). */

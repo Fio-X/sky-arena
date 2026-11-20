@@ -3,7 +3,7 @@ import { random } from "../rng/stsRandom";
 import { type EventChoice, getEventHandler } from "./eventRegistry";
 import { hasRelic, obtainCard, obtainRelic } from "./obtain";
 import { executePlayerHeal, gainGold } from "./playerActions";
-import type { CardId, GameEvent, GameState, RngState, StepResult } from "./types";
+import type { CardId, GameEvent, GameState, RelicId, RngState, StepResult } from "./types";
 
 // ── Event definition (loaded from JSON) ─────────────────
 
@@ -231,7 +231,7 @@ export function obtainRandomRelic(
 			r.tier !== "starter" &&
 			r.tier !== "special",
 	);
-	if (pool.length === 0) return state;
+	if (pool.length === 0) return obtainRelic(state, "CIRCLET" as RelicId);
 
 	let rng = state.rng.relicRng;
 	let tier: string;

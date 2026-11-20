@@ -6,13 +6,16 @@
 import { takesTurns } from "../combat/death";
 import { buildIntent, resolveMonsterMove, rollMonsterMove } from "../combat/monsterTurn";
 import { clearMonsterBlock, clearPlayerBlock, tickTurnBasedPowers } from "../combat/powers";
-import { getCard } from "../content/loader";
+import { getAllCards, getCard } from "../content/loader";
+import { nextUid } from "../content/relicsCombat";
 import { preventPlayerDeath, recordEndTurnHand } from "../content/relicsCombatRules";
+import { random } from "../rng/stsRandom";
 import { drainActions } from "./actionExecutor";
 import { addToBot } from "./actionQueue";
 import { anyHook, fireHook, fireHookOnAllActors, foldHook } from "./hooks";
+import { hasRelic } from "./obtain";
 import { triggerOrbPassives } from "./orbSystem";
-import type { CardInstance, GameEvent, GameState, StepResult } from "./types";
+import type { CardId, CardInstance, GameEvent, GameState, StepResult } from "./types";
 
 const TURN_BASED_POWER_IDS = new Set([
 	"vulnerable",
@@ -109,6 +112,16 @@ export function stepEndTurnContinue(
 
 	s = fireHookOnAllActors(s, (st, actor) => fireHook(st, actor, "atEndOfTurn", true));
 
+	const codex = codexDiscover(s);
+	if (codex) return { state: codex, events };
+
+	return stepEndTurnPostCodex(s, events);
+}
+
+/** Resume end-of-turn after Nilry's Codex choice (or skipped). */
+export function stepEndTurnPostCodex(state: GameState, events: GameEvent[]): StepResult {
+	let s = state;
+
 	({ state: s, events } = triggerOrbPassives(s, events));
 
 	s = executeMonsterTurns(s, events);
@@ -204,4 +217,44 @@ function executeMonsterTurns(state: GameState, events: GameEvent[]): GameState {
 		}
 	}
 	return s;
+}
+
+/** Nilry's Codex: 3 random class cards (cardRng), player picks 1 to shuffle into draw pile. */
+function codexDiscover(state: GameState): GameState | null {
+	if (!hasRelic(state, "NILRYS_CODEX") || !state.combat) return null;
+	const color = { IRONCLAD: "red", SILENT: "green", DEFECT: "blue", WATCHER: "purple" }[
+		state.character
+	];
+	const pool = getAllCards().filter(
+		(c) =>
+			c.color === color && ["common", "uncommon", "rare"].includes(c.rarity) && !c.unobtainable,
+	);
+	if (pool.length < 3) return null;
+	let rng = state.rng.cardRng;
+	const ids: string[] = [];
+	while (ids.length < 3) {
+		const roll = random(rng, pool.length - 1);
+		rng = roll.state;
+		const id = pool[roll.value]?.id;
+		if (id && !ids.includes(id)) ids.push(id);
+	}
+	let uid = nextUid(state);
+	const options: CardInstance[] = ids.map((id) => {
+		const def = getCard(id);
+		const card: CardInstance = {
+			id: id as CardId,
+			uniqueId: uid++,
+			upgraded: false,
+			costOverride: null,
+			costForTurn: def?.cost ?? 0,
+			freeToPlay: false,
+			misc: 0,
+		};
+		return card;
+	});
+	return {
+		...state,
+		rng: { ...state.rng, cardRng: rng },
+		phase: { type: "cardSelect", task: "codex", options },
+	};
 }

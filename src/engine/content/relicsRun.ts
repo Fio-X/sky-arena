@@ -10,8 +10,9 @@
  *   Shovel, Tiny Chest, Wing Boots, Cursed Key, Matryoshka, N'loth's Hungry Face, Singing Bowl
  * - gold rewards (core/bossReward.ts): Golden Idol; potions (core/potion.ts): Sozu
  * - obtainCard (core/obtain.ts): Omamori
- * No gameplay effect: Cultist Headpiece, Spirit Poop, Circlet, Red Circlet, Juzu Bracelet
- * (? rooms never roll fights in this engine), Frozen Eye (UI: draw pile in order).
+ * No gameplay effect: Cultist Headpiece, Spirit Poop, Circlet, Red Circlet.
+ * Frozen Eye: UI only (CardPileViewer shows draw pile in order).
+ * Juzu Bracelet: inline in eventRoom.ts (? rooms never roll fights).
  */
 import { obtainRandomPotion } from "../core/event";
 import type { HookSource, HookTable } from "../core/hooks";
@@ -149,6 +150,29 @@ register("EMPTY_CAGE", {
 register("DOLLYS_MIRROR", {
 	onEquip: (ctx) => deckSelectPhase(ctx.state, "dollysMirror", 1, ctx.state.phase),
 });
+
+// Bottled relics: pick a card → counter stores uniqueId → atBattleStart moves it to hand
+for (const [id, task] of [
+	["BOTTLED_FLAME", "bottledFlame"],
+	["BOTTLED_LIGHTNING", "bottledLightning"],
+	["BOTTLED_TORNADO", "bottledTornado"],
+] as const) {
+	register(id, {
+		onEquip: (ctx) => deckSelectPhase(ctx.state, task, 1, ctx.state.phase),
+		atBattleStart: (ctx) => {
+			const uid = relicCounter(ctx.state, id);
+			if (!uid || !ctx.combat) return ctx.state;
+			const idx = ctx.combat.drawPile.findIndex((c) => c.uniqueId === uid);
+			if (idx < 0) return ctx.state;
+			const card = ctx.combat.drawPile[idx]!;
+			const drawPile = ctx.combat.drawPile.filter((_, i) => i !== idx);
+			return {
+				...ctx.state,
+				combat: { ...ctx.combat, hand: [...ctx.combat.hand, card], drawPile },
+			};
+		},
+	});
+}
 
 // Orrery — five card rewards, generated on pickup, taken one after another
 register("ORRERY", {
