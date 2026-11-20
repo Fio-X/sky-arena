@@ -121,6 +121,22 @@ describe("Act 4", () => {
 		expect(act4.map.nodes.map((r) => r[3]?.type)).toEqual(["rest", "shop", "elite", "boss"]);
 	});
 
+	it("walk Act 4: rest site, shop, Shield and Spear, Corrupt Heart", () => {
+		let s = startNextAct({ ...base(), act: 3, floor: 50, keys: allKeys });
+		s = enter(s, 0, 3);
+		expect(s.phase.type).toBe("rest");
+		s = run(s, { type: "rest" });
+		s = enter(s, 1, 3);
+		expect(s.phase.type).toBe("shop");
+		s = run(s, { type: "leaveShop" });
+		const elite = enter(s, 2, 3);
+		expect(elite.combat?.monsters.map((m) => m.id)).toEqual(["SPIRE_SHIELD", "SPIRE_SPEAR"]);
+		const atBoss = { ...elite, combat: null, phase: { type: "map" as const } };
+		const heart = enter(atBoss, 3, 3);
+		expect(heart.combat?.monsters.map((m) => m.id)).toEqual(["CORRUPT_HEART"]);
+		expect(heart.floor).toBe(55);
+	});
+
 	it("the Act 4 boss ends the run with victory, no rewards", () => {
 		const s: GameState = {
 			...base(["boss"]),

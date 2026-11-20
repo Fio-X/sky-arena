@@ -141,6 +141,22 @@ export function calculateBlock(
 }
 
 /**
+ * onAttackedToChangeDamage on a monster about to lose HP (Invincible caps it).
+ * The fold may change the monster's own powers; those are returned.
+ */
+function capHpLoss(
+	state: GameState,
+	target: ActorRef,
+	hpLost: number,
+	powers: PowerInstance[],
+): { state: GameState; hpLost: number; powers: PowerInstance[] } {
+	if (hpLost <= 0) return { state, hpLost, powers };
+	const r = foldHook(state, target, "onAttackedToChangeDamage", hpLost);
+	const after = target.type === "monster" ? r.state.combat?.monsters[target.index]?.powers : null;
+	return { state: r.state, hpLost: Math.max(0, r.value), powers: after ? [...after] : powers };
+}
+
+/**
  * Apply damage to a target, accounting for block.
  * Returns the new state and actual HP lost.
  */
@@ -182,8 +198,7 @@ export function applyDamage(
 	}
 
 	// Monster target
-	const monsters = [...state.combat.monsters];
-	const monster = monsters[target.index];
+	const monster = state.combat.monsters[target.index];
 	if (!monster?.alive) return { state, hpLost: 0, blocked: 0 };
 
 	const blocked = Math.min(monster.block, damage);
@@ -201,20 +216,22 @@ export function applyDamage(
 		}
 	}
 
+	const capped = capHpLoss(state, target, hpLost, mPowers);
+	hpLost = capped.hpLost;
+	const base = capped.state;
+	const baseCombat = base.combat ?? state.combat;
 	const newHp = Math.max(0, monster.currentHp - hpLost);
 	const alive = newHp > 0;
 
+	const monsters = [...baseCombat.monsters];
 	monsters[target.index] = {
 		...monster,
 		block: monster.block - blocked,
 		currentHp: newHp,
 		alive,
-		powers: mPowers,
+		powers: capped.powers,
 	};
 
-	const newState: GameState = {
-		...state,
-		combat: { ...state.combat, monsters },
-	};
+	const newState: GameState = { ...base, combat: { ...baseCombat, monsters } };
 	return { state: newState, hpLost, blocked };
 }

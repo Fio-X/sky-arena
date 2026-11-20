@@ -81,6 +81,9 @@ const ENCOUNTER_MONSTERS: Record<string, EncounterSlot[]> = {
 	TIME_EATER: L("TIME_EATER"),
 	DONU_AND_DECA: L("DECA", "DONU"),
 	MYSTERIOUS_SPHERE_EVENT: L("ORB_WALKER", "ORB_WALKER"),
+	// ── Act 4 (Shield left of the player, Spear right; Surrounded: content/act4Monsters.ts) ──
+	SHIELD_AND_SPEAR: L("SPIRE_SHIELD", "SPIRE_SPEAR"),
+	CORRUPT_HEART: L("CORRUPT_HEART"),
 };
 
 /** Layouts registered by content modules (event fights), checked after the table above. */

@@ -170,6 +170,10 @@ function stepPlayCard(
 		target: { type: "monster", index: targetIndex },
 	});
 
+	if ((def?.target === "enemy" || def?.target === "selfandenemy") && targetAlive(s, targetIndex)) {
+		s = fireHook(s, playerRef, "onTargetMonster", targetIndex); // Surrounded: turn around
+	}
+
 	// X cost: energy spent is all energy (Necronomicon checks it).
 	const energySpent = def?.cost === -1 ? combat.energy : cost;
 	const actions = relicPlay ? [] : resolveCardEffect(s, card, targetIndex);
@@ -192,6 +196,10 @@ function stepPlayCard(
 	s = replayIfDuplication(s, card, targetIndex, events);
 
 	return { state: s, events };
+}
+
+function targetAlive(state: GameState, index: number): boolean {
+	return state.combat?.monsters[index]?.alive ?? false;
 }
 
 function exhaustOrDiscard(

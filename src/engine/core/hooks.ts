@@ -68,6 +68,12 @@ export interface HookTable {
 		damage: number,
 		card: CardInstance | null,
 	) => number | FoldResult;
+	/**
+	 * HP a monster is about to lose from any damage, after block (the original's
+	 * onAttackedToChangeDamage, every damage type). Dispatched in applyDamage for
+	 * monster targets only (Invincible).
+	 */
+	onAttackedToChangeDamage: (ctx: HookCtx, hpLoss: number) => number | FoldResult;
 
 	// Notifications
 	onAttack: (ctx: HookCtx, damage: number, target: ActorRef) => GameState;
@@ -75,6 +81,8 @@ export interface HookTable {
 	onLoseHp: (ctx: HookCtx, amount: number) => GameState;
 	wasHPLost: (ctx: HookCtx, amount: number) => GameState;
 	onMonsterDeath: (ctx: HookCtx, monsterIndex: number) => GameState;
+	/** The player picked this monster as the target of a card or potion (Surrounded turns around). */
+	onTargetMonster: (ctx: HookCtx, monsterIndex: number) => GameState;
 	onVictory: (ctx: HookCtx) => GameState;
 
 	// Block (fold)
@@ -379,6 +387,7 @@ type FoldHookKeys =
 	| "atDamageFinalGive"
 	| "atDamageReceive"
 	| "atDamageFinalReceive"
+	| "onAttackedToChangeDamage"
 	| "modifyBlock"
 	| "modifyCardCost"
 	| "modifyDrawPerTurn"

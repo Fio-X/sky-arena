@@ -5,7 +5,7 @@ import { random } from "../rng/stsRandom";
 import { drainActions } from "./actionExecutor";
 import { addToBot } from "./actionQueue";
 import { getCurrentRoomType } from "./bossReward";
-import { fireRunHook } from "./hooks";
+import { fireHook, fireRunHook } from "./hooks";
 import { hasRelic } from "./obtain";
 import { executeGainMaxHp, executePlayerHeal } from "./playerActions";
 import type { Action, GameEvent, GameState, PotionId, RngState, StepResult } from "./types";
@@ -152,6 +152,10 @@ export function stepUsePotion(
 	newPotions[slot] = null;
 	let s: GameState = { ...state, potions: newPotions };
 	events.push({ type: "potionUsed", potionId, slot });
+
+	if (def.targeted && s.combat?.monsters[targetIndex]?.alive) {
+		s = fireHook(s, { type: "player" }, "onTargetMonster", targetIndex); // Surrounded: turn around
+	}
 
 	const effectFn = getPotionEffect(potionId);
 	if (effectFn) {

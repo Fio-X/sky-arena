@@ -38,6 +38,11 @@ const SETUPS: Record<string, EncounterSetup> = {
 	},
 };
 
+/** Content files add setups for their own encounters (Act 4: Surrounded). */
+export function registerEncounterSetup(encounterId: string, setup: EncounterSetup): void {
+	SETUPS[encounterId] = setup;
+}
+
 export function applyEncounterSetup(state: GameState, encounterId: string): GameState {
 	const setup = SETUPS[encounterId];
 	return setup ? setup(state) : state;
