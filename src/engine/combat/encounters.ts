@@ -83,8 +83,15 @@ const ENCOUNTER_MONSTERS: Record<string, EncounterSlot[]> = {
 	MYSTERIOUS_SPHERE_EVENT: L("ORB_WALKER", "ORB_WALKER"),
 };
 
+/** Layouts registered by content modules (event fights), checked after the table above. */
+const extraLayouts = new Map<string, EncounterSlot[]>();
+
+export function registerEncounterLayout(encounterId: string, slots: EncounterSlot[]): void {
+	extraLayouts.set(encounterId, slots);
+}
+
 export function getEncounterMonsters(encounterId: string): EncounterSlot[] {
-	return ENCOUNTER_MONSTERS[encounterId] ?? [];
+	return ENCOUNTER_MONSTERS[encounterId] ?? extraLayouts.get(encounterId) ?? [];
 }
 
 export interface WeightedEncounter {

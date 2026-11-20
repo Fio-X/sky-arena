@@ -269,7 +269,7 @@ describe("integration: seed=42 full Act 1 loop", () => {
 		expect(s.combat?.hand.length).toBe(before.combat?.hand.length);
 	});
 
-	it("event: Golden Shrine at (0,1) gives +100 gold", () => {
+	it("event: Big Fish at (0,1), Banana heals a third of max HP", () => {
 		const cmds: Command[] = [
 			{ type: "chooseNeowBlessing", index: 0 },
 			{ type: "chooseMapNode", x: 1, y: 0 },
@@ -290,11 +290,13 @@ describe("integration: seed=42 full Act 1 loop", () => {
 			{ type: "skipCardReward" },
 			{ type: "chooseMapNode", x: 0, y: 1 },
 		];
+		// Since the "?" room roll and event pools (2026-11-20) this "?" is Big Fish.
 		const s = run(createGame(42n), cmds);
-		expect(s.phase.type).toBe("event");
-		const after = step(s, { type: "chooseEventOption", index: 0 }).state;
+		expect(s.phase).toEqual({ type: "event", eventId: "BIG_FISH" });
+		const hurt = { ...s, currentHp: 10 };
+		const after = step(hurt, { type: "chooseEventOption", index: 0 }).state;
 		expect(after.phase.type).toBe("map");
-		expect(after.gold).toBe(s.gold + 100);
+		expect(after.currentHp).toBe(10 + Math.floor(s.maxHp / 3));
 	});
 
 	it("shop: enter at (1,2) and leave returns to map", () => {
@@ -479,9 +481,9 @@ describe("integration: seed=42 full Act 1 auto-play", () => {
 		expect(types.has("rest")).toBe(true);
 		expect(types.has("treasure")).toBe(true);
 		expect(types.has("boss")).toBe(true);
-		// Recorded after the block fix (2026-11-20): block now lasts through the
-		// monsters' turn, so this auto-player beats the Act 1 boss.
-		expect(s.currentHp).toBe(16);
-		expect(s.phase.type).toBe("bossReward");
+		// Re-recorded after the "?" room roll (2026-11-20): different events on
+		// the way, and this naive auto-player now loses to the Act 1 boss.
+		expect(s.currentHp).toBe(0);
+		expect(s.phase.type).toBe("gameOver");
 	});
 });

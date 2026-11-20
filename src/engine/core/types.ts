@@ -18,6 +18,10 @@ export interface GameState {
 	readonly map: MapState;
 	/** Missing = no keys yet. */
 	readonly keys?: KeyState;
+	/** "?" room chances and the events not yet seen (created on the first "?" of an act). */
+	readonly eventPools?: EventPoolState;
+	/** Set while an event fight runs: its rewards replace the normal ones. */
+	readonly eventCombat?: EventCombatRewards;
 
 	// combat (null when not in combat)
 	readonly combat: CombatState | null;
@@ -42,7 +46,8 @@ export type GamePhase =
 	| { type: "neow" }
 	| { type: "map" }
 	| { type: "combat"; turn: number }
-	| { type: "event"; eventId: string }
+	/** `screen` and `data` belong to the event's handler (multi-step events). */
+	| { type: "event"; eventId: string; screen?: number; data?: Readonly<Record<string, number>> }
 	| { type: "shop"; shop: ShopData }
 	| { type: "rest" }
 	| {
@@ -64,10 +69,45 @@ export type GamePhase =
 	| { type: "deckSelect"; task: DeckSelectTask; count: number; next: GamePhase }
 	| { type: "gameOver"; victory: boolean };
 
-export type DeckSelectTask = "astrolabe" | "emptyCage" | "dollysMirror" | "peacePipe";
+export type DeckSelectTask =
+	| "astrolabe"
+	| "emptyCage"
+	| "dollysMirror"
+	| "peacePipe"
+	// Events
+	| "remove"
+	| "upgrade"
+	| "transform"
+	| "duplicate";
 
 /** Extra rest-site options from relics: Girya (lift), Peace Pipe (toke), Shovel (dig). */
 export type RestOption = "lift" | "toke" | "dig" | "recall";
+
+export interface EventPoolState {
+	readonly act: number;
+	readonly events: string[];
+	readonly shrines: string[];
+	readonly oneTime: string[];
+	readonly chances: { readonly monster: number; readonly shop: number; readonly treasure: number };
+}
+
+/**
+ * Rewards of an event fight. `none`: no reward screen at all (Colosseum's first
+ * fight goes straight back to the event via `next`).
+ */
+export interface EventCombatRewards {
+	readonly none?: boolean;
+	readonly gold?: number;
+	/** Relic rewards by tier ("random" = 50/33/17 roll); given as relics on the reward screen. */
+	readonly relics?: ReadonlyArray<"random" | "common" | "uncommon" | "rare">;
+	readonly cardReward?: boolean;
+	/** Normal potion drop roll. */
+	readonly potion?: boolean;
+	/** Elite fight for relic effects (Black Star…); default false. */
+	readonly elite?: boolean;
+	/** Phase after the fight's rewards (default: map). */
+	readonly next?: GamePhase;
+}
 
 /** The three keys that open Act 4 (Ruby: rest site Recall; Emerald: burning elite; Sapphire: chest). */
 export interface KeyState {

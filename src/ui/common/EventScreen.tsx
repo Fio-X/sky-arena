@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
-import { getEvent } from "../../engine/core/event";
-import { tEvent, tUi } from "../../i18n";
+import { eventOptions, getEvent } from "../../engine/core/event";
+import { getEventHandler } from "../../engine/core/eventRegistry";
+import { getLocale, tEvent, tUi } from "../../i18n";
 import { useGameStore } from "../../store/gameStore";
 
 const containerStyle: React.CSSProperties = {
@@ -118,10 +119,11 @@ export function EventScreen() {
 						marginTop: "0.25rem",
 					}}
 				>
-					{def.options.map((option, i) => (
+					{eventOptions(state).map((option, i) => (
 						<motion.button
 							type="button"
-							key={option.label}
+							key={`${state.phase.type === "event" ? state.phase.screen : 0}-${option.label}`}
+							disabled={option.disabled}
 							onClick={() => dispatch({ type: "chooseEventOption", index: i })}
 							initial={{ opacity: 0, x: -16 }}
 							animate={{ opacity: 1, x: 0 }}
@@ -141,35 +143,39 @@ export function EventScreen() {
 								color: "var(--text)",
 								fontSize: "0.9rem",
 								fontWeight: 500,
-								cursor: "pointer",
+								cursor: option.disabled ? "not-allowed" : "pointer",
+								opacity: option.disabled ? 0.45 : 1,
 							}}
 						>
-							{option.label}
+							{getLocale() === "zh" && option.zh ? option.zh : option.label}
 						</motion.button>
 					))}
 				</div>
 
-				<motion.button
-					type="button"
-					onClick={() => dispatch({ type: "proceed" })}
-					initial={{ opacity: 0 }}
-					animate={{ opacity: 1 }}
-					transition={{ delay: 0.4, duration: 0.3 }}
-					whileHover={{ scale: 1.03 }}
-					whileTap={{ scale: 0.97 }}
-					style={{
-						padding: "0.5rem 1.5rem",
-						color: "var(--text-dim)",
-						background: "transparent",
-						border: "1px solid var(--border)",
-						borderRadius: 10,
-						cursor: "pointer",
-						fontSize: "0.85rem",
-						marginTop: "0.25rem",
-					}}
-				>
-					{tUi("leave")}
-				</motion.button>
+				{/* Events with a handler offer their own way out; the generic Leave is for data-only events. */}
+				{!getEventHandler(state.phase.eventId) && (
+					<motion.button
+						type="button"
+						onClick={() => dispatch({ type: "proceed" })}
+						initial={{ opacity: 0 }}
+						animate={{ opacity: 1 }}
+						transition={{ delay: 0.4, duration: 0.3 }}
+						whileHover={{ scale: 1.03 }}
+						whileTap={{ scale: 0.97 }}
+						style={{
+							padding: "0.5rem 1.5rem",
+							color: "var(--text-dim)",
+							background: "transparent",
+							border: "1px solid var(--border)",
+							borderRadius: 10,
+							cursor: "pointer",
+							fontSize: "0.85rem",
+							marginTop: "0.25rem",
+						}}
+					>
+						{tUi("leave")}
+					</motion.button>
+				)}
 			</motion.div>
 		</div>
 	);

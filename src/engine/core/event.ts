@@ -1,5 +1,6 @@
 import { getAllPotions, getAllRelics, getCard } from "../content/loader";
 import { random } from "../rng/stsRandom";
+import { type EventChoice, getEventHandler } from "./eventRegistry";
 import { hasRelic, obtainCard, obtainRelic } from "./obtain";
 import { gainGold } from "./playerActions";
 import type { CardId, GameEvent, GameState, RngState, StepResult } from "./types";
@@ -27,7 +28,7 @@ export interface EventDef {
 	readonly acts: number[];
 	readonly summary: string;
 	readonly options: EventOption[];
-	readonly canSpawn: string | null;
+	readonly canSpawn: Readonly<Record<string, unknown>> | null;
 }
 
 // ── Event registry ──────────────────────────────────────
@@ -42,6 +43,10 @@ export function loadEvents(data: { events: EventDef[] }): void {
 		events.set(e.id, e);
 		if (e.pool === "shrine") shrinePool.push(e.id);
 	}
+}
+
+export function allEventDefs(): EventDef[] {
+	return [...events.values()];
 }
 
 /** Act pool + one-time events allowed in this act, in data order. */
@@ -89,6 +94,13 @@ export function stepChooseEventOption(
 	events_: GameEvent[],
 ): StepResult {
 	if (state.phase.type !== "event") return { state, events: events_ };
+	const handler = getEventHandler(state.phase.eventId);
+	if (handler) {
+		const choice = handler.options(state)[optionIndex];
+		if (!choice || choice.disabled) return { state, events: events_ };
+		return { state: handler.choose(state, optionIndex, events_), events: events_ };
+	}
+
 	const def = getEvent(state.phase.eventId);
 	if (!def) return { state: { ...state, phase: { type: "map" } }, events: events_ };
 
@@ -194,7 +206,26 @@ function upgradeRandomCard(state: GameState): GameState {
 	return { ...state, deck: newDeck, rng: { ...state.rng, miscRng: r.state } };
 }
 
-export function obtainRandomRelic(state: GameState): GameState {
+/** Choices on the current event screen: the handler's, or the data options. */
+export function eventOptions(state: GameState): EventChoice[] {
+	if (state.phase.type !== "event") return [];
+	const handler = getEventHandler(state.phase.eventId);
+	if (handler) return handler.options(state);
+	return (getEvent(state.phase.eventId)?.options ?? []).map((o) => ({ label: o.label }));
+}
+
+/** returnRandomRelicTier (50% common / 33% uncommon / 17% rare) unless a tier is given. */
+export function obtainRandomRelicOfTier(
+	state: GameState,
+	tier: "random" | "common" | "uncommon" | "rare",
+): GameState {
+	return tier === "random" ? obtainRandomRelic(state) : obtainRandomRelic(state, tier);
+}
+
+export function obtainRandomRelic(
+	state: GameState,
+	fixedTier?: "common" | "uncommon" | "rare",
+): GameState {
 	const owned = new Set(state.relics.map((r) => r.id as string));
 	const pool = getAllRelics().filter(
 		(r) =>
@@ -207,12 +238,16 @@ export function obtainRandomRelic(state: GameState): GameState {
 	);
 	if (pool.length === 0) return state;
 
-	const tierRoll = random(state.rng.relicRng, 99);
-	let rng = tierRoll.state;
+	let rng = state.rng.relicRng;
 	let tier: string;
-	if (tierRoll.value < 50) tier = "common";
-	else if (tierRoll.value < 83) tier = "uncommon";
-	else tier = "rare";
+	if (fixedTier) tier = fixedTier;
+	else {
+		const tierRoll = random(rng, 99);
+		rng = tierRoll.state;
+		if (tierRoll.value < 50) tier = "common";
+		else if (tierRoll.value < 83) tier = "uncommon";
+		else tier = "rare";
+	}
 
 	const tierPool = pool.filter((r) => r.tier === tier);
 	const finalPool = tierPool.length > 0 ? tierPool : pool;

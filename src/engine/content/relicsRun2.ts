@@ -325,8 +325,11 @@ export function stepRestOption(
 
 // ── Deck selection (Astrolabe, Empty Cage, Dolly's Mirror, Peace Pipe) ──
 
-function eligibleIndices(state: GameState, task: DeckSelectTask): number[] {
-	return task === "dollysMirror" ? state.deck.map((_, i) => i) : purgeableIndices(state);
+/** Deck cards a deck selection may pick (the UI shows the same set). */
+export function eligibleIndices(state: GameState, task: DeckSelectTask): number[] {
+	if (task === "dollysMirror" || task === "duplicate") return state.deck.map((_, i) => i);
+	if (task === "upgrade") return state.deck.flatMap((c, i) => (canUpgrade(c) ? [i] : []));
+	return purgeableIndices(state);
 }
 
 /** Open a deck selection of `count` cards (fewer if the deck is short); none → straight to `next`. */
@@ -379,8 +382,26 @@ function applyDeckSelection(
 		case "astrolabe":
 			return astrolabeTransform(removeFromDeck(state, cards), cards);
 		case "dollysMirror":
+		case "duplicate":
 			return cards.reduce(copyIntoDeck, state);
+		case "remove":
+			return removeFromDeck(state, cards);
+		case "upgrade":
+			return cards.reduce((s, c) => upgradeDeckCard(s, c.uniqueId), state);
+		case "transform":
+			return transformCards(removeFromDeck(state, cards), cards);
 	}
+}
+
+/** AbstractDungeon.transformCard + obtain, for cards already removed from the deck. */
+export function transformCards(state: GameState, cards: readonly CardInstance[]): GameState {
+	let s = state;
+	for (const card of cards) {
+		const t = transformTarget(s, card);
+		s = t.state;
+		if (t.id) s = obtainCard(s, t.id);
+	}
+	return s;
 }
 
 /** Astrolabe: transform each (miscRng), upgrade, obtain. */

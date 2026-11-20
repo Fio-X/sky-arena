@@ -10,7 +10,6 @@ import {
 	addRelicCombatRewards,
 	dreamCatcherReward,
 	openTreasureChest,
-	rollTinyChest,
 	stepChooseDeckCards,
 	stepRestOption,
 	stepSingingBowl,
@@ -25,7 +24,9 @@ import {
 	stepChooseBossRelic,
 } from "./bossReward";
 import { stepChooseCard } from "./cardSelect";
-import { pickEvent, stepChooseEventOption } from "./event";
+import { stepChooseEventOption } from "./event";
+import { eventCombatVictory } from "./eventCombat";
+import { generateEvent, rollQuestionRoom } from "./eventRoom";
 import { fireHook, fireHookOnAllActors, fireRunHook, foldHook, vetoHook } from "./hooks";
 import { applyEmeraldEliteBuff, inEmeraldElite, stepTakeChestRelic, stepTakeKey } from "./keys";
 import { stepChooseNeowBlessing } from "./neow";
@@ -268,9 +269,10 @@ function stepChooseMapNode(
 
 	let roomType = node.type;
 	if (roomType === "event") {
-		const tiny = rollTinyChest(s);
-		s = tiny.state;
-		if (tiny.treasure) roomType = "treasure";
+		// "?" room: monster / shop / treasure / event (EventHelper.roll).
+		const q = rollQuestionRoom(s);
+		s = q.state;
+		roomType = q.room;
 	}
 
 	switch (roomType) {
@@ -310,12 +312,8 @@ function stepChooseMapNode(
 			});
 			break;
 		case "event": {
-			const eventResult = pickEvent(s.rng.eventRng, s.act);
-			s = {
-				...s,
-				rng: { ...s.rng, eventRng: eventResult.rng },
-				phase: { type: "event", eventId: eventResult.eventId },
-			};
+			const picked = generateEvent(s);
+			s = { ...picked.state, phase: { type: "event", eventId: picked.eventId } };
 			break;
 		}
 	}
@@ -461,6 +459,7 @@ function checkCombatEnd(result: StepResult): StepResult {
 		events.push({ type: "combatEnded", victory: true });
 
 		const s = fireHook(state, { type: "player" }, "onVictory");
+		if (s.eventCombat) return { state: eventCombatVictory(s, events), events };
 		// The Corrupt Heart is the end of the run: no rewards.
 		if (s.act === 4 && getCurrentRoomType(s) === "boss") {
 			return { state: { ...s, phase: { type: "gameOver", victory: true } }, events };

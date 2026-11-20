@@ -3,6 +3,7 @@
  * shops, exercised through step() commands.
  */
 import { beforeEach, describe, expect, it } from "vitest";
+import { newEventPools } from "../core/eventRoom";
 import { patchMonster, playCard, runState } from "../core/fightTestHelpers";
 import type { GameState, MapNode } from "../core/types";
 import { getCard } from "./loader";
@@ -58,12 +59,17 @@ describe("rooms and map", () => {
 
 	it("Tiny Chest: the 4th ? room is a treasure room", () => {
 		let s = base(["event", "event", "event", "event"], ["TINY_CHEST"]);
+		// Keep the "?" roll on events so only Tiny Chest can make a treasure room.
+		const onlyEvents = (st: GameState): GameState => ({
+			...st,
+			eventPools: { ...newEventPools(1), chances: { monster: 0, shop: 0, treasure: 0 } },
+		});
 		for (let y = 0; y < 3; y++) {
-			s = enter(s, y);
+			s = enter(onlyEvents(s), y);
 			expect(s.phase.type).toBe("event");
 			s = toMap(s);
 		}
-		s = enter(s, 3);
+		s = enter(onlyEvents(s), 3);
 		expect(s.phase.type).toBe("reward");
 		// The chest relic is offered next to the Sapphire Key; take the relic.
 		s = run(s, { type: "takeChestRelic" });

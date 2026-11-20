@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { getCard } from "../../engine/content/loader";
-import { purgeableIndices } from "../../engine/content/relicsRun2";
+import { eligibleIndices } from "../../engine/content/relicsRun2";
 import type { DeckSelectTask } from "../../engine/core/types";
 import { getLocale, tCard, tCardText } from "../../i18n";
 import { useGameStore } from "../../store/gameStore";
@@ -18,6 +18,10 @@ const TITLES: Record<DeckSelectTask, { zh: string; en: string }> = {
 		en: "Dolly's Mirror: choose a card to duplicate",
 	},
 	peacePipe: { zh: "和平烟斗：选择 1 张牌移除", en: "Peace Pipe: choose a card to remove" },
+	remove: { zh: "选择 {n} 张牌移除", en: "Choose {n} card(s) to remove" },
+	upgrade: { zh: "选择 {n} 张牌升级", en: "Choose {n} card(s) to upgrade" },
+	transform: { zh: "选择 {n} 张牌变化", en: "Choose {n} card(s) to transform" },
+	duplicate: { zh: "选择 {n} 张牌复制", en: "Choose {n} card(s) to duplicate" },
 };
 
 /** Pick cards from the master deck for a relic (deckSelect phase). */
@@ -29,7 +33,7 @@ export function DeckSelectScreen() {
 	if (state?.phase.type !== "deckSelect") return null;
 	const { task, count } = state.phase;
 	const zh = getLocale() === "zh";
-	const eligible = task === "dollysMirror" ? state.deck.map((_, i) => i) : purgeableIndices(state);
+	const eligible = eligibleIndices(state, task);
 	const title = (zh ? TITLES[task].zh : TITLES[task].en).replace("{n}", String(count));
 
 	const toggle = (i: number) =>
