@@ -41,7 +41,7 @@ export interface TranslationTable {
 		readonly silent: string;
 		readonly defect: string;
 		readonly watcher: string;
-		readonly slayTheSpire: string;
+		readonly gameTitle: string;
 		readonly rest: string;
 		readonly smith: string;
 		readonly smithChoose: string;

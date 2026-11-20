@@ -185,7 +185,7 @@ export function TitleScreen() {
 							margin: 0,
 						}}
 					>
-						{tUi("slayTheSpire")}
+						{tUi("gameTitle")}
 					</h1>
 				</motion.div>
 

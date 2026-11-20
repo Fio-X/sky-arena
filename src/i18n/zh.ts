@@ -55,7 +55,7 @@ export const zh: TranslationTable = {
 		silent: "寂静猎手",
 		defect: "机器人",
 		watcher: "观者",
-		slayTheSpire: "杀戮尖塔",
+		gameTitle: "天空竞技场",
 		rest: "休息",
 		smith: "锻造",
 		smithChoose: "锻造 - 选择一张卡牌升级",

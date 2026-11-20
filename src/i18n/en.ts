@@ -43,7 +43,7 @@ export const en: TranslationTable = {
 		silent: "Silent",
 		defect: "Defect",
 		watcher: "Watcher",
-		slayTheSpire: "Slay the Spire",
+		gameTitle: "Sky Arena",
 		rest: "Rest",
 		smith: "Smith",
 		smithChoose: "Smith - Choose a card to upgrade",
