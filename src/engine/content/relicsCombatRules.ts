@@ -6,7 +6,7 @@
  */
 import { addToBot } from "../core/actionQueue";
 import { executePlayerHeal } from "../core/playerActions";
-import type { Action, ActorRef, CardInstance, GameEvent, GameState } from "../core/types";
+import type { Action, ActorRef, CardInstance, GameEvent, GameState, PotionId } from "../core/types";
 import { randomBoolean } from "../rng/stsRandom";
 import { getCard } from "./loader";
 
@@ -33,6 +33,10 @@ export function relicCounter(state: GameState, id: string): number {
  */
 export function preventPlayerDeath(state: GameState, events: GameEvent[]): GameState {
 	if (state.currentHp > 0 || !state.combat) return state;
+	// Mark of the Bloom: neither Fairy in a Bottle nor Lizard Tail can save you.
+	if (hasRelic(state, "MARK_OF_THE_BLOOM")) return state;
+	const fairy = state.potions.indexOf("FAIRY_POTION" as PotionId);
+	if (fairy >= 0) return drinkFairyPotion(state, fairy, events);
 	if (!hasRelic(state, "LIZARD_TAIL") || relicCounter(state, "LIZARD_TAIL") === USED_UP) {
 		return state;
 	}
@@ -42,6 +46,18 @@ export function preventPlayerDeath(state: GameState, events: GameEvent[]): GameS
 		relics: state.relics.map((r) => (r.id === "LIZARD_TAIL" ? { ...r, counter: USED_UP } : r)),
 	};
 	return executePlayerHeal(used, Math.max(1, Math.floor(state.maxHp / 2)), events).state;
+}
+
+/**
+ * Fairy in a Bottle (checked before Lizard Tail): heal 30% of max HP (Sacred
+ * Bark 60%, at least 1) and the potion is used up. Not a drink, so no onUsePotion.
+ */
+function drinkFairyPotion(state: GameState, slot: number, events: GameEvent[]): GameState {
+	const percent = hasRelic(state, "SACRED_BARK") ? 0.6 : 0.3;
+	const potions = state.potions.map((p, i) => (i === slot ? null : p));
+	events.push({ type: "potionUsed", potionId: "FAIRY_POTION" as PotionId, slot });
+	const used: GameState = { ...state, currentHp: 0, potions };
+	return executePlayerHeal(used, Math.max(1, Math.floor(state.maxHp * percent)), events).state;
 }
 
 /**

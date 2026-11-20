@@ -1,5 +1,6 @@
 import { getCard } from "../content/loader";
 import { fireHook } from "./hooks";
+import { stepPotionSelect } from "./potionSelect";
 import { stepEndTurnContinue } from "./turn";
 import type { CardInstance, CombatState, GameEvent, GameState, StepResult } from "./types";
 
@@ -235,6 +236,8 @@ export function stepChooseCard(
 	events: GameEvent[],
 ): StepResult {
 	if (state.phase.type !== "cardSelect" || !state.combat) return { state, events };
+	const fromPotion = stepPotionSelect(state, indices, events);
+	if (fromPotion) return { state: fromPotion, events };
 	const idx = indices[0] ?? -1;
 	const c = state.combat;
 	let result: GameState | null = null;

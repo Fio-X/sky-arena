@@ -1,4 +1,5 @@
 import { getPotion, getRelic } from "../../engine/content/loader";
+import { canUsePotion } from "../../engine/core/potion";
 import { tPotion, tRelic, tUi } from "../../i18n";
 import { useGameStore } from "../../store/gameStore";
 import { CardPileViewer } from "./CardPileViewer";
@@ -130,7 +131,7 @@ function PotionSlots() {
 						key={slotKey}
 						title={`${tPotion(p, def?.name ?? p)}: ${def?.text ?? ""}`}
 						onClick={() => {
-							if (state.combat) {
+							if (canUsePotion(state, p)) {
 								dispatch({ type: "usePotion", index: i, targetIndex: 0 });
 							}
 						}}

@@ -124,3 +124,25 @@ export function replayIfNecronomicon(
 	}
 	return drainActions(st, events).state;
 }
+
+/** Duplication Potion (DuplicationPower): the next card(s) this turn are played twice. */
+export function replayIfDuplication(
+	s: GameState,
+	card: CardInstance,
+	targetIndex: number,
+	events: GameEvent[],
+): GameState {
+	const c = s.combat;
+	const dup = c?.player.powers.find((p) => p.id === "DUPLICATION" && p.amount > 0);
+	if (!c || !dup) return s;
+	const powers =
+		dup.amount > 1
+			? c.player.powers.map((p) => (p === dup ? { ...p, amount: p.amount - 1 } : p))
+			: c.player.powers.filter((p) => p !== dup);
+	let st: GameState = { ...s, combat: { ...c, player: { ...c.player, powers } } };
+	for (const action of resolveCardEffect(st, card, targetIndex)) {
+		if (!st.combat) break;
+		st = { ...st, combat: addToBot(st.combat, action) };
+	}
+	return drainActions(st, events).state;
+}

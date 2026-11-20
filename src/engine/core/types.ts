@@ -97,7 +97,12 @@ export type CardSelectTask =
 	| "warcry"
 	| "seek"
 	| "wellLaidPlans"
-	| "hologram";
+	| "hologram"
+	// Potions
+	| "elixir"
+	| "liquidMemories"
+	| "potionDiscovery"
+	| "stancePotion";
 
 // ── 战斗状态 ──────────────────────────────────────────────
 
@@ -119,6 +124,8 @@ export interface CombatState {
 	readonly frostChanneled: number;
 	/** Set by a hook to end the player's turn once the current card finishes (Time Warp). */
 	readonly endTurnRequested?: boolean;
+	/** Cards still to play from the top of the draw pile (Distilled Chaos), after the current play. */
+	readonly autoplayTop?: number;
 }
 
 export interface PlayerCombatState {

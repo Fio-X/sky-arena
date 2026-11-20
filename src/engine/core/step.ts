@@ -17,6 +17,7 @@ import {
 } from "../content/relicsRun2";
 import { drainActions } from "./actionExecutor";
 import { addToBot } from "./actionQueue";
+import { drainAutoplay } from "./autoplay";
 import { afterRewardPhase, rollGoldReward, stepChooseBossRelic } from "./bossReward";
 import { stepChooseCard } from "./cardSelect";
 import { pickEvent, stepChooseEventOption } from "./event";
@@ -29,6 +30,7 @@ import {
 	replayIfAmplify,
 	replayIfBurst,
 	replayIfDoubleTap,
+	replayIfDuplication,
 	replayIfEchoForm,
 	replayIfNecronomicon,
 } from "./replay";
@@ -78,7 +80,7 @@ export function step(state: GameState, command: Command): StepResult {
 			return stepChooseEventOption(state, command.index, events);
 		case "usePotion":
 			result = stepUsePotion(state, command.index, command.targetIndex, events);
-			return checkCombatEnd(result);
+			return checkCombatEnd(drainAutoplay(result, stepPlayCard));
 		case "discardPotion":
 			return stepDiscardPotion(state, command.index, events);
 		case "obtainPotionReward":
@@ -87,7 +89,7 @@ export function step(state: GameState, command: Command): StepResult {
 			return stepChooseBossRelic(state, command.index, events);
 		case "chooseCard":
 			result = stepChooseCard(state, command.indices, events);
-			return checkCombatEnd(result);
+			return checkCombatEnd(drainAutoplay(result, stepPlayCard));
 		case "proceed":
 			return stepProceed(state, events);
 		case "chooseDeckCards":
@@ -176,6 +178,7 @@ function stepPlayCard(
 	s = replayIfEchoForm(s, card, targetIndex, events);
 	s = replayIfAmplify(s, card, targetIndex, events);
 	s = replayIfNecronomicon(s, card, targetIndex, events, energySpent);
+	s = replayIfDuplication(s, card, targetIndex, events);
 
 	return { state: s, events };
 }
@@ -459,7 +462,7 @@ function checkCombatEnd(result: StepResult): StepResult {
 		const goldResult = rollGoldReward(s);
 		const reward = generateCardReward({ ...s, rng: { ...s.rng, miscRng: goldResult.rng } });
 		const potionChance = hasRelic(s, "WHITE_BEAST_STATUE") ? 100 : 40;
-		const potionResult = rollPotionDrop(s.rng.potionRng, s.potionSlots, s.potions, potionChance);
+		const potionResult = rollPotionDrop(s.rng.potionRng, s.potions, potionChance, s.character);
 		const newRng = {
 			...s.rng,
 			miscRng: goldResult.rng,

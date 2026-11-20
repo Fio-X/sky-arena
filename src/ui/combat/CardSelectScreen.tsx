@@ -1,5 +1,11 @@
 import { motion } from "framer-motion";
+import { useState } from "react";
 import { getCard } from "../../engine/content/loader";
+import {
+	potionSelectLimits,
+	potionSelectSource,
+	STANCE_CHOICES,
+} from "../../engine/core/potionSelect";
 import type { CardInstance, CardSelectTask } from "../../engine/core/types";
 import { tCard, tCardSelect } from "../../i18n";
 import { useGameStore } from "../../store/gameStore";
@@ -50,6 +56,7 @@ function cardTypeColor(type?: string): string {
 export function CardSelectScreen() {
 	const state = useGameStore((s) => s.state);
 	const dispatch = useGameStore((s) => s.dispatch);
+	const [picked, setPicked] = useState<number[]>([]);
 
 	if (state?.phase.type !== "cardSelect") return null;
 
@@ -57,8 +64,25 @@ export function CardSelectScreen() {
 	const combat = state.combat;
 	if (!combat) return null;
 
-	const cards: CardInstance[] = options ?? getSourceCards(task, combat);
+	const cards: CardInstance[] =
+		options ?? potionSelectSource(task, combat) ?? getSourceCards(task, combat);
 	const label = tCardSelect(task);
+	// Multi-select (Elixir, Gambler's Brew / Gambling Chip, Liquid Memories): toggle, then confirm.
+	const limits = potionSelectLimits(state, task, cards.length);
+	const choose = (i: number) => {
+		if (!limits) {
+			dispatch({ type: "chooseCard", indices: [i] });
+			return;
+		}
+		setPicked((p) =>
+			p.includes(i) ? p.filter((x) => x !== i) : p.length < limits.max ? [...p, i] : p,
+		);
+	};
+	const confirm = () => {
+		dispatch({ type: "chooseCard", indices: picked });
+		setPicked([]);
+	};
+	const canConfirm = !!limits && picked.length >= limits.min && picked.length <= limits.max;
 
 	return (
 		<div style={overlayStyle}>
@@ -96,7 +120,11 @@ export function CardSelectScreen() {
 				>
 					{cards.map((card, i) => {
 						const def = getCard(card.id);
-						const name = tCard(card.id, def?.name ?? card.id);
+						const name =
+							card.id in STANCE_CHOICES
+								? tCardSelect(card.id)
+								: tCard(card.id, def?.name ?? card.id);
+						const isPicked = picked.includes(i);
 						const cost = card.freeToPlay ? 0 : card.costForTurn;
 						const typeColor = cardTypeColor(def?.type);
 
@@ -104,10 +132,10 @@ export function CardSelectScreen() {
 							<motion.button
 								type="button"
 								key={card.uniqueId}
-								onClick={() => dispatch({ type: "chooseCard", indices: [i] })}
+								onClick={() => choose(i)}
 								style={{
 									padding: "0.6rem 0.85rem",
-									border: `1px solid var(--border)`,
+									border: isPicked ? `2px solid var(--accent-cyan)` : `1px solid var(--border)`,
 									borderRadius: 10,
 									minWidth: 110,
 									textAlign: "center",
@@ -141,7 +169,7 @@ export function CardSelectScreen() {
 										textShadow: "0 0 5px var(--energy-glow)",
 									}}
 								>
-									{cost}
+									{cost >= 0 ? cost : ""}
 								</div>
 
 								{/* Name */}
@@ -173,6 +201,24 @@ export function CardSelectScreen() {
 						);
 					})}
 				</div>
+				{limits && (
+					<button
+						type="button"
+						onClick={confirm}
+						disabled={!canConfirm}
+						style={{
+							padding: "0.5rem 1.5rem",
+							borderRadius: 10,
+							border: "1px solid var(--accent-cyan)",
+							background: "var(--bg-card)",
+							color: "var(--text-bright)",
+							opacity: canConfirm ? 1 : 0.4,
+							cursor: canConfirm ? "pointer" : "default",
+						}}
+					>
+						{tCardSelect("confirm")} ({picked.length})
+					</button>
+				)}
 			</motion.div>
 		</div>
 	);

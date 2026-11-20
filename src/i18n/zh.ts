@@ -118,5 +118,12 @@ export const zh: TranslationTable = {
 		toolsOfTheTrade: "选择一张卡牌弃置",
 		wellLaidPlans: "选择要保留的卡牌",
 		hologram: "从弃牌堆选择一张卡牌加入手牌",
+		elixir: "选择任意张卡牌消耗",
+		liquidMemories: "从弃牌堆选择卡牌放入手牌",
+		potionDiscovery: "选择一张卡牌加入手牌",
+		stancePotion: "选择一种姿态",
+		STANCE_CALM: "平静",
+		STANCE_WRATH: "愤怒",
+		confirm: "确定",
 	},
 };

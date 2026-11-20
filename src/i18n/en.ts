@@ -109,5 +109,12 @@ export const en: TranslationTable = {
 		toolsOfTheTrade: "Choose a card to discard",
 		wellLaidPlans: "Choose card(s) to retain",
 		hologram: "Choose a card from discard pile to put into hand",
+		elixir: "Choose any number of cards to exhaust",
+		liquidMemories: "Choose card(s) from discard pile to put into hand",
+		potionDiscovery: "Choose a card to add to your hand",
+		stancePotion: "Choose a stance",
+		STANCE_CALM: "Calm",
+		STANCE_WRATH: "Wrath",
+		confirm: "Confirm",
 	},
 };

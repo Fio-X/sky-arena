@@ -4,32 +4,40 @@ import { potionPotency } from "../content/relicsCombatRules";
 import { random } from "../rng/stsRandom";
 import { drainActions } from "./actionExecutor";
 import { addToBot } from "./actionQueue";
+import { getCurrentRoomType } from "./bossReward";
 import { fireRunHook } from "./hooks";
 import { hasRelic } from "./obtain";
-import type { GameEvent, GameState, PotionId, RngState, StepResult } from "./types";
+import { executeGainMaxHp, executePlayerHeal } from "./playerActions";
+import type { Action, GameEvent, GameState, PotionId, RngState, StepResult } from "./types";
 
-// ── Potion pool for Ironclad ─────────────────────────────
+// ── Potion pool ──────────────────────────────────────────
+// PotionHelper.getPotions(chosenClass): shared potions + the character's own,
+// in data order (Ironclad's pool is unchanged from the old red-only list).
 
-const IRONCLAD_POTION_POOL: PotionId[] = [];
-let poolInitialized = false;
+type PoolEntry = { id: PotionId; rarity: string; inClassPool: string[] };
+const ALL_POTIONS: PoolEntry[] = [];
 
-function ensurePool(): void {
-	if (poolInitialized) return;
-	poolInitialized = true;
-	const potionDefs = import.meta.env?.SSR ? [] : [];
-	void potionDefs;
-}
+const CHARACTER_COLOR: Record<string, string> = {
+	IRONCLAD: "red",
+	SILENT: "green",
+	DEFECT: "blue",
+	WATCHER: "purple",
+};
 
 export function initPotionPool(
-	allPotions: Array<{ id: string; class: string; rarity: string }>,
+	allPotions: Array<{ id: string; class: string; rarity: string; inClassPool?: string[] }>,
 ): void {
-	IRONCLAD_POTION_POOL.length = 0;
+	ALL_POTIONS.length = 0;
 	for (const p of allPotions) {
-		if (p.class === "shared" || p.class === "red") {
-			IRONCLAD_POTION_POOL.push(p.id as PotionId);
-		}
+		const inClassPool =
+			p.inClassPool ?? (p.class === "shared" ? Object.values(CHARACTER_COLOR) : [p.class]);
+		ALL_POTIONS.push({ id: p.id as PotionId, rarity: p.rarity, inClassPool });
 	}
-	poolInitialized = true;
+}
+
+function potionPool(character: string): PoolEntry[] {
+	const color = CHARACTER_COLOR[character] ?? "red";
+	return ALL_POTIONS.filter((p) => p.inClassPool.includes(color));
 }
 
 // ── Roll potion drop ─────────────────────────────────────
@@ -37,13 +45,13 @@ export function initPotionPool(
 
 export function rollPotionDrop(
 	rng: RngState,
-	_potionSlots: number,
 	potions: (PotionId | null)[],
-	chance = 40,
+	chance: number,
+	character: string,
 ): { potion: PotionId | null; rng: RngState } {
-	ensurePool();
+	const pool = potionPool(character);
 	const hasEmptySlot = potions.some((p) => p === null);
-	if (!hasEmptySlot || IRONCLAD_POTION_POOL.length === 0) {
+	if (!hasEmptySlot || pool.length === 0) {
 		return { potion: null, rng };
 	}
 
@@ -51,10 +59,37 @@ export function rollPotionDrop(
 	rng = dropRoll.state;
 	if (dropRoll.value >= chance) return { potion: null, rng };
 
-	const potionRoll = random(rng, IRONCLAD_POTION_POOL.length - 1);
+	const potionRoll = random(rng, pool.length - 1);
 	rng = potionRoll.state;
-	const potion = IRONCLAD_POTION_POOL[potionRoll.value] ?? null;
+	const potion = pool[potionRoll.value]?.id ?? null;
 	return { potion, rng };
+}
+
+/**
+ * AbstractDungeon.returnRandomPotion(limited): rarity roll (65 common /
+ * 25 uncommon / 10 rare), then random potions until one has that rarity;
+ * `limited` also rejects Fruit Juice (Entropic Brew).
+ */
+export function randomPotion(
+	rng: RngState,
+	character: string,
+	limited: boolean,
+): { potion: PotionId | null; rng: RngState } {
+	const pool = potionPool(character);
+	const r = random(rng, 99);
+	const rarity = r.value < 65 ? "common" : r.value < 90 ? "uncommon" : "rare";
+	let st = r.state;
+	if (!pool.some((p) => p.rarity === rarity && !(limited && p.id === "FRUIT_JUICE"))) {
+		return { potion: null, rng: st };
+	}
+	for (;;) {
+		const pick = random(st, pool.length - 1);
+		st = pick.state;
+		const p = pool[pick.value];
+		if (p && p.rarity === rarity && !(limited && p.id === "FRUIT_JUICE")) {
+			return { potion: p.id, rng: st };
+		}
+	}
 }
 
 // ── Obtain potion ────────────────────────────────────────
@@ -70,6 +105,37 @@ export function obtainPotion(state: GameState, potionId: PotionId, events: GameE
 
 // ── Use potion ───────────────────────────────────────────
 
+/** AbstractPotion.canUse overrides that allow drinking outside combat. */
+const USABLE_OUTSIDE_COMBAT = new Set(["FRUIT_JUICE", "BLOOD_POTION", "ENTROPIC_BREW"]);
+
+/**
+ * Whether the potion can be drunk now. Fairy in a Bottle only triggers on
+ * death; Smoke Bomb needs a non-boss fight without Back Attack (Act 4 ambush).
+ */
+export function canUsePotion(state: GameState, potionId: PotionId): boolean {
+	if (potionId === "FAIRY_POTION") return false;
+	if (!state.combat) return USABLE_OUTSIDE_COMBAT.has(potionId);
+	if (state.phase.type !== "combat") return false;
+	if (potionId === "SMOKE_BOMB") {
+		if (getCurrentRoomType(state) === "boss") return false;
+		return !state.combat.monsters.some((m) =>
+			m.powers.some((p) => p.id.toUpperCase() === "BACK_ATTACK"),
+		);
+	}
+	return true;
+}
+
+/** Outside combat there is no action queue: run the few actions those potions use directly. */
+function runOutsideCombat(state: GameState, actions: Action[], events: GameEvent[]): GameState {
+	let s = state;
+	for (const a of actions) {
+		if (a.type === "heal") s = executePlayerHeal(s, a.amount, events).state;
+		else if (a.type === "gainMaxHp") s = executeGainMaxHp(s, a, events).state;
+		else if (a.type === "custom") s = a.execute(s);
+	}
+	return s;
+}
+
 export function stepUsePotion(
 	state: GameState,
 	slot: number,
@@ -77,13 +143,10 @@ export function stepUsePotion(
 	events: GameEvent[],
 ): StepResult {
 	const potionId = state.potions[slot];
-	if (!potionId) return { state, events };
+	if (!potionId || !canUsePotion(state, potionId)) return { state, events };
 
 	const def = getPotion(potionId);
 	if (!def) return { state, events };
-
-	// Only allow targeted potions in combat (or any potion in combat)
-	if (def.targeted && !state.combat) return { state, events };
 
 	const newPotions = [...state.potions];
 	newPotions[slot] = null;
@@ -93,11 +156,15 @@ export function stepUsePotion(
 	const effectFn = getPotionEffect(potionId);
 	if (effectFn) {
 		const actions = potionPotency(s, effectFn(s, targetIndex));
-		for (const action of actions) {
-			if (!s.combat) break;
-			s = { ...s, combat: addToBot(s.combat, action) };
+		if (!s.combat) {
+			s = runOutsideCombat(s, actions, events);
+		} else {
+			for (const action of actions) {
+				if (!s.combat) break;
+				s = { ...s, combat: addToBot(s.combat, action) };
+			}
+			({ state: s } = drainActions(s, events));
 		}
-		({ state: s } = drainActions(s, events));
 	}
 
 	return { state: fireRunHook(s, "onUsePotion", potionId), events };
